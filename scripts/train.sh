@@ -42,9 +42,10 @@ TRAIN_VIS_MODE=${TRAIN_VIS_MODE:-none}
 # ======================
 ns-train "$MODEL" \
   --data "$DATA" \
+  --output-dir "$OUTPUTDIR" \
   --machine.device-type "$DEVICE" \
   --max-num-iterations "$MAX_ITER" \
-  --experiment-name "$(basename "$OUTPUT")" \
+  --experiment-name "$(basename "$OUTPUTDIR")" \
   \
   --vis "$TRAIN_VIS_MODE" \
   \
