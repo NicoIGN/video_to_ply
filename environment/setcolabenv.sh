@@ -19,7 +19,7 @@ apt-get install -y \
   python3.10 python3.10-dev python3.10-venv
 
 # =========================
-# FORCE CLEAN PYTHON ENV
+# FORCE PYTHON 3.10 SYSTEM
 # =========================
 update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
 update-alternatives --set python /usr/bin/python3.10
@@ -31,13 +31,14 @@ python --version
 which python
 
 # =========================
-# REMOVE COLAB PYTHON 3.12 PACKAGES (CRITICAL FIX)
+# CRITICAL CLEAN (Colab 3.12 residue)
 # =========================
 rm -rf /usr/local/lib/python3.12/dist-packages/nerfstudio* || true
 rm -rf /usr/local/lib/python3.12/dist-packages/torch* || true
+rm -f /usr/local/bin/ns-train || true
 
 # =========================
-# FORCE PYTHON SHIM
+# FORCE SHIM PYTHON 3.10
 # =========================
 ln -sf /usr/bin/python3.10 $BIN_DIR/python
 ln -sf /usr/bin/python3.10 $BIN_DIR/python3
@@ -50,54 +51,63 @@ which python
 python --version
 
 # =========================
-# ENSURE PIP FOR 3.10 ONLY
+# PIP CLEAN (IMPORTANT)
 # =========================
 python -m ensurepip --upgrade || true
 python -m pip install --upgrade pip setuptools wheel
-
-# HARD RESET PIP CACHE
 python -m pip cache purge || true
 
 # =========================
-# CLEAN ML CONFLICTS
+# CLEAN ML STACK CONFLICTS
 # =========================
 python -m pip uninstall -y \
-  nerfstudio \
+  nerfstudio pytorch-lightning \
   pytensor jax jaxlib \
   tensorflow tensorflow-cpu \
   torch torchvision torchaudio || true
 
 # =========================
-# NUMPY SAFE VERSION
+# CORE SCIENCE STACK
 # =========================
 python -m pip install numpy==1.26.4
-
-# =========================
-# SCIENTIFIC STACK
-# =========================
 python -m pip install scipy imageio imageio-ffmpeg opencv-python
 
 # =========================
-# PYTORCH CUDA 11.8 (COLAB SAFE)
+# PYTORCH (CUDA 11.8 COLAB SAFE)
 # =========================
 python -m pip install torch torchvision torchaudio \
   --index-url https://download.pytorch.org/whl/cu118
 
 # =========================
-# NERF STACK CLEAN INSTALL
+# NERF STACK (PYTHON 3.10 ONLY)
 # =========================
-python -m pip install nerfstudio==0.3.4
+python -m pip install --no-cache-dir nerfstudio==0.3.4
 python -m pip install pycolmap==3.11.1
 
 # =========================
-# ENV FIXES
+# FORCE CORRECT ns-train WRAPPER
+# =========================
+cat > $BIN_DIR/ns-train << 'EOF'
+#!/usr/bin/env python3.10
+from nerfstudio.scripts.train import entrypoint
+
+if __name__ == "__main__":
+    entrypoint()
+EOF
+
+chmod +x $BIN_DIR/ns-train
+
+export PATH="$BIN_DIR:$PATH"
+hash -r
+
+# =========================
+# ENV FIXES (RENDER / COLMAP SAFE)
 # =========================
 export QT_QPA_PLATFORM=offscreen
 export MPLBACKEND=Agg
 export OPENCV_LOG_LEVEL=ERROR
 export XDG_RUNTIME_DIR=/tmp/runtime-root
 
-# IMPORTANT: avoid GPU crash fallback
 export CUDA_VISIBLE_DEVICES=0
 export LIBGL_ALWAYS_SOFTWARE=1
 
@@ -110,5 +120,5 @@ echo "FINAL PYTHON:"
 python --version
 which python
 
-echo "NERFSTUDIO:"
-ns-train --help >/dev/null && echo "OK" || echo "FAILED"
+echo "NS-TRAIN:"
+ns-train --help && echo "OK" || echo "FAILED"
