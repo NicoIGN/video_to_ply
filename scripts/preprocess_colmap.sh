@@ -39,10 +39,10 @@ export MPLBACKEND=Agg
 export OPENCV_LOG_LEVEL=ERROR
 export XDG_RUNTIME_DIR=/tmp/runtime-root
 
-# 🔥 FORCE CPU + OPENGL SAFE MODE
+# 🔥 FORCE CPU RENDERING (IMPORTANT FOR OPENGL CRASH FIX)
 export CUDA_VISIBLE_DEVICES=""
 export LIBGL_ALWAYS_SOFTWARE=1
-export OMP_NUM_THREADS=2
+
 # ======================
 # LOG
 # ======================
@@ -56,7 +56,7 @@ echo "🚫 Skip image processing: $SKIP_IMG"
 echo "⚙️ Device (NERF only): $DEVICE"
 
 # ======================
-# SKIP FLAG
+# SKIP FLAG (robust)
 # ======================
 SKIP_FLAG=""
 if [[ "$SKIP_IMG" == "true" || "$SKIP_IMG" == "1" ]]; then
@@ -78,6 +78,7 @@ xvfb-run -a ns-process-data images \
   --matching-method "$MATCHING" \
   --num-downscales "$NUM_DOWNSCALES" \
   $SKIP_FLAG \
+  --SiftExtraction.use_gpu 0 \
   2> "$LOG_FILE"
 
 # ======================
