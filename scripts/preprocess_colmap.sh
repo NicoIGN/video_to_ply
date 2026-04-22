@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 # ======================
 # LOAD CONFIG
@@ -40,7 +39,7 @@ export MPLBACKEND=Agg
 export OPENCV_LOG_LEVEL=ERROR
 export XDG_RUNTIME_DIR=/tmp/runtime-root
 
-# 🔥 HARD FORCE CPU (REAL FIX FOR COLMAP GPU SIFT)
+# 🔥 FORCE CPU (IMPORTANT)
 export CUDA_VISIBLE_DEVICES=""
 
 # ======================
@@ -56,7 +55,7 @@ echo "🚫 Skip image processing: $SKIP_IMG"
 echo "⚙️ Device (NERF only): $DEVICE"
 
 # ======================
-# SKIP IMAGE PROCESSING FLAG
+# SKIP FLAG
 # ======================
 SKIP_FLAG=""
 if [ "$SKIP_IMG" = "true" ] || [ "$SKIP_IMG" = true ]; then
@@ -64,9 +63,11 @@ if [ "$SKIP_IMG" = "true" ] || [ "$SKIP_IMG" = true ]; then
 fi
 
 # ======================
-# PIPELINE EXECUTION
+# RUN COLMAP (WITH ERROR CAPTURE)
 # ======================
 echo "⚙️ COLMAP SIFT: CPU MODE FORCED (CUDA disabled)"
+
+LOG_FILE="/tmp/colmap_error.log"
 
 ns-process-data images \
   --data "$DATA_DIR" \
@@ -75,6 +76,20 @@ ns-process-data images \
   --sfm-tool "$SFMT_TOOL" \
   --matching-method "$MATCHING" \
   --num-downscales "$NUM_DOWNSCALES" \
-  $SKIP_FLAG
+  $SKIP_FLAG \
+  2> "$LOG_FILE"
 
-echo "✅ COLMAP done"
+# ======================
+# ERROR HANDLING
+# ======================
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "❌ ❌ ❌ COLMAP FAILED ❌ ❌ ❌"
+  echo "📄 Log saved to: $LOG_FILE"
+  echo ""
+  echo "🔍 Last errors:"
+  tail -n 30 "$LOG_FILE"
+  exit 1
+fi
+
+echo "✅ COLMAP done successfully"
