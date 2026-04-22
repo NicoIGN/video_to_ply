@@ -39,8 +39,9 @@ export MPLBACKEND=Agg
 export OPENCV_LOG_LEVEL=ERROR
 export XDG_RUNTIME_DIR=/tmp/runtime-root
 
-# 🔥 FORCE CPU (IMPORTANT)
+# 🔥 FORCE CPU RENDERING (IMPORTANT FOR OPENGL CRASH FIX)
 export CUDA_VISIBLE_DEVICES=""
+export LIBGL_ALWAYS_SOFTWARE=1
 
 # ======================
 # LOG
@@ -55,21 +56,21 @@ echo "🚫 Skip image processing: $SKIP_IMG"
 echo "⚙️ Device (NERF only): $DEVICE"
 
 # ======================
-# SKIP FLAG
+# SKIP FLAG (robust)
 # ======================
 SKIP_FLAG=""
-if [ "$SKIP_IMG" = "true" ] || [ "$SKIP_IMG" = true ]; then
+if [[ "$SKIP_IMG" == "true" || "$SKIP_IMG" == "1" ]]; then
   SKIP_FLAG="--skip-image-processing"
 fi
 
 # ======================
-# RUN COLMAP (WITH ERROR CAPTURE)
+# RUN COLMAP (SAFE COLAB MODE)
 # ======================
-echo "⚙️ COLMAP SIFT: CPU MODE FORCED (CUDA disabled)"
+echo "⚙️ COLMAP SIFT: CPU MODE FORCED (OpenGL safe mode)"
 
 LOG_FILE="/tmp/colmap_error.log"
 
-ns-process-data images \
+xvfb-run -a ns-process-data images \
   --data "$DATA_DIR" \
   --output-dir "$OUTPUT_DIR" \
   --camera-type perspective \
@@ -77,6 +78,7 @@ ns-process-data images \
   --matching-method "$MATCHING" \
   --num-downscales "$NUM_DOWNSCALES" \
   $SKIP_FLAG \
+  --SiftExtraction.use_gpu 0 \
   2> "$LOG_FILE"
 
 # ======================
