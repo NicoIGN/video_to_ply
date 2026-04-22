@@ -31,6 +31,13 @@ fi
 
 
 # ======================
+# DEFAULT VIS MODE FALLBACK
+# ======================
+# évite crash si non défini dans config
+TRAIN_VIS_MODE=${TRAIN_VIS_MODE:-none}
+
+
+# ======================
 # TRAIN
 # ======================
 ns-train "$MODEL" \
@@ -38,6 +45,8 @@ ns-train "$MODEL" \
   --machine.device-type "$DEVICE" \
   --max-num-iterations "$MAX_ITER" \
   --experiment-name "$(basename "$OUTPUT")" \
+  \
+  --vis "$TRAIN_VIS_MODE" \
   \
   --pipeline.datamanager.train-num-rays-per-batch "$TRAIN_RAYS_PER_BATCH" \
   --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR" \

@@ -2,20 +2,7 @@
 set -e
 
 source config/config.sh
-# ======================
-# PROXY SETUP
-# ======================
-if [ -n "$HTTP_PROXY" ]; then
-  export HTTP_PROXY="$HTTP_PROXY"
-  export http_proxy="$HTTP_PROXY"
-  echo "🌐 HTTP proxy enabled"
-fi
 
-if [ -n "$HTTPS_PROXY" ]; then
-  export HTTPS_PROXY="$HTTPS_PROXY"
-  export https_proxy="$HTTPS_PROXY"
-  echo "🌐 HTTPS proxy enabled"
-fi
 
 # ======================
 # HELP
@@ -85,6 +72,21 @@ source "$(conda info --base)/etc/profile.d/conda.sh"
 if [ "$SKIP_CONDA_UPDATE" = true ]; then
   echo "⏩ Skipping conda update (config)"
 else
+    # ======================
+    # PROXY SETUP
+    # ======================
+    if [ -n "$HTTP_PROXY" ]; then
+      export HTTP_PROXY="$HTTP_PROXY"
+      export http_proxy="$HTTP_PROXY"
+      echo "🌐 HTTP proxy enabled"
+    fi
+
+    if [ -n "$HTTPS_PROXY" ]; then
+      export HTTPS_PROXY="$HTTPS_PROXY"
+      export https_proxy="$HTTPS_PROXY"
+      echo "🌐 HTTPS proxy enabled"
+    fi
+
   if conda env list | grep -q "$CONDA_ENV_NAME"; then
     echo "🔁 Updating env"
     conda env update -n "$CONDA_ENV_NAME" -f "$CONDA_ENV_FILE" --prune > /dev/null 2>&1
@@ -97,14 +99,48 @@ fi
 conda activate "$CONDA_ENV_NAME"
 
 # ======================
-# MODEL SWITCH
+# MODEL VALIDATION
 # ======================
-if [ "$DEVICE" == "cpu" ]; then
-  MODEL="nerfacto"
-else
-  MODEL="splatfacto"
+
+CUDA_AVAILABLE=false
+if command -v nvidia-smi >/dev/null 2>&1; then
+  if nvidia-smi >/dev/null 2>&1; then
+    CUDA_AVAILABLE=true
+  fi
 fi
 
+# GPU CHECK
+if [ "$DEVICE" == "gpu" ] && [ "$CUDA_AVAILABLE" = false ]; then
+  echo "❌ ERROR: GPU requested but CUDA is not available."
+  echo "👉 Switch to DEVICE=cpu or install CUDA"
+  exit 1
+fi
+
+# CPU COMPATIBILITY CHECK
+if [ "$DEVICE" == "cpu" ]; then
+  case "$MODEL" in
+    nerfacto|nerf|kplanes|tensorf)
+      echo "🧠 CPU model OK: $MODEL"
+      ;;
+    *)
+      echo "❌ MODEL '$MODEL' not supported on CPU"
+      echo "👉 Allowed: nerfacto | nerf | kplanes | tensorf"
+      exit 1
+      ;;
+  esac
+fi
+
+# GPU COMPATIBILITY CHECK (warning only)
+if [ "$DEVICE" == "gpu" ]; then
+  case "$MODEL" in
+    splatfacto|splatfacto-w|instant-ngp|zip-nerf|pynerf|feature-splatting)
+      echo "🚀 GPU model OK: $MODEL"
+      ;;
+    *)
+      echo "⚠️ MODEL '$MODEL' is not GPU-optimized (will run but may be slow)"
+      ;;
+  esac
+fi
 # ======================
 # STRUCTURE (SIMPLIFIÉE)
 # ======================

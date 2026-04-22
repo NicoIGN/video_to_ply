@@ -1,9 +1,10 @@
 ############################
 # PIPELINE CONTROL (SKIP FLAGS)
 ############################
+
 SKIP_CONDA_UPDATE=true
 SKIP_FRAME_EXTRACTION=true
-SKIP_COLMAP=false
+SKIP_COLMAP=true
 SKIP_TRAINING=false
 SKIP_EXPORT=false
 
@@ -14,7 +15,6 @@ SKIP_EXPORT=false
 
 ROOT_DIR="runs/default"
 
-# derived paths (will be set in run.sh)
 INPUT_DIR=""
 FRAME_DIR=""
 ORI_DIR=""
@@ -28,17 +28,41 @@ EXPORT_DIR=""
 
 DEVICE="cpu"   # cpu | gpu
 
+# GPU REQUIREMENTS (important)
+# - NVIDIA GPU + CUDA drivers
+# - PyTorch compiled with CUDA
+# - required for:
+#   - splatfacto / splatfacto-w
+#   - instant-ngp
+#   - zip-nerf
+#   - pynerf
+#   - feature-splatting
+#   - tetra-nerf (partially GPU)
+
+# CPU MODE LIMITATIONS
+# - no CUDA kernels
+# - slower dataloading + training
+# - recommended models:
+#   - nerfacto (BEST CPU CHOICE)
+#   - nerf
+#   - kplanes (slow)
+#   - tensorf (slow but works)
+
 
 ############################
 # MODEL CONFIG
 ############################
 
 MODEL="nerfacto"
+
+# Nerfstudio backend implementation
 MODEL_IMPLEMENTATION="torch"
+# torch  -> CPU / safe fallback
+# tcnn   -> GPU ONLY (tiny-cuda-nn required)
 
 
 ############################
-# VIDEO PIPELINE PARAMS
+# VIDEO PIPELINE
 ############################
 
 VIDEO_NAME="video.mov"
@@ -46,37 +70,60 @@ FPS=10
 
 
 ############################
-# DATA PREPROCESS (COLMAP)
+# COLMAP / PREPROCESS
 ############################
 
 SFMT_TOOL="colmap"
 MATCHING_METHOD="sequential"
-SKIP_IMAGE_PROCESSING=true
 NUM_DOWNSCALES=1
+SKIP_IMAGE_PROCESSING=false
 
 
 ############################
 # IMAGE PREPROCESSING
 ############################
 
-CAMERA_RES_SCALE_FACTOR=1.0   # set 0.5 for FAST MODE (~4x speedup)
-
+#CAMERA_RES_SCALE_FACTOR=1.0
+CAMERA_RES_SCALE_FACTOR=0.5  # 0.5 = FAST MODE (~4x speedup)
 
 ############################
-# TRAINING PARAMETERS
+# TRAINING PARAMETERS (NERF CORE)
 ############################
 
+# Nombre total d’itérations d’entraînement
+# → 1 itération = optimisation sur un batch de rayons
+# ↑ augmente la qualité mais augmente le temps de calcul
 MAX_ITER=2000
-RAYS=1024
+
+# Nombre de rayons (pixels simulés) traités par batch
+# → contrôle la stabilité et la mémoire utilisée
+# ↑ plus grand = plus stable mais plus lent
 TRAIN_RAYS_PER_BATCH=1024
 
 
 ############################
-# MODEL QUALITY / SPEED TRADEOFF
+# SAMPLING (RECONSTRUCTION 3D)
 ############################
 
+# Nombre de points échantillonnés par rayon caméra
+# → chaque rayon est "découpé" en 3D pour estimer couleur + densité
+# ↑ plus élevé = détails plus fins mais calcul plus lourd
 NUM_NERF_SAMPLES_PER_RAY=32
+
+# Échantillonnage en 2 étapes (proposal network)
+# 1er nombre : exploration grossière (zones importantes)
+# 2e nombre : raffinement des zones sélectionnées
+# → améliore qualité et efficacité du rendu
 NUM_PROPOSAL_SAMPLES_PER_RAY="160 64"
+
+
+############################
+# IMAGE / DATA RESOLUTION
+############################
+
+# Résolution maximale utilisée pendant l’entraînement
+# → les images peuvent être downscalées automatiquement
+# ↑ plus élevé = plus de détails mais plus lent et plus gourmand
 MAX_RES=1024
 
 
@@ -87,15 +134,30 @@ MAX_RES=1024
 CAMERA_MODE="off"
 
 
-############################
-# EXPORT CONFIG
-############################
-
-NORMAL_METHOD="open3d"
-
 
 ############################
-# PERFORMANCE FLAGS (CPU SAFE DEFAULTS)
+# TRAINING MODE (VISUALISATION)
+############################
+
+# Contrôle l’interface de visualisation pendant le training
+# options possibles :
+#   viewer               → interface web interactive (par défaut)
+#   tensorboard          → logs only (RECOMMANDÉ pour pipeline automatisé)
+#   comet                → tracking expérimental
+#   wandb                → tracking cloud
+#   viewer+tensorboard   → hybride (debug + logs)
+#   viewer+wandb         → hybride
+#   viewer+comet        → hybride
+#   viewer_beta         → version expérimentale viewer
+#
+# ⚠️ IMPORTANT :
+# - "none" n’existe PAS dans Nerfstudio
+# - utiliser "tensorboard" pour mode headless réel (batch / scripts)
+TRAIN_VIS_MODE="tensorboard"
+
+
+############################
+# PERFORMANCE FLAGS
 ############################
 
 OMP_NUM_THREADS=1
@@ -103,8 +165,44 @@ TORCHDYNAMO_DISABLE=1
 PYTORCH_ENABLE_MPS_FALLBACK=1
 
 
+
 ############################
-# CONDA / ENVIRONMENT
+# EXPORT CONFIG
+############################
+
+NORMAL_METHOD="open3d"
+
+# MODE GLOBAL D'EXPORT
+# - fast     → très rapide, preview / debug
+# - balanced → compromis qualité/vitesse (recommandé)
+# - quality  → export complet haute qualité (lent)
+EXPORT_MODE="balanced"
+
+# PARAMÈTRES DÉRIVÉS (utilisés par export.sh)
+
+# nombre de points exportés
+EXPORT_NUM_POINTS_FAST=200000
+EXPORT_NUM_POINTS_BALANCED=500000
+EXPORT_NUM_POINTS_QUALITY=2000000
+
+# normales
+EXPORT_NORMALS_FAST="none"
+EXPORT_NORMALS_BALANCED="open3d"
+EXPORT_NORMALS_QUALITY="open3d"
+
+# nettoyage
+EXPORT_REMOVE_OUTLIERS_FAST=true
+EXPORT_REMOVE_OUTLIERS_BALANCED=true
+EXPORT_REMOVE_OUTLIERS_QUALITY=false
+
+# downsampling global
+EXPORT_DOWNSAMPLE_FAST=2
+EXPORT_DOWNSAMPLE_BALANCED=1
+EXPORT_DOWNSAMPLE_QUALITY=1
+
+
+############################
+# CONDA
 ############################
 
 CONDA_ENV_FILE="environment/conda_macosx.yml"
@@ -112,7 +210,7 @@ CONDA_ENV_NAME="gsplat2"
 
 
 ############################
-# PROXY (optional)
+# PROXY
 ############################
 
 HTTP_PROXY="http://proxy.ign.fr:3128"
