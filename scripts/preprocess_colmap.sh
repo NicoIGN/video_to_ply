@@ -40,8 +40,8 @@ export MPLBACKEND=Agg
 export OPENCV_LOG_LEVEL=ERROR
 export XDG_RUNTIME_DIR=/tmp/runtime-root
 
-# 🔥 HARD FORCE: NO GPU FOR COLMAP (IMPORTANT)
-export COLMAP_SIFT_GPU=0
+# 🔥 HARD FORCE CPU (REAL FIX FOR COLMAP GPU SIFT)
+export CUDA_VISIBLE_DEVICES=""
 
 # ======================
 # LOG
@@ -64,13 +64,10 @@ if [ "$SKIP_IMG" = "true" ] || [ "$SKIP_IMG" = true ]; then
 fi
 
 # ======================
-# 🧠 IMPORTANT NOTE
-# ======================
-echo "⚙️ COLMAP SIFT: FORCED CPU MODE (GPU disabled for stability)"
-
-# ======================
 # PIPELINE EXECUTION
 # ======================
+echo "⚙️ COLMAP SIFT: CPU MODE FORCED (CUDA disabled)"
+
 ns-process-data images \
   --data "$DATA_DIR" \
   --output-dir "$OUTPUT_DIR" \
