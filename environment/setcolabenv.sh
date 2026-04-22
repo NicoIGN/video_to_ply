@@ -1,4 +1,12 @@
 # =========================
+# CONFIG
+# =========================
+WORK_DIR=/content/work
+BIN_DIR=$WORK_DIR/bin
+
+mkdir -p $BIN_DIR
+
+# =========================
 # SYSTEM + PYTHON 3.10
 # =========================
 apt-get update -y
@@ -10,23 +18,37 @@ apt-get install -y \
   python3.10 python3.10-dev python3.10-venv
 
 # =========================
-# FORCE PYTHON 3.10 (IMPORTANT FIX)
+# FORCE PYTHON 3.10 (SYSTEM LEVEL)
 # =========================
 update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
 update-alternatives --set python /usr/bin/python3.10
 
 hash -r
 
+echo "Python system:"
 python --version
 which python
 
 # =========================
-# FORCE PIP OF PYTHON 3.10 (CRITICAL)
+# CREATE WORKSPACE PYTHON SHIM (IMPORTANT)
 # =========================
-python3.10 -m ensurepip --upgrade
+ln -sf /usr/bin/python3.10 $BIN_DIR/python
+ln -sf /usr/bin/python3.10 $BIN_DIR/python3
+
+export PATH="$BIN_DIR:/usr/bin:$PATH"
+hash -r
+
+echo "Python shim:"
+which python
+python --version
+
+# =========================
+# FORCE PIP FOR PYTHON 3.10
+# =========================
+python3.10 -m ensurepip --upgrade || true
 python3.10 -m pip install --upgrade pip setuptools wheel
 
-# ALWAYS USE PYTHON 3.10 PIPELINE
+# ALWAYS USE PYTHON 3.10
 alias pip='python3.10 -m pip'
 
 # =========================
@@ -54,7 +76,7 @@ python3.10 -m pip install torch torchvision torchaudio --index-url https://downl
 # =========================
 python3.10 -m pip install nerfstudio==0.3.4
 
-# PYCOLMAP (MATCHES NS 0.3.4)
+# PYCOLMAP
 python3.10 -m pip install pycolmap==3.11.1
 
 # =========================
@@ -75,8 +97,9 @@ export LIBGL_ALWAYS_SOFTWARE=1
 python3.10 -m pip install rclone-python || true
 
 # =========================
-# VERIFY INSTALL
+# FINAL CHECK
 # =========================
 nvidia-smi
+echo "Final python:"
 python --version
 which python
