@@ -9,7 +9,7 @@ source "$SCRIPT_DIR/../config/config.sh"
 
 
 # ======================
-# INPUTS (only override if needed)
+# INPUTS
 # ======================
 DATA_DIR=${1:-dataset/images}
 OUTPUT_DIR=${2:-dataset/ori}
@@ -29,10 +29,10 @@ mkdir -p "$OUTPUT_DIR"
 # ======================
 # PARAMS FROM CONFIG
 # ======================
-MATCHING="${MATCHING_METHOD}"
-SFMT_TOOL="${SFMT_TOOL}"
-NUM_DOWNSCALES="${NUM_DOWNSCALES}"
-SKIP_IMG="${SKIP_IMAGE_PROCESSING}"
+MATCHING="$MATCHING_METHOD"
+SFMT_TOOL="$SFMT_TOOL"
+NUM_DOWNSCALES="$NUM_DOWNSCALES"
+SKIP_IMG="$SKIP_IMAGE_PROCESSING"
 
 
 # ======================
@@ -48,10 +48,10 @@ echo "🚫 Skip image processing: $SKIP_IMG"
 
 
 # ======================
-# BUILD FLAGS
+# SAFETY FIX (IMPORTANT)
 # ======================
 SKIP_FLAG=""
-if [ "$SKIP_IMG" = true ]; then
+if [ "$SKIP_IMG" = "true" ] || [ "$SKIP_IMG" = true ]; then
   SKIP_FLAG="--skip-image-processing"
 fi
 

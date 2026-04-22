@@ -29,6 +29,9 @@ fi
 # ======================
 mkdir -p "$OUT_DIR"
 
+# 🧹 CLEAN OLD FRAMES (IMPORTANT FIX TO AVOID DUPLICATES)
+rm -f "$OUT_DIR"/frame_*.png
+
 echo "🎬 Extracting frames from: $VIDEO"
 echo "⚙️ FPS: $FPS"
 echo "📁 Output: $OUT_DIR"
@@ -39,6 +42,6 @@ echo "📁 Output: $OUT_DIR"
 ffmpeg -hide_banner -loglevel error -stats \
   -i "$VIDEO" \
   -vf "fps=$FPS,scale=1280:-1" \
-  "$OUT_DIR/frame_%04d.png"
+  "$OUT_DIR/frame_%05d.png"
 
 echo "✅ Frames extracted"

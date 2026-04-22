@@ -3,10 +3,11 @@
 ############################
 
 SKIP_CONDA_UPDATE=true
-SKIP_FRAME_EXTRACTION=true
-SKIP_COLMAP=true
+SKIP_FRAME_EXTRACTION=false
+SKIP_COLMAP=false
 SKIP_TRAINING=false
 SKIP_EXPORT=false
+
 
 
 ############################
@@ -76,7 +77,7 @@ FPS=10
 SFMT_TOOL="colmap"
 MATCHING_METHOD="sequential"
 NUM_DOWNSCALES=1
-SKIP_IMAGE_PROCESSING=false
+SKIP_IMAGE_PROCESSING=true
 
 
 ############################
