@@ -24,7 +24,7 @@ fi
 mkdir -p "$OUTPUT_DIR"
 
 # ======================
-# CONFIG VARIABLES (STRICT MATCH)
+# CONFIG VARIABLES
 # ======================
 MATCHING="$MATCHING_METHOD"
 SFMT_TOOL="$SFMT_TOOL"
@@ -33,12 +33,15 @@ SKIP_IMG="$SKIP_IMAGE_PROCESSING"
 DEVICE="${DEVICE:-cpu}"
 
 # ======================
-# 🧠 COLMAP / COLAB SAFE MODE (IMPORTANT)
+# 🧠 COLMAP SAFE MODE (COLAB FIX)
 # ======================
 export QT_QPA_PLATFORM=offscreen
 export MPLBACKEND=Agg
 export OPENCV_LOG_LEVEL=ERROR
 export XDG_RUNTIME_DIR=/tmp/runtime-root
+
+# 🔥 HARD FORCE: NO GPU FOR COLMAP (IMPORTANT)
+export COLMAP_SIFT_GPU=0
 
 # ======================
 # LOG
@@ -50,7 +53,7 @@ echo "🔗 Matching: $MATCHING"
 echo "🧱 SfM tool: $SFMT_TOOL"
 echo "📉 Downscale: $NUM_DOWNSCALES"
 echo "🚫 Skip image processing: $SKIP_IMG"
-echo "⚙️ Device: $DEVICE"
+echo "⚙️ Device (NERF only): $DEVICE"
 
 # ======================
 # SKIP IMAGE PROCESSING FLAG
@@ -61,12 +64,9 @@ if [ "$SKIP_IMG" = "true" ] || [ "$SKIP_IMG" = true ]; then
 fi
 
 # ======================
-# ⚠️ IMPORTANT FIX (COLMAP OPENGL ISSUE)
+# 🧠 IMPORTANT NOTE
 # ======================
-# Colab has no OpenGL context → GPU SIFT crashes
-# Always force CPU-safe extraction
-
-echo "⚙️ COLMAP SIFT: CPU-safe mode forced (Colab compatible)"
+echo "⚙️ COLMAP SIFT: FORCED CPU MODE (GPU disabled for stability)"
 
 # ======================
 # PIPELINE EXECUTION
