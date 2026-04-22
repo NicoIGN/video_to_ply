@@ -102,6 +102,31 @@ else
 fi
 
 # ======================
+# PYTHON VERSION CHECK
+# ======================
+PY_VER=$(python --version 2>&1)
+
+echo "🐍 Python detected: $PY_VER"
+
+if [[ "$PY_VER" != *"3.10"* ]]; then
+  echo "❌ ERROR: Python 3.10 required but found: $PY_VER"
+  echo "👉 Aborting execution"
+  exit 1
+fi
+
+echo "✅ Python 3.10 confirmed"
+
+# ======================
+# MODEL VALIDATION
+# ======================
+CUDA_AVAILABLE=false
+if command -v nvidia-smi >/dev/null 2>&1; then
+  if nvidia-smi >/dev/null 2>&1; then
+    CUDA_AVAILABLE=true
+  fi
+fi
+
+# ======================
 # MODEL VALIDATION
 # ======================
 CUDA_AVAILABLE=false
