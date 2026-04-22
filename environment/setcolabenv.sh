@@ -2,18 +2,26 @@
 # SYSTEM CLEAN (COLMAP FIRST)
 # =========================
 apt-get update -y
-apt-get install -y colmap ffmpeg cmake ninja-build libgl1-mesa-glx xvfb
+apt-get install -y colmap ffmpeg cmake ninja-build libgl1-mesa-glx xvfb python3.10 python3.10-venv
 
 # =========================
-# PYTHON TOOLCHAIN STABLE
+# FORCE PYTHON VERSION (IMPORTANT FIX)
+# =========================
+update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
+python --version
+
+# =========================
+# PYTHON TOOLCHAIN
 # =========================
 pip install --upgrade pip setuptools wheel
 
-# 🚨 IMPORTANT: remove ML conflict packages (Colab pollution fix)
+# =========================
+# CLEAN CONFLICTS (COLAB POLLUTION FIX)
+# =========================
 pip uninstall -y pytensor jax jaxlib tensorflow tensorflow-cpu || true
 
 # =========================
-# NUMPY (COLMAP + NERF SAFE ZONE)
+# NUMPY (NERF STABLE ZONE)
 # =========================
 pip install numpy==1.26.4
 
@@ -23,27 +31,27 @@ pip install numpy==1.26.4
 pip install scipy imageio imageio-ffmpeg opencv-python
 
 # =========================
-# PYTORCH (STABLE COLAB CUDA)
+# PYTORCH (STABLE CUDA COLAB)
 # =========================
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
 # =========================
-# NERF STACK (CLEAN INSTALL)
+# NERF STACK (STABLE VERSION)
 # =========================
-pip install nerfstudio
+pip install nerfstudio==0.3.4
 
-# pycolmap (DO NOT PIN ON PYTHON 3.12)
-pip install pycolmap
+# PYCOLMAP (STABLE FOR NS 0.3.4)
+pip install pycolmap==3.11.1
 
 # =========================
-# RUNTIME FIXES (CRITICAL FOR COLMAP)
+# RUNTIME FIXES (COLMAP SAFE MODE)
 # =========================
 export QT_QPA_PLATFORM=offscreen
 export MPLBACKEND=Agg
 export OPENCV_LOG_LEVEL=ERROR
 export XDG_RUNTIME_DIR=/tmp/runtime-root
 
-# 🔥 FORCE CPU SAFE MODE FOR COLMAP
+# FORCE CPU SAFE FOR COLMAP
 export CUDA_VISIBLE_DEVICES=""
 export LIBGL_ALWAYS_SOFTWARE=1
 
