@@ -1,27 +1,35 @@
 # =========================
-# SYSTEM CLEAN (COLMAP FIRST)
+# SYSTEM + PYTHON 3.10
 # =========================
 apt-get update -y
-apt-get install -y colmap ffmpeg cmake ninja-build libgl1-mesa-glx xvfb python3.10 python3.10-venv
+
+apt-get install -y \
+  software-properties-common \
+  colmap ffmpeg cmake ninja-build \
+  libgl1-mesa-glx xvfb \
+  python3.10 python3.10-dev python3.10-venv
 
 # =========================
-# FORCE PYTHON VERSION (IMPORTANT FIX)
+# FORCE PYTHON 3.10
 # =========================
 update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
+update-alternatives --set python /usr/bin/python3.10
+
 python --version
 
 # =========================
 # PYTHON TOOLCHAIN
 # =========================
+python -m ensurepip --upgrade
 pip install --upgrade pip setuptools wheel
 
 # =========================
-# CLEAN CONFLICTS (COLAB POLLUTION FIX)
+# CLEAN COLAB ML CONFLICTS
 # =========================
 pip uninstall -y pytensor jax jaxlib tensorflow tensorflow-cpu || true
 
 # =========================
-# NUMPY (NERF STABLE ZONE)
+# NUMPY (NERF SAFE)
 # =========================
 pip install numpy==1.26.4
 
@@ -31,16 +39,16 @@ pip install numpy==1.26.4
 pip install scipy imageio imageio-ffmpeg opencv-python
 
 # =========================
-# PYTORCH (STABLE CUDA COLAB)
+# PYTORCH (CUDA 11.8 STABLE COLAB)
 # =========================
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
 # =========================
-# NERF STACK (STABLE VERSION)
+# NERF STACK (STABLE FOR PYTHON 3.10)
 # =========================
 pip install nerfstudio==0.3.4
 
-# PYCOLMAP (STABLE FOR NS 0.3.4)
+# PYCOLMAP (MATCHES NS 0.3.4)
 pip install pycolmap==3.11.1
 
 # =========================
@@ -51,17 +59,17 @@ export MPLBACKEND=Agg
 export OPENCV_LOG_LEVEL=ERROR
 export XDG_RUNTIME_DIR=/tmp/runtime-root
 
-# FORCE CPU SAFE FOR COLMAP
+# FORCE CPU SAFE FOR COLMAP OPENGL
 export CUDA_VISIBLE_DEVICES=""
 export LIBGL_ALWAYS_SOFTWARE=1
 
 # =========================
-# OPTIONAL
+# OPTIONAL TOOLS
 # =========================
 pip install rclone-python || true
 
 # =========================
-# CHECK
+# VERIFY INSTALL
 # =========================
 nvidia-smi
 python --version
