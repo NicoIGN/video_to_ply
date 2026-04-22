@@ -16,7 +16,8 @@ apt-get install -y \
   software-properties-common \
   colmap ffmpeg cmake ninja-build \
   libgl1-mesa-glx xvfb \
-  python3.10 python3.10-dev python3.10-venv
+  python3.10 python3.10-dev python3.10-venv \
+  python3-pip
 
 # =========================
 # FORCE PYTHON 3.10 SYSTEM
@@ -51,9 +52,8 @@ which python
 python --version
 
 # =========================
-# PIP CLEAN (IMPORTANT)
+# PIP SETUP (FIX IMPORTANT)
 # =========================
-python -m ensurepip --upgrade || true
 python -m pip install --upgrade pip setuptools wheel
 python -m pip cache purge || true
 
@@ -79,20 +79,25 @@ python -m pip install torch torchvision torchaudio \
   --index-url https://download.pytorch.org/whl/cu118
 
 # =========================
-# NERF STACK (PYTHON 3.10 ONLY)
+# NERF STACK (STABLE INSTALL)
 # =========================
 python -m pip install --no-cache-dir nerfstudio==0.3.4
 python -m pip install pycolmap==3.11.1
+
+# =========================
+# VERIFY IMPORT
+# =========================
+python -c "import nerfstudio; print('NERFSTUDIO OK')"
 
 # =========================
 # FORCE CORRECT ns-train WRAPPER
 # =========================
 cat > $BIN_DIR/ns-train << 'EOF'
 #!/usr/bin/env python3.10
+import sys
 from nerfstudio.scripts.train import entrypoint
 
-if __name__ == "__main__":
-    entrypoint()
+sys.exit(entrypoint())
 EOF
 
 chmod +x $BIN_DIR/ns-train
