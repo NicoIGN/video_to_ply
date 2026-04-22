@@ -3,7 +3,6 @@ set -e
 
 source config/config.sh
 
-
 # ======================
 # HELP
 # ======================
@@ -19,6 +18,7 @@ Options:
   --fps         Frame extraction FPS (default: 10)
   --device      cpu | gpu (default: cpu)
   --max-iter    Training iterations (default: 2000)
+  --skip-conda  Skip conda environment setup (useful for Colab)
   --help        Show this help
 EOF
 }
@@ -31,6 +31,7 @@ MAX_ITER=2000
 DEVICE="cpu"
 ROOT_DIR="runs/default"
 VIDEO=""
+SKIP_CONDA=false
 
 # ======================
 # ARG PARSING
@@ -42,6 +43,7 @@ while [[ $# -gt 0 ]]; do
     --device) DEVICE="$2"; shift 2 ;;
     --root) ROOT_DIR="$2"; shift 2 ;;
     --max-iter) MAX_ITER="$2"; shift 2 ;;
+    --skip-conda) SKIP_CONDA=true; shift ;;
     --help) show_help; exit 0 ;;
     *) echo "❌ Unknown param: $1"; show_help; exit 1 ;;
   esac
@@ -61,31 +63,31 @@ if [ ! -f "$VIDEO" ]; then
 fi
 
 # ======================
-# CONDA
+# CONDA (SKIPPABLE)
 # ======================
-
-conda config --set proxy_servers.http "$HTTP_PROXY" 2>/dev/null || true
-conda config --set proxy_servers.https "$HTTPS_PROXY" 2>/dev/null || true
-
-source "$(conda info --base)/etc/profile.d/conda.sh"
-
-if [ "$SKIP_CONDA_UPDATE" = true ]; then
-  echo "⏩ Skipping conda update (config)"
+if [ "$SKIP_CONDA" = true ]; then
+  echo "⏩ Skipping conda setup (--skip-conda enabled)"
 else
-    # ======================
-    # PROXY SETUP
-    # ======================
-    if [ -n "$HTTP_PROXY" ]; then
-      export HTTP_PROXY="$HTTP_PROXY"
-      export http_proxy="$HTTP_PROXY"
-      echo "🌐 HTTP proxy enabled"
-    fi
 
-    if [ -n "$HTTPS_PROXY" ]; then
-      export HTTPS_PROXY="$HTTPS_PROXY"
-      export https_proxy="$HTTPS_PROXY"
-      echo "🌐 HTTPS proxy enabled"
-    fi
+  conda config --set proxy_servers.http "$HTTP_PROXY" 2>/dev/null || true
+  conda config --set proxy_servers.https "$HTTPS_PROXY" 2>/dev/null || true
+
+  source "$(conda info --base)/etc/profile.d/conda.sh"
+
+  # ======================
+  # PROXY SETUP
+  # ======================
+  if [ -n "$HTTP_PROXY" ]; then
+    export HTTP_PROXY="$HTTP_PROXY"
+    export http_proxy="$HTTP_PROXY"
+    echo "🌐 HTTP proxy enabled"
+  fi
+
+  if [ -n "$HTTPS_PROXY" ]; then
+    export HTTPS_PROXY="$HTTPS_PROXY"
+    export https_proxy="$HTTPS_PROXY"
+    echo "🌐 HTTPS proxy enabled"
+  fi
 
   if conda env list | grep -q "$CONDA_ENV_NAME"; then
     echo "🔁 Updating env"
@@ -94,14 +96,14 @@ else
     echo "🆕 Creating env"
     conda env create -n "$CONDA_ENV_NAME" -f "$CONDA_ENV_FILE" > /dev/null 2>&1
   fi
-fi
 
-conda activate "$CONDA_ENV_NAME"
+  conda activate "$CONDA_ENV_NAME"
+
+fi
 
 # ======================
 # MODEL VALIDATION
 # ======================
-
 CUDA_AVAILABLE=false
 if command -v nvidia-smi >/dev/null 2>&1; then
   if nvidia-smi >/dev/null 2>&1; then
@@ -109,14 +111,11 @@ if command -v nvidia-smi >/dev/null 2>&1; then
   fi
 fi
 
-# GPU CHECK
 if [ "$DEVICE" == "gpu" ] && [ "$CUDA_AVAILABLE" = false ]; then
   echo "❌ ERROR: GPU requested but CUDA is not available."
-  echo "👉 Switch to DEVICE=cpu or install CUDA"
   exit 1
 fi
 
-# CPU COMPATIBILITY CHECK
 if [ "$DEVICE" == "cpu" ]; then
   case "$MODEL" in
     nerfacto|nerf|kplanes|tensorf)
@@ -124,13 +123,11 @@ if [ "$DEVICE" == "cpu" ]; then
       ;;
     *)
       echo "❌ MODEL '$MODEL' not supported on CPU"
-      echo "👉 Allowed: nerfacto | nerf | kplanes | tensorf"
       exit 1
       ;;
   esac
 fi
 
-# GPU COMPATIBILITY CHECK (warning only)
 if [ "$DEVICE" == "gpu" ]; then
   case "$MODEL" in
     splatfacto|splatfacto-w|instant-ngp|zip-nerf|pynerf|feature-splatting)
@@ -141,8 +138,9 @@ if [ "$DEVICE" == "gpu" ]; then
       ;;
   esac
 fi
+
 # ======================
-# STRUCTURE (SIMPLIFIÉE)
+# STRUCTURE
 # ======================
 INPUT_DIR="$ROOT_DIR/input"
 ORI_DIR="$ROOT_DIR/ori"
