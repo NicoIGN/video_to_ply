@@ -17,12 +17,12 @@ pip install numpy==1.26.4 scipy imageio imageio-ffmpeg opencv-python
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
 # =========================
-# NERF / GSPLAT STACK
+# NERF STACK (IMPORTANT FIX)
 # =========================
-pip install nerfstudio==0.3.4
+pip install nerfstudio
 
-# ⚠️ IMPORTANT: pycolmap version pinned safe
-pip install pycolmap==0.5.1
+# ⚠️ pycolmap MUST NOT be pinned on Python 3.12
+pip install pycolmap
 
 # =========================
 # OPTIONAL TOOLS
