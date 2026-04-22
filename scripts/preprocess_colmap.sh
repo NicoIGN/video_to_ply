@@ -42,7 +42,7 @@ export XDG_RUNTIME_DIR=/tmp/runtime-root
 # 🔥 FORCE CPU + OPENGL SAFE MODE
 export CUDA_VISIBLE_DEVICES=""
 export LIBGL_ALWAYS_SOFTWARE=1
-
+export OMP_NUM_THREADS=2
 # ======================
 # LOG
 # ======================
