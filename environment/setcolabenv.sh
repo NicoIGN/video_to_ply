@@ -4,10 +4,11 @@
 WORK_DIR=/content/work
 BIN_DIR=$WORK_DIR/bin
 
+rm -rf $WORK_DIR
 mkdir -p $BIN_DIR
 
 # =========================
-# SYSTEM + PYTHON 3.10
+# SYSTEM UPDATE
 # =========================
 apt-get update -y
 
@@ -18,19 +19,25 @@ apt-get install -y \
   python3.10 python3.10-dev python3.10-venv
 
 # =========================
-# FORCE PYTHON 3.10 (SYSTEM LEVEL)
+# FORCE CLEAN PYTHON ENV
 # =========================
 update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
 update-alternatives --set python /usr/bin/python3.10
 
 hash -r
 
-echo "Python system:"
+echo "System python:"
 python --version
 which python
 
 # =========================
-# CREATE WORKSPACE PYTHON SHIM (IMPORTANT)
+# REMOVE COLAB PYTHON 3.12 PACKAGES (CRITICAL FIX)
+# =========================
+rm -rf /usr/local/lib/python3.12/dist-packages/nerfstudio* || true
+rm -rf /usr/local/lib/python3.12/dist-packages/torch* || true
+
+# =========================
+# FORCE PYTHON SHIM
 # =========================
 ln -sf /usr/bin/python3.10 $BIN_DIR/python
 ln -sf /usr/bin/python3.10 $BIN_DIR/python3
@@ -38,68 +45,70 @@ ln -sf /usr/bin/python3.10 $BIN_DIR/python3
 export PATH="$BIN_DIR:/usr/bin:$PATH"
 hash -r
 
-echo "Python shim:"
+echo "Shim python:"
 which python
 python --version
 
 # =========================
-# FORCE PIP FOR PYTHON 3.10
+# ENSURE PIP FOR 3.10 ONLY
 # =========================
-python3.10 -m ensurepip --upgrade || true
-python3.10 -m pip install --upgrade pip setuptools wheel
+python -m ensurepip --upgrade || true
+python -m pip install --upgrade pip setuptools wheel
 
-# ALWAYS USE PYTHON 3.10
-alias pip='python3.10 -m pip'
-
-# =========================
-# CLEAN COLAB ML CONFLICTS
-# =========================
-python3.10 -m pip uninstall -y pytensor jax jaxlib tensorflow tensorflow-cpu || true
+# HARD RESET PIP CACHE
+python -m pip cache purge || true
 
 # =========================
-# NUMPY (NERF SAFE)
+# CLEAN ML CONFLICTS
 # =========================
-python3.10 -m pip install numpy==1.26.4
+python -m pip uninstall -y \
+  nerfstudio \
+  pytensor jax jaxlib \
+  tensorflow tensorflow-cpu \
+  torch torchvision torchaudio || true
+
+# =========================
+# NUMPY SAFE VERSION
+# =========================
+python -m pip install numpy==1.26.4
 
 # =========================
 # SCIENTIFIC STACK
 # =========================
-python3.10 -m pip install scipy imageio imageio-ffmpeg opencv-python
+python -m pip install scipy imageio imageio-ffmpeg opencv-python
 
 # =========================
-# PYTORCH (CUDA 11.8 STABLE COLAB)
+# PYTORCH CUDA 11.8 (COLAB SAFE)
 # =========================
-python3.10 -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+python -m pip install torch torchvision torchaudio \
+  --index-url https://download.pytorch.org/whl/cu118
 
 # =========================
-# NERF STACK (STABLE FOR PYTHON 3.10)
+# NERF STACK CLEAN INSTALL
 # =========================
-python3.10 -m pip install nerfstudio==0.3.4
-
-# PYCOLMAP
-python3.10 -m pip install pycolmap==3.11.1
+python -m pip install nerfstudio==0.3.4
+python -m pip install pycolmap==3.11.1
 
 # =========================
-# RUNTIME FIXES (COLMAP SAFE MODE)
+# ENV FIXES
 # =========================
 export QT_QPA_PLATFORM=offscreen
 export MPLBACKEND=Agg
 export OPENCV_LOG_LEVEL=ERROR
 export XDG_RUNTIME_DIR=/tmp/runtime-root
 
-# FORCE CPU SAFE FOR COLMAP OPENGL
-export CUDA_VISIBLE_DEVICES=""
+# IMPORTANT: avoid GPU crash fallback
+export CUDA_VISIBLE_DEVICES=0
 export LIBGL_ALWAYS_SOFTWARE=1
-
-# =========================
-# OPTIONAL TOOLS
-# =========================
-python3.10 -m pip install rclone-python || true
 
 # =========================
 # FINAL CHECK
 # =========================
-nvidia-smi
-echo "Final python:"
+nvidia-smi || true
+
+echo "FINAL PYTHON:"
 python --version
 which python
+
+echo "NERFSTUDIO:"
+ns-train --help >/dev/null && echo "OK" || echo "FAILED"
