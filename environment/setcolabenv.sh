@@ -1,53 +1,59 @@
 # =========================
-# BASE SYSTEM
+# SYSTEM CLEAN (COLMAP FIRST)
 # =========================
 apt-get update -y
 apt-get install -y colmap ffmpeg cmake ninja-build libgl1-mesa-glx xvfb
 
 # =========================
-# PYTHON CORE
+# PYTHON TOOLCHAIN STABLE
 # =========================
 pip install --upgrade pip setuptools wheel
 
-pip install numpy scipy imageio imageio-ffmpeg opencv-python
+# 🚨 IMPORTANT: remove ML conflict packages (Colab pollution fix)
+pip uninstall -y pytensor jax jaxlib tensorflow tensorflow-cpu || true
 
 # =========================
-# TORCH (CUDA 11.8 stable Colab)
+# NUMPY (COLMAP + NERF SAFE ZONE)
+# =========================
+pip install numpy==1.26.4
+
+# =========================
+# SCIENTIFIC STACK
+# =========================
+pip install scipy imageio imageio-ffmpeg opencv-python
+
+# =========================
+# PYTORCH (STABLE COLAB CUDA)
 # =========================
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
 # =========================
-# NERF STACK (Python 3.12 compatible)
+# NERF STACK (CLEAN INSTALL)
 # =========================
 pip install nerfstudio
 
-# pycolmap (NE PAS PINNER)
+# pycolmap (DO NOT PIN ON PYTHON 3.12)
 pip install pycolmap
 
 # =========================
-# COLMAP / GPU SAFE RUNTIME
-# =========================
-pip install pybind11
-
-# =========================
-# OPTIONAL TOOLS
-# =========================
-pip install rclone-python || true
-
-# =========================
-# ENV (IMPORTANT COLAB FIX)
+# RUNTIME FIXES (CRITICAL FOR COLMAP)
 # =========================
 export QT_QPA_PLATFORM=offscreen
 export MPLBACKEND=Agg
 export OPENCV_LOG_LEVEL=ERROR
 export XDG_RUNTIME_DIR=/tmp/runtime-root
 
-# force CPU safe mode for COLMAP/OpenGL
+# 🔥 FORCE CPU SAFE MODE FOR COLMAP
 export CUDA_VISIBLE_DEVICES=""
 export LIBGL_ALWAYS_SOFTWARE=1
 
 # =========================
-# VERIFY
+# OPTIONAL
+# =========================
+pip install rclone-python || true
+
+# =========================
+# CHECK
 # =========================
 nvidia-smi
 python --version
