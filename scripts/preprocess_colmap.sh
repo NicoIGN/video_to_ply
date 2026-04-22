@@ -33,11 +33,12 @@ SKIP_IMG="$SKIP_IMAGE_PROCESSING"
 DEVICE="${DEVICE:-cpu}"
 
 # ======================
-# 🧠 COLMAP / QT SAFE MODE (CRITICAL FOR COLAB)
+# 🧠 COLMAP / COLAB SAFE MODE (IMPORTANT)
 # ======================
 export QT_QPA_PLATFORM=offscreen
 export MPLBACKEND=Agg
 export OPENCV_LOG_LEVEL=ERROR
+export XDG_RUNTIME_DIR=/tmp/runtime-root
 
 # ======================
 # LOG
@@ -58,6 +59,14 @@ SKIP_FLAG=""
 if [ "$SKIP_IMG" = "true" ] || [ "$SKIP_IMG" = true ]; then
   SKIP_FLAG="--skip-image-processing"
 fi
+
+# ======================
+# ⚠️ IMPORTANT FIX (COLMAP OPENGL ISSUE)
+# ======================
+# Colab has no OpenGL context → GPU SIFT crashes
+# Always force CPU-safe extraction
+
+echo "⚙️ COLMAP SIFT: CPU-safe mode forced (Colab compatible)"
 
 # ======================
 # PIPELINE EXECUTION

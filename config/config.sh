@@ -27,7 +27,12 @@ EXPORT_DIR=""
 # DEVICE MODE
 ############################
 
-DEVICE="cpu"   # cpu | gpu
+# If DEVICE is already defined in environment, keep it
+if [ -z "${DEVICE+x}" ]; then
+  DEVICE="cpu"   # cpu | gpu
+fi
+
+export DEVICE
 
 # GPU REQUIREMENTS (important)
 # - NVIDIA GPU + CUDA drivers
