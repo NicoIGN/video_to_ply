@@ -40,18 +40,6 @@ export MPLBACKEND=Agg
 export OPENCV_LOG_LEVEL=ERROR
 
 # ======================
-# GPU / CPU MODE
-# ======================
-GPU_FLAG=""
-if [ "$DEVICE" = "gpu" ]; then
-  echo "🚀 DEVICE: GPU enabled"
-  GPU_FLAG="--SiftExtraction.use_gpu 1"
-else
-  echo "🧠 DEVICE: CPU enabled"
-  GPU_FLAG="--SiftExtraction.use_gpu 0"
-fi
-
-# ======================
 # LOG
 # ======================
 echo "🧭 Running COLMAP preprocessing"
@@ -81,7 +69,6 @@ ns-process-data images \
   --sfm-tool "$SFMT_TOOL" \
   --matching-method "$MATCHING" \
   --num-downscales "$NUM_DOWNSCALES" \
-  $SKIP_FLAG \
-  $GPU_FLAG
+  $SKIP_FLAG
 
 echo "✅ COLMAP done"
