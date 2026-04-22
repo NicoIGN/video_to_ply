@@ -108,13 +108,13 @@ PY_VER=$(python --version 2>&1)
 
 echo "🐍 Python detected: $PY_VER"
 
-if [[ "$PY_VER" != *"3.10"* ]]; then
+if [[ "$PY_VER" != *"3.12"* ]]; then
   echo "❌ ERROR: Python 3.10 required but found: $PY_VER"
   echo "👉 Aborting execution"
   exit 1
 fi
 
-echo "✅ Python 3.10 confirmed"
+echo "✅ Python 3.12 confirmed"
 
 # ======================
 # MODEL VALIDATION
