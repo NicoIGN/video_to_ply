@@ -7,22 +7,27 @@ apt-get install -y colmap ffmpeg cmake ninja-build libgl1-mesa-glx xvfb
 # =========================
 # PYTHON CORE
 # =========================
-pip install --upgrade pip
+pip install --upgrade pip setuptools wheel
 
-pip install numpy==1.26.4 scipy imageio imageio-ffmpeg opencv-python
+pip install numpy scipy imageio imageio-ffmpeg opencv-python
 
 # =========================
-# TORCH STACK (COLAB SAFE)
+# TORCH (CUDA 11.8 stable Colab)
 # =========================
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
 # =========================
-# NERF STACK (IMPORTANT FIX)
+# NERF STACK (Python 3.12 compatible)
 # =========================
 pip install nerfstudio
 
-# ⚠️ pycolmap MUST NOT be pinned on Python 3.12
+# pycolmap (NE PAS PINNER)
 pip install pycolmap
+
+# =========================
+# COLMAP / GPU SAFE RUNTIME
+# =========================
+pip install pybind11
 
 # =========================
 # OPTIONAL TOOLS
@@ -30,6 +35,19 @@ pip install pycolmap
 pip install rclone-python || true
 
 # =========================
-# VERIFY GPU
+# ENV (IMPORTANT COLAB FIX)
+# =========================
+export QT_QPA_PLATFORM=offscreen
+export MPLBACKEND=Agg
+export OPENCV_LOG_LEVEL=ERROR
+export XDG_RUNTIME_DIR=/tmp/runtime-root
+
+# force CPU safe mode for COLMAP/OpenGL
+export CUDA_VISIBLE_DEVICES=""
+export LIBGL_ALWAYS_SOFTWARE=1
+
+# =========================
+# VERIFY
 # =========================
 nvidia-smi
+python --version
