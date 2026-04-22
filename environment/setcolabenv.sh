@@ -16,7 +16,6 @@ apt-get install -y \
   software-properties-common \
   colmap ffmpeg cmake ninja-build \
   libgl1-mesa-glx xvfb \
-  python3.10 python3.10-dev python3.10-venv \
   libeigen3-dev \
   libsuitesparse-dev \
   libglew-dev \
@@ -24,76 +23,54 @@ apt-get install -y \
   libqt5opengl5-dev
 
 # =========================
-# FORCE PYTHON 3.10 SYSTEM LEVEL
+# USE SYSTEM PYTHON 3.12 (NO OVERRIDE)
 # =========================
-update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
-update-alternatives --set python /usr/bin/python3.10
-
-hash -r
-
 echo "SYSTEM PYTHON:"
-python --version
+python3 --version
 
 # =========================
-# CLEAN COLAB PYTHON CONFLICTS
+# CLEAN OLD CONFLICTS
 # =========================
 rm -rf /usr/local/lib/python3.12/dist-packages/nerfstudio* || true
 rm -rf /usr/local/lib/python3.12/dist-packages/torch* || true
 rm -f /usr/local/bin/ns-train || true
 
 # =========================
-# FORCE PYTHON 3.10 INTO BIN_DIR (IMPORTANT)
+# PIP BASE
 # =========================
-ln -sf /usr/bin/python3.10 $BIN_DIR/python
-ln -sf /usr/bin/python3.10 $BIN_DIR/python3
-
-# 🔥 PRIORITY PATH (BIN_DIR FIRST)
-export PATH="$BIN_DIR:$PATH"
-hash -r
-
-echo "SHIM PYTHON:"
-which python
-python --version
+python3 -m ensurepip --upgrade || true
+python3 -m pip install --upgrade pip setuptools wheel
 
 # =========================
-# ENSURE PIP (SAFE ON COLAB)
+# CORE NUMPY STACK (IMPORTANT FOR COMPATIBILITY)
 # =========================
-python -m ensurepip --upgrade || true
-python -m pip install --upgrade pip setuptools wheel
-
-# =========================
-# NUMPY / SCIENTIFIC STACK
-# =========================
-python -m pip install numpy==1.26.4
-python -m pip install scipy
+python3 -m pip install numpy==1.26.4 scipy
 
 # =========================
 # VISION STACK
 # =========================
-python -m pip install openimageio
-python -m pip install imageio imageio-ffmpeg opencv-python
+python3 -m pip install openimageio imageio imageio-ffmpeg opencv-python
 
 # =========================
-# BUILD SUPPORT
+# BUILD TOOLS
 # =========================
-python -m pip install pybind11
+python3 -m pip install pybind11
 
 # =========================
-# PYTORCH (CUDA 11.8 stable Colab)
+# PYTORCH (CUDA COMPATIBLE WITH MODERN NERFSTUDIO)
 # =========================
-python -m pip install torch==2.1.2 torchvision==0.16.2 \
-  --index-url https://download.pytorch.org/whl/cu118
+python3 -m pip install torch torchvision torchaudio \
+  --index-url https://download.pytorch.org/whl/cu121
 
 # =========================
-# NERF STACK
+# NERFSTUDIO (MODERN VERSION FOR PYTHON 3.12)
 # =========================
-python -m pip install nerfstudio==0.3.4
-python -m pip install pycolmap==0.6.1
+python3 -m pip install nerfstudio
 
 # =========================
 # OPTIONAL
 # =========================
-python -m pip install rclone
+python3 -m pip install pycolmap rclone
 
 # =========================
 # ENV FLAGS
@@ -106,10 +83,10 @@ export LIBGL_ALWAYS_SOFTWARE=1
 export CUDA_VISIBLE_DEVICES=0
 
 # =========================
-# ns-train WRAPPER (SAFE)
+# WRAPPER
 # =========================
 cat > $BIN_DIR/ns-train << 'EOF'
-#!/usr/bin/env python3.10
+#!/usr/bin/env python3
 from nerfstudio.scripts.train import entrypoint
 import sys
 
@@ -117,18 +94,19 @@ sys.exit(entrypoint())
 EOF
 
 chmod +x $BIN_DIR/ns-train
+export PATH="$BIN_DIR:$PATH"
 
 # =========================
 # FINAL CHECK
 # =========================
-hash -r
+echo "PYTHON:"
+python3 --version
 
-echo "FINAL PYTHON:"
-python --version
-which python
+echo "TORCH:"
+python3 -c "import torch; print(torch.__version__, torch.cuda.is_available())"
 
-echo "IMPORT TEST:"
-python -c "import nerfstudio; print('NERFSTUDIO OK')"
+echo "NERFSTUDIO:"
+python3 -c "import nerfstudio; print('OK', nerfstudio.__file__)"
 
 echo "NS-TRAIN:"
-ns-train --help && echo "OK" || echo "FAILED"
+ns-train --help || echo "FAILED"
