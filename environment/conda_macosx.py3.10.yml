@@ -1,0 +1,48 @@
+name: gsplat
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.10
+  - pip
+  - rclone
+
+  # 🔧 build
+  - cmake
+  - ninja
+
+  # 🧮 math stable
+  - numpy=1.26.4
+  - scipy
+  - eigen=3
+  - suitesparse
+
+  # 🖼️ vision (IMPORTANT: ONLY CONDA OPENCV)
+  - openimageio
+  - ffmpeg
+
+  # 🧊 geometry / SfM stack
+  - cgal
+  - colmap
+
+  # 🖥️ UI
+  - glew
+  - qt=5
+
+  # system
+  - libiconv
+
+  - pip:
+      # 🔥 ML stack stable
+      - torch==2.1.2
+      - torchvision==0.16.2
+
+      # nerfstudio stable
+      - nerfstudio==0.3.4
+
+      # COLMAP bindings correct
+      - pycolmap==0.6.1
+
+      # utils
+      - imageio
+      - imageio-ffmpeg
