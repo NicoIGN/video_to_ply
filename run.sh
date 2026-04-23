@@ -1,6 +1,25 @@
 #!/bin/bash
 set -e
 
+
+# ======================
+# DEFAULTS
+# ======================
+FPS=10
+MAX_ITER=2000
+DEVICE="cpu"
+ROOT_DIR="runs/default"
+VIDEO=""
+SKIP_CONDA=false
+
+# ======================
+# PIPELINE SKIP DEFAULTS (from config.sh, overridable by CLI)
+# ======================
+SKIP_FRAME_EXTRACTION=false
+SKIP_COLMAP=false
+SKIP_TRAINING=false
+SKIP_EXPORT=false
+
 source config/config.sh
 
 # ======================
@@ -14,24 +33,20 @@ Required:
   --video       Path to input video
 
 Options:
-  --root        Root output directory (default: runs/default)
-  --fps         Frame extraction FPS (default: 10)
-  --device      cpu | gpu (default: cpu)
-  --max-iter    Training iterations (default: 2000)
-  --skip-conda  Skip conda environment setup (useful for Colab)
-  --help        Show this help
+  --root                 Root output directory (default: runs/default)
+  --fps                  Frame extraction FPS (default: 10)
+  --device               cpu | gpu (default: cpu)
+  --max-iter             Training iterations (default: 2000)
+  --skip-conda           Skip conda environment setup (useful for Colab)
+
+  --skip-frame-extraction  Skip frame extraction step
+  --skip-colmap            Skip COLMAP step
+  --skip-training          Skip training step
+  --skip-export            Skip export step
+
+  --help                 Show this help
 EOF
 }
-
-# ======================
-# DEFAULTS
-# ======================
-FPS=10
-MAX_ITER=2000
-DEVICE="cpu"
-ROOT_DIR="runs/default"
-VIDEO=""
-SKIP_CONDA=false
 
 # ======================
 # ARG PARSING
@@ -44,11 +59,19 @@ while [[ $# -gt 0 ]]; do
     --root) ROOT_DIR="$2"; shift 2 ;;
     --max-iter) MAX_ITER="$2"; shift 2 ;;
     --skip-conda) SKIP_CONDA=true; shift ;;
+
+    # ======================
+    # PIPELINE OVERRIDES
+    # ======================
+    --skip-frame-extraction) SKIP_FRAME_EXTRACTION=true; shift ;;
+    --skip-colmap) SKIP_COLMAP=true; shift ;;
+    --skip-training) SKIP_TRAINING=true; shift ;;
+    --skip-export) SKIP_EXPORT=true; shift ;;
+
     --help) show_help; exit 0 ;;
     *) echo "❌ Unknown param: $1"; show_help; exit 1 ;;
   esac
 done
-
 # ======================
 # VALIDATION
 # ======================
@@ -63,19 +86,19 @@ if [ ! -f "$VIDEO" ]; then
 fi
 
 # ======================
-# CONDA (SKIPPABLE)
+# CONDA
 # ======================
 if [ "$SKIP_CONDA" = true ]; then
   echo "⏩ Skipping conda setup (--skip-conda enabled)"
 else
 
-  conda config --set proxy_servers.http "$HTTP_PROXY" 2>/dev/null || true
-  conda config --set proxy_servers.https "$HTTPS_PROXY" 2>/dev/null || true
-
+  # ======================
+  # LOAD CONDA FIRST
+  # ======================
   source "$(conda info --base)/etc/profile.d/conda.sh"
 
   # ======================
-  # PROXY SETUP
+  # PROXY SETUP (RUNTIME FIRST)
   # ======================
   if [ -n "$HTTP_PROXY" ]; then
     export HTTP_PROXY="$HTTP_PROXY"
@@ -89,14 +112,42 @@ else
     echo "🌐 HTTPS proxy enabled"
   fi
 
-  if conda env list | grep -q "$CONDA_ENV_NAME"; then
-    echo "🔁 Updating env"
-    conda env update -n "$CONDA_ENV_NAME" -f "$CONDA_ENV_FILE" --prune > /dev/null 2>&1
+  # ======================
+  # CONDA PROXY CONFIG (SECONDARY)
+  # ======================
+  conda config --set proxy_servers.http "$HTTP_PROXY" 2>/dev/null || true
+  conda config --set proxy_servers.https "$HTTPS_PROXY" 2>/dev/null || true
+
+  # ======================
+  # ENV CREATE / UPDATE
+  # ======================
+  set +e
+
+  if conda env list | awk '{print $1}' | grep -qw "$CONDA_ENV_NAME"; then
+    echo "🔁 Updating env: $CONDA_ENV_NAME"
+    CONDA_CMD="conda env update -n $CONDA_ENV_NAME -f $CONDA_ENV_FILE --prune"
   else
-    echo "🆕 Creating env"
-    conda env create -n "$CONDA_ENV_NAME" -f "$CONDA_ENV_FILE" > /dev/null 2>&1
+    echo "🆕 Creating env: $CONDA_ENV_NAME"
+    CONDA_CMD="conda env create -n $CONDA_ENV_NAME -f $CONDA_ENV_FILE"
   fi
 
+  echo "⚙️ Running: $CONDA_CMD"
+
+  $CONDA_CMD
+  STATUS=$?
+
+  if [ $STATUS -ne 0 ]; then
+    echo "❌ Conda failed ($CONDA_CMD)"
+    echo "👉 Run manually for debug"
+    exit 1
+  fi
+
+  set -e
+
+  # ======================
+  # ACTIVATE ENV (IMPORTANT FIX)
+  # ======================
+  echo "🔌 Activating env: $CONDA_ENV_NAME"
   conda activate "$CONDA_ENV_NAME"
 
 fi
@@ -104,17 +155,21 @@ fi
 # ======================
 # PYTHON VERSION CHECK
 # ======================
+which python
+python --version
+
 PY_VER=$(python --version 2>&1)
 
 echo "🐍 Python detected: $PY_VER"
 
-if [[ "$PY_VER" != *"3.12"* ]]; then
-  echo "❌ ERROR: Python 3.10 required but found: $PY_VER"
+if [[ "$PY_VER" != *"3.10"* && "$PY_VER" != *"3.11"* ]]; then
+  echo "❌ ERROR: Python 3.10 or 3.11 required but found: $PY_VER"
+  echo "👉 Supported versions: 3.10.x, 3.11.x"
   echo "👉 Aborting execution"
   exit 1
 fi
 
-echo "✅ Python 3.12 confirmed"
+echo "✅ Python $PY_VER confirmed"
 
 # ======================
 # MODEL VALIDATION
@@ -245,11 +300,12 @@ fi
 # ----------------------
 if [ "$SKIP_EXPORT" = true ]; then
   echo "⏩ Skipping export (config)"
-elif ls "$EXPORT_DIR"/*.ply >/dev/null 2>&1; then
+elif find "$EXPORT_DIR" -name "*.ply" | grep -q .; then
   echo "⏩ Skipping export"
 else
   echo "📦 Exporting PLY..."
-  bash scripts/export.sh "$EXPORT_DIR" "$OUTPUT_DIR"
+  RUNS_DIR="$OUTPUT_DIR/outputs"
+  bash scripts/export.sh "$EXPORT_DIR" "$RUNS_DIR"
 fi
 
 echo "✅ DONE → $ROOT_DIR"

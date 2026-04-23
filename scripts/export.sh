@@ -11,20 +11,37 @@ EXPORT_DIR="$1"
 OUTPUT_DIR="$2"
 
 # ======================
-# FIND CONFIG SAFELY
+# SAFETY CHECKS
 # ======================
-CONFIG=$(find "$OUTPUT_DIR" -type f -name "config.yml" | sort | tail -n 1)
+if [ -z "$EXPORT_DIR" ] || [ -z "$OUTPUT_DIR" ]; then
+  echo "❌ Usage: export.sh <EXPORT_DIR> <OUTPUT_DIR>"
+  exit 1
+fi
 
 # ======================
-# CHECKS
+# FIND LATEST NERFACTO RUN (IMPORTANT FIX)
 # ======================
-if [ -z "$CONFIG" ]; then
-  echo "❌ No config.yml found in $OUTPUT_DIR"
+RUN_DIR=$(find "$OUTPUT_DIR" -type d -path "*/nerfacto/*" | sort | tail -n 1)
+
+if [ -z "$RUN_DIR" ]; then
+  echo "❌ No nerfacto run directory found in $OUTPUT_DIR"
+  exit 1
+fi
+
+CONFIG=$(find "$RUN_DIR" -maxdepth 2 -name "config.yml" | head -n 1)
+
+# ======================
+# CHECK CONFIG
+# ======================
+if [ -z "$CONFIG" ] || [ ! -f "$CONFIG" ]; then
+  echo "❌ No config.yml found in run directory:"
+  echo "$RUN_DIR"
   exit 1
 fi
 
 mkdir -p "$EXPORT_DIR"
 
+echo "📦 Using run dir: $RUN_DIR"
 echo "📦 Using config: $CONFIG"
 echo "📁 Export dir: $EXPORT_DIR"
 echo "⚙️ Export mode: $EXPORT_MODE"
@@ -32,7 +49,6 @@ echo "⚙️ Export mode: $EXPORT_MODE"
 # ======================
 # EXPORT MODE RESOLUTION
 # ======================
-
 case "$EXPORT_MODE" in
   fast)
     NUM_POINTS="$EXPORT_NUM_POINTS_FAST"
@@ -59,7 +75,6 @@ esac
 # ======================
 # EXPORT
 # ======================
-
 echo "🚀 Export settings:"
 echo "   - points: $NUM_POINTS"
 echo "   - normals: $NORMAL_METHOD"
@@ -71,4 +86,5 @@ ns-export pointcloud \
   --output-dir "$EXPORT_DIR" \
   --num-points "$NUM_POINTS" \
   --normal-method "$NORMAL_METHOD" \
-  --downsample-factor "$DOWNSAMPLE"
+  --downsample-factor "$DOWNSAMPLE" \
+  --remove-outliers "$REMOVE_OUTLIERS"

@@ -34,7 +34,7 @@ fi
 # DEFAULT VIS MODE FALLBACK
 # ======================
 # évite crash si non défini dans config
-TRAIN_VIS_MODE=${TRAIN_VIS_MODE:-none}
+TRAIN_VIS_MODE=${TRAIN_VIS_MODE:-tensorboard}
 
 
 # ======================
