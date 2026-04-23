@@ -32,6 +32,8 @@ echo "⚙️ Device: $DEVICE"
 # ENV SETUP
 # ======================
 
+export CAMERA_TYPE="simple_pinhole" # autres options: perspective, pinhole
+
 if [[ "$DEVICE" == "gpu" ]]; then
   echo "🚀 GPU MODE"
 
@@ -44,27 +46,7 @@ if [[ "$DEVICE" == "gpu" ]]; then
 
 else
   echo "🧠 CPU MODE (safe)"
-
-  # 🔴 force CPU partout (CUDA invisible)
-  export CUDA_VISIBLE_DEVICES=""
-
-  # 🔴 COLMAP CPU FORCE (important dans Nerfstudio)
-  export COLMAP_USE_GPU=0
-  export COLMAP_GPU=0
-  export COLMAP_NO_GPU=1
-  export COLMAP_SIFT_GPU=0
-
-  # 🔴 fix OpenGL (Mac / headless crash COLMAP)
-  export LIBGL_ALWAYS_SOFTWARE=1
-  export QT_QPA_PLATFORM=offscreen
-  export DISPLAY=
-
-  # 🔴 stabilité runtime
-  export MPLBACKEND=Agg
-  export OPENCV_LOG_LEVEL=ERROR
-  export XDG_RUNTIME_DIR=/tmp/runtime-root
-  export OMP_NUM_THREADS=4
-
+ # parametres cpu si necessaire ici
 fi
 
 # ======================
@@ -76,7 +58,7 @@ echo ns-process-data images \
   --data "$DATA_DIR" \
   --sfm_tool colmap \
   --output-dir "$OUTPUT_DIR" \
-  --camera-type perspective \
+  --camera-type $CAMERA_TYPE \
   --matching-method sequential \
   --num-downscales 1
 
@@ -84,7 +66,7 @@ ns-process-data images \
   --data "$DATA_DIR" \
   --sfm_tool colmap \
   --output-dir "$OUTPUT_DIR" \
-  --camera-type perspective \
+  --camera-type $CAMERA_TYPE \
   --matching-method sequential \
   --num-downscales 1 \
   2> "$LOG_FILE"
