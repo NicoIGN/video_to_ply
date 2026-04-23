@@ -164,7 +164,7 @@ if [[ "$PY_VER" != *"3.10"* && "$PY_VER" != *"3.11"* ]]; then
   exit 1
 fi
 
-echo "✅ Using ython $PY_VER "
+echo "✅ Using python: $PY_VER "
 
 # ======================
 # MODEL VALIDATION

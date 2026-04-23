@@ -32,14 +32,12 @@ SKIP_IMG="$SKIP_IMAGE_PROCESSING"
 DEVICE="${DEVICE:-cpu}"
 
 # ======================
-# 🧠 COLMAP SAFE MODE (COLAB FIX)
+# SAFE ENV (cross-platform)
 # ======================
 export QT_QPA_PLATFORM=offscreen
 export MPLBACKEND=Agg
 export OPENCV_LOG_LEVEL=ERROR
 export XDG_RUNTIME_DIR=/tmp/runtime-root
-
-# 🔥 FORCE CPU + OPENGL SAFE MODE
 export CUDA_VISIBLE_DEVICES=""
 export LIBGL_ALWAYS_SOFTWARE=1
 
@@ -64,13 +62,28 @@ if [[ "$SKIP_IMG" == "true" || "$SKIP_IMG" == "1" ]]; then
 fi
 
 # ======================
-# RUN COLMAP (SAFE COLAB MODE)
+# EXEC MODE (FIXED)
 # ======================
-echo "⚙️ COLMAP SIFT: CPU MODE FORCED (OpenGL safe mode)"
-
 LOG_FILE="/tmp/colmap_error.log"
 
-xvfb-run -a ns-process-data images \
+echo "⚙️ COLMAP SIFT: CPU MODE FORCED"
+
+# detect OS
+RUN_PREFIX=""
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  echo "🍏 macOS detected → no xvfb-run"
+  RUN_PREFIX=""
+else
+  echo "🐧 Linux detected → using xvfb-run"
+  RUN_PREFIX="xvfb-run -a"
+fi
+
+# ======================
+# RUN
+# ======================
+set +e
+
+$RUN_PREFIX ns-process-data images \
   --data "$DATA_DIR" \
   --output-dir "$OUTPUT_DIR" \
   --camera-type perspective \
@@ -80,10 +93,13 @@ xvfb-run -a ns-process-data images \
   $SKIP_FLAG \
   2> "$LOG_FILE"
 
+STATUS=$?
+set -e
+
 # ======================
 # ERROR HANDLING
 # ======================
-if [ $? -ne 0 ]; then
+if [ $STATUS -ne 0 ]; then
   echo ""
   echo "❌ ❌ ❌ COLMAP FAILED ❌ ❌ ❌"
   echo "📄 Log saved to: $LOG_FILE"
