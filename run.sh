@@ -155,12 +155,7 @@ fi
 # ======================
 # PYTHON VERSION CHECK
 # ======================
-which python
-python --version
-
 PY_VER=$(python --version 2>&1)
-
-echo "🐍 Python detected: $PY_VER"
 
 if [[ "$PY_VER" != *"3.10"* && "$PY_VER" != *"3.11"* ]]; then
   echo "❌ ERROR: Python 3.10 or 3.11 required but found: $PY_VER"
@@ -169,7 +164,7 @@ if [[ "$PY_VER" != *"3.10"* && "$PY_VER" != *"3.11"* ]]; then
   exit 1
 fi
 
-echo "✅ Python $PY_VER confirmed"
+echo "✅ Using ython $PY_VER "
 
 # ======================
 # MODEL VALIDATION
