@@ -157,9 +157,10 @@ CAMERA_MODE="off"
 #   viewer_beta         → version expérimentale viewer
 #
 # ⚠️ IMPORTANT :
-# - "none" n’existe PAS dans Nerfstudio
-# - utiliser "tensorboard" pour mode headless réel (batch / scripts)
-TRAIN_VIS_MODE="tensorboard"
+# - "viewer" pour voir le resultat dans Nerfstudio
+# - "tensorboard" pour mode headless réel (batch / scripts)
+#TRAIN_VIS_MODE="tensorboard"
+TRAIN_VIS_MODE="viewer"
 
 
 ############################
