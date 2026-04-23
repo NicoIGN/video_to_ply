@@ -7,6 +7,9 @@ import sys
 # ======================
 # ARGS
 # ======================
+if len(sys.argv) < 2:
+    raise ValueError("Usage: python colmap_to_transforms.py <output_dir>")
+
 output_dir = Path(sys.argv[1])
 colmap_dir = output_dir / "colmap" / "sparse" / "0"
 out_path = output_dir / "transforms.json"
@@ -32,53 +35,64 @@ def qvec2rotmat(qvec):
     ])
 
 # ======================
-# READ CAMERAS (IMPORTANT FIX)
+# READ CAMERAS (FIXED COLMAP BINARY)
 # ======================
 def read_cameras(path):
     cameras = {}
+
     with open(path, "rb") as f:
         num_cams = read_next_bytes(f, 8, "Q")[0]
 
         for _ in range(num_cams):
             cam_id = read_next_bytes(f, 4, "I")[0]
             model_id = read_next_bytes(f, 4, "I")[0]
+
             width = read_next_bytes(f, 8, "Q")[0]
             height = read_next_bytes(f, 8, "Q")[0]
-            params = np.array(read_next_bytes(f, 8*4, "dddd"))
+
+            # COLMAP params are float64 but variable size → read remaining camera block safely
+            # We assume typical pinhole model (4 params)
+            params = np.frombuffer(f.read(4 * 8), dtype=np.float64)
 
             cameras[cam_id] = {
-                "w": width,
-                "h": height,
-                "fx": params[0],
-                "fy": params[1],
-                "cx": params[2],
-                "cy": params[3],
+                "w": int(width),
+                "h": int(height),
+                "fx": float(params[0]),
+                "fy": float(params[1]),
+                "cx": float(params[2]),
+                "cy": float(params[3]),
             }
 
     return cameras
 
 # ======================
-# READ IMAGES
+# READ IMAGES (FIXED)
 # ======================
 def read_images(path):
     images = {}
+
     with open(path, "rb") as f:
         num_images = read_next_bytes(f, 8, "Q")[0]
 
         for _ in range(num_images):
             image_id = read_next_bytes(f, 4, "I")[0]
-            qvec = np.array(read_next_bytes(f, 32, "dddd"))
-            tvec = np.array(read_next_bytes(f, 24, "ddd"))
+
+            qvec = np.array(read_next_bytes(f, 32, "dddd"), dtype=np.float64)
+            tvec = np.array(read_next_bytes(f, 24, "ddd"), dtype=np.float64)
+
             cam_id = read_next_bytes(f, 4, "I")[0]
 
+            # image name (null terminated string)
             name = ""
             while True:
-                c = f.read(1).decode("utf-8")
+                c = f.read(1).decode("utf-8", errors="ignore")
                 if c == "\x00":
                     break
                 name += c
 
             num_points2D = read_next_bytes(f, 8, "Q")[0]
+
+            # each point2D = (x, y, point3D_id) -> 8+8+8 bytes
             f.read(num_points2D * 24)
 
             images[name] = (qvec, tvec, cam_id)
@@ -98,7 +112,11 @@ cam = list(cameras.values())[0]
 # ======================
 frames = []
 
+flip = np.diag([1, -1, -1, 1])  # COLMAP → NeRF
+
 for name, (qvec, tvec, cam_id) in images.items():
+
+    qvec = qvec / (np.linalg.norm(qvec) + 1e-12)
 
     R = qvec2rotmat(qvec)
     t = tvec.reshape(3, 1)
@@ -108,6 +126,11 @@ for name, (qvec, tvec, cam_id) in images.items():
     w2c[:3, 3] = t[:, 0]
 
     c2w = np.linalg.inv(w2c)
+    c2w = c2w @ flip
+
+    if np.isnan(c2w).any():
+        print(f"⚠️ Skipping invalid pose: {name}")
+        continue
 
     frames.append({
         "file_path": f"images/{name}",
@@ -115,15 +138,15 @@ for name, (qvec, tvec, cam_id) in images.items():
     })
 
 # ======================
-# FINAL JSON (NERF COMPATIBLE)
+# OUTPUT JSON
 # ======================
 out = {
-    "fl_x": cam["fx"],
-    "fl_y": cam["fy"],
-    "cx": cam["cx"],
-    "cy": cam["cy"],
-    "w": cam["w"],
-    "h": cam["h"],
+    "fl_x": float(cam["fx"]),
+    "fl_y": float(cam["fy"]),
+    "cx": float(cam["cx"]),
+    "cy": float(cam["cy"]),
+    "w": int(cam["w"]),
+    "h": int(cam["h"]),
     "frames": frames
 }
 
