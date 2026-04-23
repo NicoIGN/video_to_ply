@@ -48,6 +48,10 @@ export NS_LOG_LEVEL=debug
 
 LOG_FILE="/tmp/colmap_error.log"
 
+if [ -e "$LOG_FILE" ]; then
+    rm "$LOG_FILE"
+fi
+
 echo "🧭 COLMAP preprocessing"
 echo "📁 Input: $DATA_DIR"
 echo "📁 Output: $OUTPUT_DIR"
@@ -169,60 +173,54 @@ if [[ "$DEVICE" == "cpu" ]]; then
   ls -R "$SPARSE"
   echo "────────────────────────────────────────────"
 
-  # ======================
-  # TRANSFORMS GENERATION
-  # ======================
-  if [[ "$CLEAN_ARTEFACTS" == "true" || ! -f "$TRANSFORMS" ]]; then
+# ======================
+# TRANSFORMS GENERATION (NO NERFSTUDIO)
+# ======================
+if [[ "$CLEAN_ARTEFACTS" == "true" || ! -f "$TRANSFORMS" ]]; then
 
-    echo "📦 Generating transforms.json via ns-process-data"
+  echo "📦 Generating transforms.json from COLMAP (external script)"
 
-    set +e
+  SCRIPT_PATH="$SCRIPT_DIR/colmap_to_transforms.py"
 
-    echo "🚀 RUN ns-process-data (COLMAP REUSE MODE FIXED)"
-
-    echo ns-process-data images \
-      --data "$OUTPUT_DIR" \
-      --output-dir "$OUTPUT_DIR" \
-      --sfm-tool colmap \
-      --camera-type perspective \
-      --skip-colmap
-      exit 0
-    ns-process-data images \
-      --data "$OUTPUT_DIR" \
-      --output-dir "$OUTPUT_DIR" \
-      --sfm-tool colmap \
-      --camera-type perspective \
-      --skip-colmap \
-      2>> "$LOG_FILE"
-
-    GEN_STATUS=$?
-
-    set -e
-
-    # ======================
-    # VERIFICATION
-    # ======================
-    if [ -f "$TRANSFORMS" ]; then
-      echo "✅ transforms.json generated: $TRANSFORMS"
-      GEN_STATUS=0
-    else
-      echo "❌ transforms.json NOT FOUND: $TRANSFORMS"
-
-      echo "📌 DEBUG CHECK:"
-      echo "→ images folder:"
-      ls "$OUTPUT_DIR/images" | head -n 5
-      echo "→ sparse folder:"
-      ls "$OUTPUT_DIR/sparse/0" 2>/dev/null || echo "missing sparse/0"
-
-      GEN_STATUS=1
-    fi
-
-  else
-    echo "⏩ transforms.json already exists"
-    GEN_STATUS=0
+  if [ ! -f "$SCRIPT_PATH" ]; then
+    echo "❌ Missing Python script: $SCRIPT_PATH"
+    exit 1
   fi
 
-  set -e
+  echo "🚀 Running COLMAP → transforms exporter"
+
+  python3 "$SCRIPT_PATH" "$OUTPUT_DIR"
+  GEN_STATUS=$?
+
+  # ======================
+  # VALIDATION STEP
+  # ======================
+  if [ $GEN_STATUS -ne 0 ]; then
+    echo "❌ Python export script failed (exit code $GEN_STATUS)"
+    echo "📄 Check logs above"
+    exit 1
+  fi
+
+  if [ ! -f "$TRANSFORMS" ]; then
+    echo "❌ transforms.json NOT FOUND at expected path:"
+    echo "   $TRANSFORMS"
+    exit 1
+  fi
+
+  # check file is not empty / corrupted
+  if [ ! -s "$TRANSFORMS" ]; then
+    echo "❌ transforms.json is empty or corrupted"
+    exit 1
+  fi
+
+  echo "✅ transforms.json generated successfully: $TRANSFORMS"
+
+else
+  echo "⏩ transforms.json already exists"
+  GEN_STATUS=0
+fi
+
+set -e
 
   # ======================
   # STATUS

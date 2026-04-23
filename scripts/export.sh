@@ -2,52 +2,63 @@
 set -e
 
 # ======================
-# LOAD CONFIG (CRITICAL)
+# LOAD CONFIG
 # ======================
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../config/config.sh"
 
 EXPORT_DIR="$1"
-OUTPUT_DIR="$2"
+ROOT_DIR="$2"
 
 # ======================
-# SAFETY CHECKS
+# CHECKS
 # ======================
-if [ -z "$EXPORT_DIR" ] || [ -z "$OUTPUT_DIR" ]; then
-  echo "❌ Usage: export.sh <EXPORT_DIR> <OUTPUT_DIR>"
+if [ -z "$EXPORT_DIR" ] || [ -z "$ROOT_DIR" ]; then
+  echo "❌ Usage: export.sh <EXPORT_DIR> <ROOT_DIR>"
+  exit 1
+fi
+
+NERF_ROOT="$ROOT_DIR/nerfacto"
+
+if [ ! -d "$NERF_ROOT" ]; then
+  echo "❌ nerfacto folder not found: $NERF_ROOT"
   exit 1
 fi
 
 # ======================
-# FIND LATEST NERFACTO RUN (IMPORTANT FIX)
+# FIND LATEST RUN (FIXED)
 # ======================
-RUN_DIR=$(find "$OUTPUT_DIR" -type d -path "*/nerfacto/*" | sort | tail -n 1)
+RUN_DIR=$(ls -dt "$NERF_ROOT"/* 2>/dev/null | head -n 1)
 
 if [ -z "$RUN_DIR" ]; then
-  echo "❌ No nerfacto run directory found in $OUTPUT_DIR"
+  echo "❌ No nerfacto runs found in $NERF_ROOT"
   exit 1
 fi
 
-CONFIG=$(find "$RUN_DIR" -maxdepth 2 -name "config.yml" | head -n 1)
+# ======================
+# CONFIG
+# ======================
+CONFIG="$RUN_DIR/config.yml"
 
-# ======================
-# CHECK CONFIG
-# ======================
-if [ -z "$CONFIG" ] || [ ! -f "$CONFIG" ]; then
-  echo "❌ No config.yml found in run directory:"
+if [ ! -f "$CONFIG" ]; then
+  echo "❌ config.yml not found in:"
   echo "$RUN_DIR"
   exit 1
 fi
 
 mkdir -p "$EXPORT_DIR"
 
-echo "📦 Using run dir: $RUN_DIR"
-echo "📦 Using config: $CONFIG"
-echo "📁 Export dir: $EXPORT_DIR"
-echo "⚙️ Export mode: $EXPORT_MODE"
+echo "────────────────────────────────────────────"
+echo "📦 ROOT DIR       : $ROOT_DIR"
+echo "📦 NERF ROOT      : $NERF_ROOT"
+echo "📦 RUN DIR        : $RUN_DIR"
+echo "📄 CONFIG         : $CONFIG"
+echo "📁 EXPORT DIR     : $EXPORT_DIR"
+echo "⚙️ EXPORT MODE    : $EXPORT_MODE"
+echo "────────────────────────────────────────────"
 
 # ======================
-# EXPORT MODE RESOLUTION
+# EXPORT MODE
 # ======================
 case "$EXPORT_MODE" in
   fast)
@@ -56,14 +67,12 @@ case "$EXPORT_MODE" in
     REMOVE_OUTLIERS="$EXPORT_REMOVE_OUTLIERS_FAST"
     DOWNSAMPLE="$EXPORT_DOWNSAMPLE_FAST"
     ;;
-
   quality)
     NUM_POINTS="$EXPORT_NUM_POINTS_QUALITY"
     NORMAL_METHOD="$EXPORT_NORMALS_QUALITY"
     REMOVE_OUTLIERS="$EXPORT_REMOVE_OUTLIERS_QUALITY"
     DOWNSAMPLE="$EXPORT_DOWNSAMPLE_QUALITY"
     ;;
-
   *)
     NUM_POINTS="$EXPORT_NUM_POINTS_BALANCED"
     NORMAL_METHOD="$EXPORT_NORMALS_BALANCED"
@@ -71,6 +80,12 @@ case "$EXPORT_MODE" in
     DOWNSAMPLE="$EXPORT_DOWNSAMPLE_BALANCED"
     ;;
 esac
+
+# ======================
+# DEBUG MODEL
+# ======================
+echo "📊 Checking checkpoint..."
+ls "$RUN_DIR/nerfstudio_models" || echo "⚠️ No models folder"
 
 # ======================
 # EXPORT
@@ -88,3 +103,5 @@ ns-export pointcloud \
   --normal-method "$NORMAL_METHOD" \
   --downsample-factor "$DOWNSAMPLE" \
   --remove-outliers "$REMOVE_OUTLIERS"
+
+echo "✅ Export done"

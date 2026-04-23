@@ -299,7 +299,7 @@ elif find "$EXPORT_DIR" -name "*.ply" | grep -q .; then
   echo "⏩ Skipping export"
 else
   echo "📦 Exporting PLY..."
-  RUNS_DIR="$OUTPUT_DIR/outputs"
+  RUNS_DIR="$OUTPUT_DIR"
   bash scripts/export.sh "$EXPORT_DIR" "$RUNS_DIR"
 fi
 
