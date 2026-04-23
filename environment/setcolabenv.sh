@@ -1,10 +1,13 @@
+set -e
+
 # =========================
 # CONFIG
 # =========================
 WORK_DIR=/content/work
 BIN_DIR=$WORK_DIR/bin
+VENV_DIR=/content/venv
 
-rm -rf $WORK_DIR
+rm -rf $WORK_DIR $VENV_DIR
 mkdir -p $BIN_DIR
 
 # =========================
@@ -13,7 +16,6 @@ mkdir -p $BIN_DIR
 apt-get update -y
 
 apt-get install -y \
-  software-properties-common \
   colmap ffmpeg cmake ninja-build \
   libgl1-mesa-glx xvfb \
   libeigen3-dev \
@@ -23,54 +25,46 @@ apt-get install -y \
   libqt5opengl5-dev
 
 # =========================
-# USE SYSTEM PYTHON 3.12 (NO OVERRIDE)
+# PYTHON INFO
 # =========================
 echo "SYSTEM PYTHON:"
 python3 --version
 
 # =========================
-# CLEAN OLD CONFLICTS
+# VENV (CRITICAL FIX)
 # =========================
-rm -rf /usr/local/lib/python3.12/dist-packages/nerfstudio* || true
-rm -rf /usr/local/lib/python3.12/dist-packages/torch* || true
-rm -f /usr/local/bin/ns-train || true
+python3 -m venv $VENV_DIR
+source $VENV_DIR/bin/activate
 
 # =========================
 # PIP BASE
 # =========================
-python3 -m ensurepip --upgrade || true
-python3 -m pip install --upgrade pip setuptools wheel
+pip install --upgrade pip setuptools wheel
 
 # =========================
-# CORE NUMPY STACK (IMPORTANT FOR COMPATIBILITY)
+# CORE STACK (LOCKED)
 # =========================
-python3 -m pip install numpy==1.26.4 scipy
+pip install numpy==1.26.4 scipy
 
-# =========================
-# VISION STACK
-# =========================
-python3 -m pip install openimageio imageio imageio-ffmpeg opencv-python
+# ⚠️ PAS openimageio (casse numpy)
+
+pip install imageio imageio-ffmpeg opencv-python-headless
 
 # =========================
 # BUILD TOOLS
 # =========================
-python3 -m pip install pybind11
+pip install pybind11
 
 # =========================
-# PYTORCH (CUDA COMPATIBLE WITH MODERN NERFSTUDIO)
+# PYTORCH
 # =========================
-python3 -m pip install torch torchvision torchaudio \
+pip install torch torchvision \
   --index-url https://download.pytorch.org/whl/cu121
 
 # =========================
-# NERFSTUDIO (MODERN VERSION FOR PYTHON 3.12)
+# NERFSTUDIO
 # =========================
-python3 -m pip install nerfstudio
-
-# =========================
-# OPTIONAL
-# =========================
-python3 -m pip install pycolmap rclone
+pip install nerfstudio pycolmap
 
 # =========================
 # ENV FLAGS
@@ -97,16 +91,61 @@ chmod +x $BIN_DIR/ns-train
 export PATH="$BIN_DIR:$PATH"
 
 # =========================
+# VALIDATION (FAIL FAST)
+# =========================
+echo "=== VALIDATION ==="
+
+python3 << 'EOF'
+import sys
+
+def fail(msg):
+    print(f"\n❌ ENV ERROR: {msg}\n")
+    sys.exit(1)
+
+# --- Python ---
+import sys as _sys
+print("Python:", _sys.version)
+
+# --- Torch ---
+try:
+    import torch
+    print("Torch:", torch.__version__)
+    if not torch.cuda.is_available():
+        fail("CUDA not available (ns-train will be extremely slow or crash)")
+except Exception as e:
+    fail(f"Torch import failed: {e}")
+
+# --- Numpy ---
+try:
+    import numpy as np
+    print("Numpy:", np.__version__)
+    major = int(np.__version__.split('.')[0])
+    if major >= 2:
+        fail("Numpy >=2 detected (incompatible with nerfstudio stack)")
+except Exception as e:
+    fail(f"Numpy import failed: {e}")
+
+# --- Nerfstudio ---
+try:
+    import nerfstudio
+    print("Nerfstudio OK")
+except Exception as e:
+    fail(f"Nerfstudio import failed: {e}")
+
+# --- Entrypoint ---
+try:
+    from nerfstudio.scripts.train import entrypoint
+    print("Entrypoint OK")
+except Exception as e:
+    fail(f"ns-train entrypoint broken: {e}")
+
+print("\n✅ ENVIRONMENT OK\n")
+EOF
+
+# =========================
 # FINAL CHECK
 # =========================
-echo "PYTHON:"
-python3 --version
+echo "NS-TRAIN CHECK:"
+ns-train --help > /dev/null 2>&1 || { echo "❌ ns-train broken"; exit 1; }
 
-echo "TORCH:"
-python3 -c "import torch; print(torch.__version__, torch.cuda.is_available())"
-
-echo "NERFSTUDIO:"
-python3 -c "import nerfstudio; print('OK', nerfstudio.__file__)"
-
-echo "NS-TRAIN:"
-ns-train --help || echo "FAILED"
+echo "🎉 READY"
