@@ -141,8 +141,6 @@ ns-process-data images \
 STATUS=$?
 set -e
 
-echo "STATUS: $STATUS"
-
 # ======================
 # FALLBACK IF FAIL
 # ======================

@@ -258,6 +258,8 @@ if [ "$SKIP_COLMAP" = true ]; then
 elif [ -f "$ORI_DIR/transforms.json" ]; then
   echo "⏩ Skipping COLMAP"
 else
+    echo ""
+    echo ""
   if [ "$WITH_COLMAP" = true ]; then
       echo "🧭 Running COLMAP..."
       bash scripts/preprocess_colmap.sh "$IMAGE_DIR" "$ORI_DIR"
@@ -291,6 +293,8 @@ else
   if [ -n "$LATEST_RUN" ] && [ -d "$LATEST_RUN/nerfstudio_models" ]; then
     echo "⏩ Skipping training"
   else
+    echo ""
+    echo ""
     echo "🧠 Training..."
 
     MODEL="$MODEL" \
