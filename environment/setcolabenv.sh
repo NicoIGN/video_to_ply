@@ -1,9 +1,6 @@
 #!/bin/bash
 set -e
 
-# =========================
-# CONFIG
-# =========================
 WORK_DIR=/content/work
 VENV_DIR=$WORK_DIR/venv
 BIN_DIR=$WORK_DIR/bin
@@ -15,14 +12,12 @@ mkdir -p $BIN_DIR
 # SYSTEM
 # =========================
 apt-get update -y
-
 apt-get install -y \
   python3.12 python3.12-venv python3.12-dev \
   colmap ffmpeg cmake ninja-build \
   libgl1-mesa-glx xvfb \
   libeigen3-dev libsuitesparse-dev \
-  libglew-dev qtbase5-dev libqt5opengl5-dev \
-  curl
+  libglew-dev qtbase5-dev libqt5opengl5-dev
 
 echo "SYSTEM PYTHON:"
 python3.12 --version
@@ -33,32 +28,20 @@ python3.12 --version
 python3.12 -m venv $VENV_DIR
 source $VENV_DIR/bin/activate
 
-# FIX pip
+# FIX pip (robuste colab)
 curl -sS https://bootstrap.pypa.io/get-pip.py | python
 
 pip install --upgrade pip setuptools wheel
 
 # =========================
-# 🔒 FORCE NUMPY 2 (LOCK)
-# =========================
-pip install numpy==2.1.2
-pip install "numpy>=2,<3" --no-deps --force-reinstall
-
-# =========================
-# PYTORCH FIRST (IMPORTANT)
-# =========================
-pip install torch torchvision torchaudio \
-  --index-url https://download.pytorch.org/whl/cu121
-
-# =========================
-# CORE SCIENTIFIC
+# CORE (laisser pip gérer numpy)
 # =========================
 pip install scipy
 
 # =========================
-# VISION (aligned numpy 2)
+# IMAGE STACK MINIMAL
 # =========================
-pip install opencv-python imageio imageio-ffmpeg
+pip install imageio imageio-ffmpeg
 
 # =========================
 # BUILD
@@ -66,11 +49,16 @@ pip install opencv-python imageio imageio-ffmpeg
 pip install pybind11 ninja
 
 # =========================
+# PYTORCH
+# =========================
+pip install torch torchvision torchaudio \
+  --index-url https://download.pytorch.org/whl/cu121
+
+# =========================
 # NERFSTUDIO
 # =========================
 pip install nerfstudio
 
-# OPTIONAL
 pip install pycolmap || true
 
 # =========================
@@ -78,9 +66,7 @@ pip install pycolmap || true
 # =========================
 export QT_QPA_PLATFORM=offscreen
 export MPLBACKEND=Agg
-export OPENCV_LOG_LEVEL=ERROR
 export XDG_RUNTIME_DIR=/tmp/runtime-root
-export LIBGL_ALWAYS_SOFTWARE=1
 
 # =========================
 # WRAPPER
@@ -96,7 +82,7 @@ chmod +x $BIN_DIR/ns-train
 export PATH="$BIN_DIR:$PATH"
 
 # =========================
-# 🔍 HARD VALIDATION (ANTI-FREEZE)
+# 🔥 VALIDATION ANTI-CRASH
 # =========================
 echo "==== VALIDATION ===="
 
@@ -105,60 +91,48 @@ import sys
 
 errors = []
 
-# NUMPY ABI
-try:
-    import numpy
-    if int(numpy.__version__.split('.')[0]) < 2:
-        errors.append("NUMPY < 2")
-except Exception as e:
-    errors.append(f"NUMPY FAIL: {e}")
-
 # TORCH
 try:
     import torch
     if not torch.cuda.is_available():
-        print("⚠️ WARNING: CUDA not available (will be slow)")
-except Exception as e:
-    errors.append(f"TORCH FAIL: {e}")
+        errors.append("CUDA NOT AVAILABLE")
+except:
+    errors.append("TORCH IMPORT FAIL")
 
-# OPENCV ABI
+# NUMPY
 try:
-    import cv2
-except Exception as e:
-    errors.append(f"OPENCV FAIL (likely numpy ABI): {e}")
+    import numpy as np
+    print("NUMPY:", np.__version__)
+except:
+    errors.append("NUMPY IMPORT FAIL")
 
 # NERFSTUDIO
 try:
     import nerfstudio
-except Exception as e:
-    errors.append(f"NERFSTUDIO FAIL: {e}")
+except:
+    errors.append("NERFSTUDIO IMPORT FAIL")
+
+# ⚠️ combo dangereux connu
+try:
+    import numpy as np
+    if np.__version__.startswith("2"):
+        print("⚠️ WARNING: numpy 2 detected → nerfstudio may crash later")
+except:
+    pass
 
 if errors:
-    print("\n❌ ENVIRONMENT INVALID:")
+    print("\n❌ ENV INVALID:")
     for e in errors:
         print(" -", e)
     sys.exit(1)
 
-print("✅ ENVIRONMENT OK")
+print("✅ ENV OK")
 EOF
 
 # =========================
 # FINAL CHECK
 # =========================
-echo "PYTHON:"
-python --version
+python -c "import torch; print('TORCH:', torch.__version__, torch.cuda.is_available())"
+python -c "import nerfstudio; print('NERFSTUDIO OK')"
 
-echo "NUMPY:"
-python -c "import numpy; print(numpy.__version__)"
-
-echo "TORCH:"
-python -c "import torch; print(torch.__version__, torch.cuda.is_available())"
-
-echo "OPENCV:"
-python -c "import cv2; print(cv2.__version__)"
-
-echo "NERFSTUDIO:"
-python -c "import nerfstudio; print('OK')"
-
-echo "NS-TRAIN:"
 ns-train --help || (echo "❌ ns-train broken" && exit 1)
