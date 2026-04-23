@@ -36,6 +36,10 @@ fi
 mkdir -p "$OUTPUT_DIR"
 
 LOG_FILE="/tmp/ns_process.log"
+#CAMERA_TYPE="simple_pinhole"
+CAMERA_TYPE="perspective"
+VERBOSE="" #--verbose
+
 rm -f "$LOG_FILE"
 
 echo "────────────────────────────────────"
@@ -43,12 +47,13 @@ echo "📁 INPUT        : $DATA_DIR"
 echo "📁 OUTPUT       : $OUTPUT_DIR"
 echo "⚙️ DEVICE       : $DEVICE"
 echo "🚦 SKIP_NS      : $SKIP_NS"
+echo "📄 LOG FILE        : $LOG_FILE"
+echo "📷 CAMERA TYPE     : $CAMERA_TYPE"
 echo "────────────────────────────────────"
 
 # ======================
 # ENV
 # ======================
-export CAMERA_TYPE="simple_pinhole"
 
 if [[ "$DEVICE" == "gpu" ]]; then
   echo "🚀 GPU MODE"
@@ -57,6 +62,9 @@ if [[ "$DEVICE" == "gpu" ]]; then
   export MPLBACKEND=Agg
 else
   echo "🧠 CPU MODE"
+  export OMP_NUM_THREADS=1
+  export MKL_NUM_THREADS=1
+ export NUMEXPR_NUM_THREADS=1
 fi
 
 # ======================
@@ -126,7 +134,8 @@ ns-process-data images \
   --output-dir "$OUTPUT_DIR" \
   --camera-type $CAMERA_TYPE \
   --matching-method sequential \
-  --num-downscales 1 \
+  --num-downscales 1 $VERBOSE \
+  
   2> "$LOG_FILE"
 
 STATUS=$?
