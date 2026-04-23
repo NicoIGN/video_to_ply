@@ -12,9 +12,9 @@ source "$SCRIPT_DIR/../config/config.sh"
 # ======================
 DATA_DIR=${1:-dataset/images}
 OUTPUT_DIR=${2:-dataset/ori}
-DEVICE=${DEVICE:-cpu}   # cpu | gpu
+DEVICE=${DEVICE:-cpu}
 
-SKIP_NS=true
+SKIP_NS=false
 
 # ======================
 # FLAGS
@@ -25,6 +25,9 @@ for arg in "$@"; do
   fi
 done
 
+# ======================
+# CHECK INPUT
+# ======================
 if [ ! -d "$DATA_DIR" ]; then
   echo "❌ Data dir not found: $DATA_DIR"
   exit 1
@@ -35,13 +38,15 @@ mkdir -p "$OUTPUT_DIR"
 LOG_FILE="/tmp/ns_process.log"
 rm -f "$LOG_FILE"
 
-echo "📁 Input : $DATA_DIR"
-echo "📁 Output: $OUTPUT_DIR"
-echo "⚙️ Device: $DEVICE"
-echo "🚦 Skip NS: $SKIP_NS"
+echo "────────────────────────────────────"
+echo "📁 INPUT        : $DATA_DIR"
+echo "📁 OUTPUT       : $OUTPUT_DIR"
+echo "⚙️ DEVICE       : $DEVICE"
+echo "🚦 SKIP_NS      : $SKIP_NS"
+echo "────────────────────────────────────"
 
 # ======================
-# ENV SETUP
+# ENV
 # ======================
 export CAMERA_TYPE="simple_pinhole"
 
@@ -51,37 +56,68 @@ if [[ "$DEVICE" == "gpu" ]]; then
   export QT_QPA_PLATFORM=offscreen
   export MPLBACKEND=Agg
 else
-  echo "🧠 CPU MODE (safe)"
+  echo "🧠 CPU MODE"
 fi
 
 # ======================
-# FALLBACK SCRIPT
+# PATHS
 # ======================
+COLMAP_DIR="$OUTPUT_DIR/colmap/sparse/0"
 FALLBACK_SCRIPT="$(dirname "$0")/colmap_to_transforms.py"
+TRANSFORMS="$OUTPUT_DIR/transforms.json"
 
 # ======================
-# SKIP MODE (DIRECT COLMAP → TRANSFORMS)
+# SKIP MODE
 # ======================
 if [[ "$SKIP_NS" == "true" ]]; then
   echo "⚡ SKIP MODE ENABLED"
   echo "🚀 Running COLMAP → transforms directly"
 
-  python3 "$FALLBACK_SCRIPT" "$OUTPUT_DIR"
+  # ======================
+  # CHECK COLMAP FIRST
+  # ======================
+  echo "🔍 Checking COLMAP outputs..."
 
+  if [ ! -d "$COLMAP_DIR" ]; then
+    echo "❌ COLMAP folder missing:"
+    echo "   $COLMAP_DIR"
+    echo ""
+    echo "💡 You must run COLMAP or ns-process-data first"
+    exit 1
+  fi
+
+  if [ ! -f "$COLMAP_DIR/cameras.bin" ] || [ ! -f "$COLMAP_DIR/images.bin" ]; then
+    echo "❌ COLMAP incomplete data"
+    echo "   Missing files in: $COLMAP_DIR"
+    echo ""
+    echo "📦 Expected:"
+    echo "   - cameras.bin"
+    echo "   - images.bin"
+    echo ""
+    echo "💡 Fix: run COLMAP preprocessing first"
+    exit 1
+  fi
+
+  echo "✅ COLMAP data found"
+  echo "📦 Running transforms export..."
+
+  python3 "$FALLBACK_SCRIPT" "$OUTPUT_DIR"
   STATUS=$?
 
-  if [ "$STATUS" -eq 0 ]; then
-    echo "✅ transforms.json generated (skip mode)"
+  if [ "$STATUS" -eq 0 ] && [ -f "$TRANSFORMS" ]; then
+    echo "✅ transforms.json generated successfully"
     exit 0
   else
-    echo "💀 Direct COLMAP conversion failed"
+    echo "💀 Transforms generation failed"
     exit 1
   fi
 fi
 
 # ======================
-# RUN NS PIPELINE
+# NS PIPELINE
 # ======================
+echo "🚀 Running ns-process-data..."
+
 set +e
 
 ns-process-data images \
@@ -94,38 +130,34 @@ ns-process-data images \
   2> "$LOG_FILE"
 
 STATUS=$?
-
 set -e
 
-# ======================
-# CHECK
-# ======================
 echo "STATUS: $STATUS"
 
-COLMAP_DIR="$OUTPUT_DIR/colmap/sparse/0"
-
+# ======================
+# FALLBACK IF FAIL
+# ======================
 if [ "$STATUS" -ne 0 ]; then
   echo "❌ PIPELINE FAILED"
   echo "📄 Last logs:"
   tail -n 40 "$LOG_FILE"
 
-  # fallback automatique
   if [ -f "$COLMAP_DIR/cameras.bin" ] || [ -f "$COLMAP_DIR/images.bin" ]; then
-    echo "⚠️ COLMAP output detected → fallback"
+    echo "⚠️ COLMAP detected → fallback transforms"
 
     python3 "$FALLBACK_SCRIPT" "$OUTPUT_DIR"
 
     FALLBACK_STATUS=$?
 
     if [ "$FALLBACK_STATUS" -eq 0 ]; then
-      echo "✅ Fallback transforms.json generated successfully"
+      echo "✅ fallback OK"
       exit 0
     else
-      echo "💀 Fallback also failed"
+      echo "💀 fallback failed"
       exit 1
     fi
   else
-    echo "💀 No COLMAP output found → cannot recover"
+    echo "💀 No COLMAP output → cannot recover"
     exit 1
   fi
 fi

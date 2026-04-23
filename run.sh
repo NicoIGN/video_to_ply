@@ -258,8 +258,26 @@ if [ "$SKIP_COLMAP" = true ]; then
 elif [ -f "$ORI_DIR/transforms.json" ]; then
   echo "⏩ Skipping COLMAP"
 else
-  echo "🧭 Running COLMAP..."
-  bash scripts/preprocess_colmap.sh "$IMAGE_DIR" "$ORI_DIR"
+  if [ "$WITH_COLMAP" = true ]; then
+      echo "🧭 Running COLMAP..."
+      bash scripts/preprocess_colmap.sh "$IMAGE_DIR" "$ORI_DIR"
+  elif [ "$WITH_NERFSTUDIO" = true ]; then
+      echo "🧭 Running COLMAP through NerfStudio..."
+      bash scripts/preprocess_nerfstudio.sh "$IMAGE_DIR" "$ORI_DIR"
+  else
+    echo "❌ CONFIGURATION ERROR"
+    echo "   → Neither WITH_NERFSTUDIO nor WITH_COLMAP is enabled"
+    echo ""
+    echo "📌 Required fix:"
+    echo "   - set WITH_NERFSTUDIO=true  OR"
+    echo "   - set WITH_COLMAP=true"
+    echo ""
+    echo "🧠 Current state:"
+    echo "   WITH_NERFSTUDIO=$WITH_NERFSTUDIO"
+    echo "   WITH_COLMAP=$WITH_COLMAP"
+    echo ""
+    exit 1
+  fi
 fi
 
 # ----------------------

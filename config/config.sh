@@ -84,6 +84,7 @@ MATCHING_METHOD="sequential"
 NUM_DOWNSCALES=1
 SKIP_IMAGE_PROCESSING=true
 
+WITH_NERFSTUDIO="true"
 
 ############################
 # IMAGE PREPROCESSING
@@ -162,6 +163,9 @@ CAMERA_MODE="off"
 #TRAIN_VIS_MODE="tensorboard"
 TRAIN_VIS_MODE="viewer"
 
+if [ "$DEVICE" == "gpu" ]; then
+    TRAIN_VIS_MODE="tensorboard"
+fi
 
 ############################
 # PERFORMANCE FLAGS
