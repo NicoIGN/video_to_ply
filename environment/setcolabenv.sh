@@ -1,89 +1,88 @@
+#!/bin/bash
 set -e
 
 # =========================
 # CONFIG
 # =========================
 WORK_DIR=/content/work
+VENV_DIR=$WORK_DIR/venv
 BIN_DIR=$WORK_DIR/bin
-VENV_DIR=/content/venv
 
-rm -rf $WORK_DIR $VENV_DIR
+rm -rf $WORK_DIR
 mkdir -p $BIN_DIR
 
 # =========================
-# SYSTEM DEPENDENCIES
+# SYSTEM
 # =========================
 apt-get update -y
 
 apt-get install -y \
+  python3.12 python3.12-venv python3.12-dev \
   colmap ffmpeg cmake ninja-build \
   libgl1-mesa-glx xvfb \
-  libeigen3-dev \
-  libsuitesparse-dev \
-  libglew-dev \
-  qtbase5-dev \
-  libqt5opengl5-dev
+  libeigen3-dev libsuitesparse-dev \
+  libglew-dev qtbase5-dev libqt5opengl5-dev
 
-# =========================
-# PYTHON INFO
-# =========================
 echo "SYSTEM PYTHON:"
-python3 --version
+python3.12 --version
 
 # =========================
-# VENV (CRITICAL FIX)
+# VENV CLEAN (NO ENSUREPIP BUG)
 # =========================
-python3 -m venv $VENV_DIR
+python3.12 -m venv $VENV_DIR
 source $VENV_DIR/bin/activate
 
-# =========================
-# PIP BASE
-# =========================
+# FIX pip (ensurepip broken in colab sometimes)
+curl -sS https://bootstrap.pypa.io/get-pip.py | python
+
 pip install --upgrade pip setuptools wheel
 
 # =========================
-# CORE STACK (LOCKED)
+# CORE STACK (PYTHON 3.12 SAFE)
 # =========================
-pip install numpy==1.26.4 scipy
-
-# ⚠️ PAS openimageio (casse numpy)
-
-pip install imageio imageio-ffmpeg opencv-python-headless
+pip install numpy==2.1.2 scipy
 
 # =========================
-# BUILD TOOLS
+# VISION
 # =========================
-pip install pybind11
+pip install imageio imageio-ffmpeg opencv-python
+# ⚠️ openimageio retiré (force numpy 2.x instable avec torch)
 
 # =========================
-# PYTORCH
+# BUILD
 # =========================
-pip install torch torchvision \
+pip install pybind11 ninja
+
+# =========================
+# PYTORCH (CUDA COLAB)
+# =========================
+pip install torch torchvision torchaudio \
   --index-url https://download.pytorch.org/whl/cu121
 
 # =========================
-# NERFSTUDIO
+# NERFSTUDIO (LATEST COMPAT 3.12)
 # =========================
-pip install nerfstudio pycolmap
+pip install nerfstudio
+
+# pycolmap optionnel (pas critique)
+pip install pycolmap || true
 
 # =========================
-# ENV FLAGS
+# ENV
 # =========================
 export QT_QPA_PLATFORM=offscreen
 export MPLBACKEND=Agg
 export OPENCV_LOG_LEVEL=ERROR
 export XDG_RUNTIME_DIR=/tmp/runtime-root
 export LIBGL_ALWAYS_SOFTWARE=1
-export CUDA_VISIBLE_DEVICES=0
 
 # =========================
 # WRAPPER
 # =========================
 cat > $BIN_DIR/ns-train << 'EOF'
-#!/usr/bin/env python3
+#!/usr/bin/env python
 from nerfstudio.scripts.train import entrypoint
 import sys
-
 sys.exit(entrypoint())
 EOF
 
@@ -91,61 +90,54 @@ chmod +x $BIN_DIR/ns-train
 export PATH="$BIN_DIR:$PATH"
 
 # =========================
-# VALIDATION (FAIL FAST)
+# 🔍 HARD VALIDATION (CRASH PREVENTION)
 # =========================
-echo "=== VALIDATION ==="
+echo "==== VALIDATION ===="
 
-python3 << 'EOF'
+python - << 'EOF'
 import sys
 
-def fail(msg):
-    print(f"\n❌ ENV ERROR: {msg}\n")
-    sys.exit(1)
+errors = []
 
-# --- Python ---
-import sys as _sys
-print("Python:", _sys.version)
-
-# --- Torch ---
 try:
     import torch
-    print("Torch:", torch.__version__)
     if not torch.cuda.is_available():
-        fail("CUDA not available (ns-train will be extremely slow or crash)")
-except Exception as e:
-    fail(f"Torch import failed: {e}")
+        errors.append("CUDA NOT AVAILABLE")
+except:
+    errors.append("TORCH IMPORT FAIL")
 
-# --- Numpy ---
 try:
-    import numpy as np
-    print("Numpy:", np.__version__)
-    major = int(np.__version__.split('.')[0])
-    if major >= 2:
-        fail("Numpy >=2 detected (incompatible with nerfstudio stack)")
-except Exception as e:
-    fail(f"Numpy import failed: {e}")
+    import numpy
+    if int(numpy.__version__.split('.')[0]) < 2:
+        errors.append("NUMPY < 2 (INCOMPATIBLE PYTHON 3.12 STACK)")
+except:
+    errors.append("NUMPY IMPORT FAIL")
 
-# --- Nerfstudio ---
 try:
     import nerfstudio
-    print("Nerfstudio OK")
-except Exception as e:
-    fail(f"Nerfstudio import failed: {e}")
+except:
+    errors.append("NERFSTUDIO IMPORT FAIL")
 
-# --- Entrypoint ---
-try:
-    from nerfstudio.scripts.train import entrypoint
-    print("Entrypoint OK")
-except Exception as e:
-    fail(f"ns-train entrypoint broken: {e}")
+if errors:
+    print("\n❌ ENVIRONMENT INVALID:")
+    for e in errors:
+        print(" -", e)
+    sys.exit(1)
 
-print("\n✅ ENVIRONMENT OK\n")
+print("✅ ENVIRONMENT OK")
 EOF
 
 # =========================
 # FINAL CHECK
 # =========================
-echo "NS-TRAIN CHECK:"
-ns-train --help > /dev/null 2>&1 || { echo "❌ ns-train broken"; exit 1; }
+echo "PYTHON:"
+python --version
 
-echo "🎉 READY"
+echo "TORCH:"
+python -c "import torch; print(torch.__version__, torch.cuda.is_available())"
+
+echo "NERFSTUDIO:"
+python -c "import nerfstudio; print('OK')"
+
+echo "NS-TRAIN:"
+ns-train --help || (echo "❌ ns-train broken" && exit 1)
