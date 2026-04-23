@@ -1,13 +1,11 @@
 #!/bin/bash
 set -e
 
-
--# ======================
--# LOAD CONFIG
--# ======================
--SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
--source "$SCRIPT_DIR/../config/config.sh"
-
+# ======================
+# LOAD CONFIG
+# ======================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../config/config.sh"
 
 # ======================
 # INPUTS
@@ -47,17 +45,21 @@ if [[ "$DEVICE" == "gpu" ]]; then
 else
   echo "🧠 CPU MODE (safe)"
 
-  # 🔴 force CPU partout
+  # 🔴 force CPU partout (CUDA invisible)
   export CUDA_VISIBLE_DEVICES=""
-  export COLMAP_USE_GPU=0
-  export COLMAP_NO_GPU=1
 
-  # 🔴 fix OpenGL (crash classique Mac / headless)
+  # 🔴 COLMAP CPU FORCE (important dans Nerfstudio)
+  export COLMAP_USE_GPU=0
+  export COLMAP_GPU=0
+  export COLMAP_NO_GPU=1
+  export COLMAP_SIFT_GPU=0
+
+  # 🔴 fix OpenGL (Mac / headless crash COLMAP)
   export LIBGL_ALWAYS_SOFTWARE=1
   export QT_QPA_PLATFORM=offscreen
   export DISPLAY=
 
-  # 🔴 stabilité
+  # 🔴 stabilité runtime
   export MPLBACKEND=Agg
   export OPENCV_LOG_LEVEL=ERROR
   export XDG_RUNTIME_DIR=/tmp/runtime-root
@@ -70,8 +72,17 @@ fi
 # ======================
 set +e
 
+echo ns-process-data images \
+  --data "$DATA_DIR" \
+  --sfm_tool colmap \
+  --output-dir "$OUTPUT_DIR" \
+  --camera-type perspective \
+  --matching-method sequential \
+  --num-downscales 1
+
 ns-process-data images \
   --data "$DATA_DIR" \
+  --sfm_tool colmap \
   --output-dir "$OUTPUT_DIR" \
   --camera-type perspective \
   --matching-method sequential \
