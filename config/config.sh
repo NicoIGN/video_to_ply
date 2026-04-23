@@ -182,7 +182,7 @@ NORMAL_METHOD="open3d"
 # - fast     → très rapide, preview / debug
 # - balanced → compromis qualité/vitesse (recommandé)
 # - quality  → export complet haute qualité (lent)
-EXPORT_MODE="balanced"
+EXPORT_MODE="fast"
 
 # PARAMÈTRES DÉRIVÉS (utilisés par export.sh)
 
@@ -192,14 +192,14 @@ EXPORT_NUM_POINTS_BALANCED=500000
 EXPORT_NUM_POINTS_QUALITY=2000000
 
 # normales
-EXPORT_NORMALS_FAST="none"
+EXPORT_NORMALS_FAST="open3d"
 EXPORT_NORMALS_BALANCED="open3d"
 EXPORT_NORMALS_QUALITY="open3d"
 
 # nettoyage
-EXPORT_REMOVE_OUTLIERS_FAST=true
-EXPORT_REMOVE_OUTLIERS_BALANCED=true
-EXPORT_REMOVE_OUTLIERS_QUALITY=false
+EXPORT_REMOVE_OUTLIERS_FAST=True
+EXPORT_REMOVE_OUTLIERS_BALANCED=True
+EXPORT_REMOVE_OUTLIERS_QUALITY=True
 
 # downsampling global
 EXPORT_DOWNSAMPLE_FAST=2

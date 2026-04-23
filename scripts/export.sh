@@ -93,15 +93,14 @@ ls "$RUN_DIR/nerfstudio_models" || echo "⚠️ No models folder"
 echo "🚀 Export settings:"
 echo "   - points: $NUM_POINTS"
 echo "   - normals: $NORMAL_METHOD"
-echo "   - downsample: $DOWNSAMPLE"
 echo "   - outliers: $REMOVE_OUTLIERS"
+# echo "   - downsample: $DOWNSAMPLE"
 
 ns-export pointcloud \
   --load-config "$CONFIG" \
   --output-dir "$EXPORT_DIR" \
   --num-points "$NUM_POINTS" \
   --normal-method "$NORMAL_METHOD" \
-  --downsample-factor "$DOWNSAMPLE" \
   --remove-outliers "$REMOVE_OUTLIERS"
 
 echo "✅ Export done"
