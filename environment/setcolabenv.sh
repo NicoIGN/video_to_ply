@@ -21,32 +21,44 @@ apt-get install -y \
   colmap ffmpeg cmake ninja-build \
   libgl1-mesa-glx xvfb \
   libeigen3-dev libsuitesparse-dev \
-  libglew-dev qtbase5-dev libqt5opengl5-dev
+  libglew-dev qtbase5-dev libqt5opengl5-dev \
+  curl
 
 echo "SYSTEM PYTHON:"
 python3.12 --version
 
 # =========================
-# VENV CLEAN (NO ENSUREPIP BUG)
+# VENV CLEAN
 # =========================
 python3.12 -m venv $VENV_DIR
 source $VENV_DIR/bin/activate
 
-# FIX pip (ensurepip broken in colab sometimes)
+# FIX pip
 curl -sS https://bootstrap.pypa.io/get-pip.py | python
 
 pip install --upgrade pip setuptools wheel
 
 # =========================
-# CORE STACK (PYTHON 3.12 SAFE)
+# 🔒 FORCE NUMPY 2 (LOCK)
 # =========================
-pip install numpy==2.1.2 scipy
+pip install numpy==2.1.2
+pip install "numpy>=2,<3" --no-deps --force-reinstall
 
 # =========================
-# VISION
+# PYTORCH FIRST (IMPORTANT)
 # =========================
-pip install imageio imageio-ffmpeg opencv-python
-# ⚠️ openimageio retiré (force numpy 2.x instable avec torch)
+pip install torch torchvision torchaudio \
+  --index-url https://download.pytorch.org/whl/cu121
+
+# =========================
+# CORE SCIENTIFIC
+# =========================
+pip install scipy
+
+# =========================
+# VISION (aligned numpy 2)
+# =========================
+pip install opencv-python imageio imageio-ffmpeg
 
 # =========================
 # BUILD
@@ -54,17 +66,11 @@ pip install imageio imageio-ffmpeg opencv-python
 pip install pybind11 ninja
 
 # =========================
-# PYTORCH (CUDA COLAB)
-# =========================
-pip install torch torchvision torchaudio \
-  --index-url https://download.pytorch.org/whl/cu121
-
-# =========================
-# NERFSTUDIO (LATEST COMPAT 3.12)
+# NERFSTUDIO
 # =========================
 pip install nerfstudio
 
-# pycolmap optionnel (pas critique)
+# OPTIONAL
 pip install pycolmap || true
 
 # =========================
@@ -90,7 +96,7 @@ chmod +x $BIN_DIR/ns-train
 export PATH="$BIN_DIR:$PATH"
 
 # =========================
-# 🔍 HARD VALIDATION (CRASH PREVENTION)
+# 🔍 HARD VALIDATION (ANTI-FREEZE)
 # =========================
 echo "==== VALIDATION ===="
 
@@ -99,24 +105,33 @@ import sys
 
 errors = []
 
-try:
-    import torch
-    if not torch.cuda.is_available():
-        errors.append("CUDA NOT AVAILABLE")
-except:
-    errors.append("TORCH IMPORT FAIL")
-
+# NUMPY ABI
 try:
     import numpy
     if int(numpy.__version__.split('.')[0]) < 2:
-        errors.append("NUMPY < 2 (INCOMPATIBLE PYTHON 3.12 STACK)")
-except:
-    errors.append("NUMPY IMPORT FAIL")
+        errors.append("NUMPY < 2")
+except Exception as e:
+    errors.append(f"NUMPY FAIL: {e}")
 
+# TORCH
+try:
+    import torch
+    if not torch.cuda.is_available():
+        print("⚠️ WARNING: CUDA not available (will be slow)")
+except Exception as e:
+    errors.append(f"TORCH FAIL: {e}")
+
+# OPENCV ABI
+try:
+    import cv2
+except Exception as e:
+    errors.append(f"OPENCV FAIL (likely numpy ABI): {e}")
+
+# NERFSTUDIO
 try:
     import nerfstudio
-except:
-    errors.append("NERFSTUDIO IMPORT FAIL")
+except Exception as e:
+    errors.append(f"NERFSTUDIO FAIL: {e}")
 
 if errors:
     print("\n❌ ENVIRONMENT INVALID:")
@@ -133,8 +148,14 @@ EOF
 echo "PYTHON:"
 python --version
 
+echo "NUMPY:"
+python -c "import numpy; print(numpy.__version__)"
+
 echo "TORCH:"
 python -c "import torch; print(torch.__version__, torch.cuda.is_available())"
+
+echo "OPENCV:"
+python -c "import cv2; print(cv2.__version__)"
 
 echo "NERFSTUDIO:"
 python -c "import nerfstudio; print('OK')"
