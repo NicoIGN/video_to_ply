@@ -160,8 +160,8 @@ CAMERA_MODE="off"
 # ⚠️ IMPORTANT :
 # - "viewer" pour voir le resultat dans Nerfstudio
 # - "tensorboard" pour mode headless réel (batch / scripts)
-#TRAIN_VIS_MODE="tensorboard"
-TRAIN_VIS_MODE="viewer"
+TRAIN_VIS_MODE="tensorboard"
+#TRAIN_VIS_MODE="viewer"
 
 if [ "$DEVICE" == "gpu" ]; then
     TRAIN_VIS_MODE="tensorboard"
@@ -187,7 +187,7 @@ NORMAL_METHOD="open3d"
 # - fast     → très rapide, preview / debug
 # - balanced → compromis qualité/vitesse (recommandé)
 # - quality  → export complet haute qualité (lent)
-EXPORT_MODE="fast"
+EXPORT_MODE="balanced"
 
 # PARAMÈTRES DÉRIVÉS (utilisés par export.sh)
 

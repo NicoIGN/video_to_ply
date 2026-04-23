@@ -81,6 +81,14 @@ case "$EXPORT_MODE" in
     ;;
 esac
 
+
+# ======================
+# ENV FLAGS
+# ======================
+export TORCHDYNAMO_DISABLE=1
+export OMP_NUM_THREADS=1
+export PYTORCH_ENABLE_MPS_FALLBACK=1
+
 # ======================
 # DEBUG MODEL
 # ======================
