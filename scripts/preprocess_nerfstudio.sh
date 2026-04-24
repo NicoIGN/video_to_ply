@@ -65,7 +65,7 @@ else
   export OMP_NUM_THREADS=1
   export MKL_NUM_THREADS=1
   export NUMEXPR_NUM_THREADS=1
-
+  export COLMAP_USE_GPU=0
   export QT_QPA_PLATFORM=offscreen
   export MPLBACKEND=Agg
   export OPENCV_LOG_LEVEL=ERROR
