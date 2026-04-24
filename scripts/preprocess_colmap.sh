@@ -33,6 +33,8 @@ SKIP_IMG="$SKIP_IMAGE_PROCESSING"
 DEVICE="${DEVICE:-cpu}"
 CLEAN_ARTEFACTS="${CLEAN_ARTEFACTS:-false}"
 
+CLEAN_ARTEFACTS=true
+
 # ======================
 # CPU SAFE MODE
 # ======================
