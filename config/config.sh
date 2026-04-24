@@ -233,4 +233,8 @@ if [ "$NO_PROXY" != "true" ]; then
   echo "🌐 Proxy enabled"
 else
   echo "🚫 Proxy disabled (NO_PROXY=true)"
+  unset HTTP_PROXY
+  unset HTTPS_PROXY
+  unset http_proxy
+  unset https_proxy
 fi
