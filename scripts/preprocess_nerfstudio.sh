@@ -64,7 +64,17 @@ else
   echo "🧠 CPU MODE"
   export OMP_NUM_THREADS=1
   export MKL_NUM_THREADS=1
- export NUMEXPR_NUM_THREADS=1
+  export NUMEXPR_NUM_THREADS=1
+
+  export QT_QPA_PLATFORM=offscreen
+  export MPLBACKEND=Agg
+  export OPENCV_LOG_LEVEL=ERROR
+  export XDG_RUNTIME_DIR=/tmp/runtime-root
+  export CUDA_VISIBLE_DEVICES=""
+  export LIBGL_ALWAYS_SOFTWARE=1
+
+  export NS_DEBUG=1
+  export NS_LOG_LEVEL=debug
 fi
 
 # ======================
