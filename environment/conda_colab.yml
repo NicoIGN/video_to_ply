@@ -25,10 +25,11 @@ dependencies:
   - imageio-ffmpeg
 
   # 🧊 geometry / SfM stack
-  - colmap
+  - colmap>=3.9
+  - pycolmap>=0.6
   - cgal
 
-  # 🖥️ UI (optionnel, souvent inutile en Colab mais safe)
+  # 🖥️ UI (souvent inutile mais requis par colmap)
   - glew
   - qt
 
@@ -39,15 +40,12 @@ dependencies:
   # PIP SECTION
   # ======================
   - pip:
-      # 🔥 ML stack
+      # 🔥 ML stack (GPU auto sur Colab)
       - torch
       - torchvision
 
       # nerfstudio
       - nerfstudio==1.1.5
-
-      # COLMAP python bindings
-      - pycolmap
 
       # utils
       - tqdm
