@@ -11,6 +11,7 @@ DEVICE="cpu"
 ROOT_DIR="runs/default"
 VIDEO=""
 SKIP_CONDA=false
+NO_PROXY=false
 
 # ======================
 # PIPELINE SKIP DEFAULTS (from config.sh, overridable by CLI)
@@ -43,6 +44,7 @@ Options:
   --skip-colmap            Skip COLMAP step
   --skip-training          Skip training step
   --skip-export            Skip export step
+  --no-proxy               ignore all proxy config
 
   --help                 Show this help
 EOF
@@ -59,6 +61,7 @@ while [[ $# -gt 0 ]]; do
     --root) ROOT_DIR="$2"; shift 2 ;;
     --max-iter) MAX_ITER="$2"; shift 2 ;;
     --skip-conda) SKIP_CONDA=true; shift ;;
+    --no-proxy) NO_PROXY=true; shift ;;
 
     # ======================
     # PIPELINE OVERRIDES
@@ -100,13 +103,13 @@ else
   # ======================
   # PROXY SETUP (RUNTIME FIRST)
   # ======================
-  if [ -n "$HTTP_PROXY" ]; then
+  if [ -n "$HTTP_PROXY" && "$NO_PROXY" != true ]; then
     export HTTP_PROXY="$HTTP_PROXY"
     export http_proxy="$HTTP_PROXY"
     echo "🌐 HTTP proxy enabled"
   fi
 
-  if [ -n "$HTTPS_PROXY" ]; then
+  if [ -n "$HTTPS_PROXY" && "$NO_PROXY" != true ]; then
     export HTTPS_PROXY="$HTTPS_PROXY"
     export https_proxy="$HTTPS_PROXY"
     echo "🌐 HTTPS proxy enabled"
@@ -115,9 +118,10 @@ else
   # ======================
   # CONDA PROXY CONFIG (SECONDARY)
   # ======================
-  conda config --set proxy_servers.http "$HTTP_PROXY" 2>/dev/null || true
-  conda config --set proxy_servers.https "$HTTPS_PROXY" 2>/dev/null || true
-
+  if [ "$NO_PROXY" != true ]; then
+    conda config --set proxy_servers.http "$HTTP_PROXY" 2>/dev/null || true
+    conda config --set proxy_servers.https "$HTTPS_PROXY" 2>/dev/null || true
+  fi
   # ======================
   # ENV CREATE / UPDATE
   # ======================
