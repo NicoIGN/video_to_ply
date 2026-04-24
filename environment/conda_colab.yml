@@ -1,0 +1,54 @@
+name: gsplat
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.10
+  - pip
+  - rclone
+  - tree
+
+  # 🔧 build tools
+  - cmake
+  - ninja
+
+  # 🧮 math / core
+  - numpy
+  - scipy
+  - eigen
+  - suitesparse
+
+  # 🖼️ vision / IO
+  - openimageio
+  - ffmpeg
+  - imageio
+  - imageio-ffmpeg
+
+  # 🧊 geometry / SfM stack
+  - colmap
+  - cgal
+
+  # 🖥️ UI (optionnel, souvent inutile en Colab mais safe)
+  - glew
+  - qt
+
+  # system utils
+  - libiconv
+
+  # ======================
+  # PIP SECTION
+  # ======================
+  - pip:
+      # 🔥 ML stack
+      - torch
+      - torchvision
+
+      # nerfstudio
+      - nerfstudio==1.1.5
+
+      # COLMAP python bindings
+      - pycolmap
+
+      # utils
+      - tqdm
+      - opencv-python

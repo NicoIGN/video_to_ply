@@ -216,7 +216,7 @@ EXPORT_DOWNSAMPLE_QUALITY=1
 # CONDA
 ############################
 
-CONDA_ENV_FILE="environment/conda_macosx.yml"
+CONDA_ENV_FILE="environment/conda_colab.yml"
 CONDA_ENV_NAME="gsplat"
 
 
