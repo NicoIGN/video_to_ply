@@ -133,37 +133,6 @@ else
 fi
 
 
-echo "================ PROXY ENV ================"
-env | grep -i proxy || echo "No proxy env vars"
-echo "==========================================="
-
-echo ""
-echo "================ NO_PROXY =================="
-echo "NO_PROXY=$NO_PROXY"
-echo "no_proxy=$no_proxy"
-echo "==========================================="
-
-echo ""
-echo "============ CONDA PROXY CONFIG ============"
-conda config --show proxy_servers || echo "No conda proxy config"
-echo "============================================"
-
-echo ""
-echo "============ PROXY DNS CHECK ================"
-getent hosts proxy.ign.fr || echo "proxy.ign.fr NOT resolvable (OK in Colab)"
-echo "============================================"
-
-echo ""
-echo "============ CONDA INFO PROXY =============="
-conda info | grep -i proxy || true
-echo "============================================"
-
-echo ""
-echo "=========== FINAL ENV BEFORE CONDA =========="
-env | grep -iE "proxy|http|https" || echo "Clean environment"
-echo "============================================"
-
-
   # ======================
   # ENV CREATE / UPDATE
   # ======================
@@ -174,6 +143,8 @@ echo "============================================"
     CONDA_CMD="conda env update -n $CONDA_ENV_NAME -f $CONDA_ENV_FILE --prune"
   else
     echo "🆕 Creating env: $CONDA_ENV_NAME"
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
     CONDA_CMD="conda env create -n $CONDA_ENV_NAME -f $CONDA_ENV_FILE"
   fi
 
