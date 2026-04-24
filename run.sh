@@ -100,16 +100,19 @@ else
   # ======================
   source "$(conda info --base)/etc/profile.d/conda.sh"
 
-  # ======================
-  # PROXY SETUP (RUNTIME FIRST)
-  # ======================
-  if [ -n "$HTTP_PROXY" && "$NO_PROXY" != true ]; then
+ # ======================
+# PROXY SETUP (RUNTIME FIRST)
+# ======================
+
+if [ "$NO_PROXY" != "true" ]; then
+
+  if [ -n "$HTTP_PROXY" ]; then
     export HTTP_PROXY="$HTTP_PROXY"
     export http_proxy="$HTTP_PROXY"
     echo "🌐 HTTP proxy enabled"
   fi
 
-  if [ -n "$HTTPS_PROXY" && "$NO_PROXY" != true ]; then
+  if [ -n "$HTTPS_PROXY" ]; then
     export HTTPS_PROXY="$HTTPS_PROXY"
     export https_proxy="$HTTPS_PROXY"
     echo "🌐 HTTPS proxy enabled"
@@ -118,10 +121,13 @@ else
   # ======================
   # CONDA PROXY CONFIG (SECONDARY)
   # ======================
-  if [ "$NO_PROXY" != true ]; then
-    conda config --set proxy_servers.http "$HTTP_PROXY" 2>/dev/null || true
-    conda config --set proxy_servers.https "$HTTPS_PROXY" 2>/dev/null || true
-  fi
+  conda config --set proxy_servers.http "$HTTP_PROXY" 2>/dev/null || true
+  conda config --set proxy_servers.https "$HTTPS_PROXY" 2>/dev/null || true
+
+else
+  echo "🚫 Proxy disabled via NO_PROXY=true"
+fi
+
   # ======================
   # ENV CREATE / UPDATE
   # ======================
