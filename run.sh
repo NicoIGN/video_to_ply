@@ -104,8 +104,9 @@ else
 # PROXY SETUP (RUNTIME FIRST)
 # ======================
 
-if [ "$NO_PROXY" != "true" ]; then
-
+if [ "$NO_PROXY" != true ]; then
+  echo NO_PROXY: $NO_PROXY
+  
   if [ -n "$HTTP_PROXY" ]; then
     export HTTP_PROXY="$HTTP_PROXY"
     export http_proxy="$HTTP_PROXY"
