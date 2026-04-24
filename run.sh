@@ -110,13 +110,13 @@ if [ "$NO_PROXY" != true ]; then
   if [ -n "$HTTP_PROXY" ]; then
     export HTTP_PROXY="$HTTP_PROXY"
     export http_proxy="$HTTP_PROXY"
-    echo "🌐 HTTP proxy enabled"
+    echo "🌐 HTTP proxy enabled (1)"
   fi
 
   if [ -n "$HTTPS_PROXY" ]; then
     export HTTPS_PROXY="$HTTPS_PROXY"
     export https_proxy="$HTTPS_PROXY"
-    echo "🌐 HTTPS proxy enabled"
+    echo "🌐 HTTPS proxy enabled (2)"
   fi
 
   # ======================
