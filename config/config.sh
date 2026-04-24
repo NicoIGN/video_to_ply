@@ -224,5 +224,13 @@ CONDA_ENV_NAME="gsplat"
 # PROXY
 ############################
 
-HTTP_PROXY="http://proxy.ign.fr:3128"
-HTTPS_PROXY="http://proxy.ign.fr:3128"
+if [ "$NO_PROXY" != "true" ]; then
+  export HTTP_PROXY="http://proxy.ign.fr:3128"
+  export HTTPS_PROXY="http://proxy.ign.fr:3128"
+  export http_proxy="$HTTP_PROXY"
+  export https_proxy="$HTTPS_PROXY"
+
+  echo "🌐 Proxy enabled"
+else
+  echo "🚫 Proxy disabled (NO_PROXY=true)"
+fi
