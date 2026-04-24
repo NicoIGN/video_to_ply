@@ -128,13 +128,21 @@ echo "🚀 Running ns-process-data..."
 
 set +e
 
+COLMAP_BIN=$(which colmap || true)
+
+if [ -z "$COLMAP_BIN" ]; then
+  echo "❌ COLMAP not found in PATH"
+  exit 1
+fi
+
 ns-process-data images \
   --data "$DATA_DIR" \
   --sfm_tool colmap \
+  --colmap-path "$COLMAP_BIN" \
   --output-dir "$OUTPUT_DIR" \
   --camera-type $CAMERA_TYPE \
   --matching-method sequential \
-  --num-downscales 1 $VERBOSE \
+  --num-downscales 1 $VERBOSE
   
   2> "$LOG_FILE"
 
