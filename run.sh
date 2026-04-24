@@ -127,6 +127,9 @@ if [ "$NO_PROXY" != true ]; then
 
 else
   echo "🚫 Proxy disabled via NO_PROXY=true"
+  # 🔥 clean conda config
+  conda config --remove-key proxy_servers.http 2>/dev/null || true
+  conda config --remove-key proxy_servers.https 2>/dev/null || true
 fi
 
   # ======================
