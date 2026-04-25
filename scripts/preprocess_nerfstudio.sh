@@ -15,6 +15,7 @@ OUTPUT_DIR=${2:-dataset/ori}
 DEVICE=${DEVICE:-cpu}
 
 SKIP_NS=false
+PYCOLMAP_MODE=true   # 🔥 NEW: force safe backend
 
 # ======================
 # FLAGS
@@ -36,25 +37,21 @@ fi
 mkdir -p "$OUTPUT_DIR"
 
 LOG_FILE="/tmp/ns_process.log"
-#CAMERA_TYPE="simple_pinhole"
 CAMERA_TYPE="perspective"
-VERBOSE="" #--verbose
+VERBOSE=""
 
 rm -f "$LOG_FILE"
 
 echo "────────────────────────────────────"
-echo "📁 INPUT        : $DATA_DIR"
-echo "📁 OUTPUT       : $OUTPUT_DIR"
-echo "⚙️ DEVICE       : $DEVICE"
-echo "🚦 SKIP_NS      : $SKIP_NS"
-echo "📄 LOG FILE        : $LOG_FILE"
-echo "📷 CAMERA TYPE     : $CAMERA_TYPE"
+echo "📁 INPUT   : $DATA_DIR"
+echo "📁 OUTPUT  : $OUTPUT_DIR"
+echo "⚙️ DEVICE  : $DEVICE"
+echo "🧠 PYCOLMAP: $PYCOLMAP_MODE"
 echo "────────────────────────────────────"
 
 # ======================
 # ENV
 # ======================
-
 if [[ "$DEVICE" == "gpu" ]]; then
   echo "🚀 GPU MODE"
   unset CUDA_VISIBLE_DEVICES
@@ -65,16 +62,20 @@ else
   export OMP_NUM_THREADS=1
   export MKL_NUM_THREADS=1
   export NUMEXPR_NUM_THREADS=1
-  export COLMAP_USE_GPU=0
-  export QT_QPA_PLATFORM=offscreen
-  export MPLBACKEND=Agg
-  export OPENCV_LOG_LEVEL=ERROR
-  export XDG_RUNTIME_DIR=/tmp/runtime-root
   export CUDA_VISIBLE_DEVICES=""
   export LIBGL_ALWAYS_SOFTWARE=1
+  export QT_QPA_PLATFORM=offscreen
+  export MPLBACKEND=Agg
+fi
 
-  export NS_DEBUG=1
-  export NS_LOG_LEVEL=debug
+# ======================
+# 🔥 FORCE PYCOLMAP MODE (IMPORTANT FIX)
+# ======================
+if [[ "$PYCOLMAP_MODE" == "true" ]]; then
+  echo "🚀 Using PYCOLMAP backend (NO COLMAP CLI)"
+
+  export NERFSTUDIO_SFM_BACKEND=pycolmap
+  export NS_USE_PYCOLMAP=1
 fi
 
 # ======================
@@ -85,85 +86,11 @@ FALLBACK_SCRIPT="$(dirname "$0")/colmap_to_transforms.py"
 TRANSFORMS="$OUTPUT_DIR/transforms.json"
 
 # ======================
-# SKIP MODE
-# ======================
-if [[ "$SKIP_NS" == "true" ]]; then
-  echo "⚡ SKIP MODE ENABLED"
-  echo "🚀 Running COLMAP → transforms directly"
-
-  # ======================
-  # CHECK COLMAP FIRST
-  # ======================
-  echo "🔍 Checking COLMAP outputs..."
-
-  if [ ! -d "$COLMAP_DIR" ]; then
-    echo "❌ COLMAP folder missing:"
-    echo "   $COLMAP_DIR"
-    echo ""
-    echo "💡 You must run COLMAP or ns-process-data first"
-    exit 1
-  fi
-
-  if [ ! -f "$COLMAP_DIR/cameras.bin" ] || [ ! -f "$COLMAP_DIR/images.bin" ]; then
-    echo "❌ COLMAP incomplete data"
-    echo "   Missing files in: $COLMAP_DIR"
-    echo ""
-    echo "📦 Expected:"
-    echo "   - cameras.bin"
-    echo "   - images.bin"
-    echo ""
-    echo "💡 Fix: run COLMAP preprocessing first"
-    exit 1
-  fi
-
-  echo "✅ COLMAP data found"
-  echo "📦 Running transforms export..."
-
-  python3 "$FALLBACK_SCRIPT" "$OUTPUT_DIR"
-  STATUS=$?
-
-  if [ "$STATUS" -eq 0 ] && [ -f "$TRANSFORMS" ]; then
-    echo "✅ transforms.json generated successfully"
-    exit 0
-  else
-    echo "💀 Transforms generation failed"
-    exit 1
-  fi
-fi
-
-# ======================
-# NS PIPELINE
+# RUN PIPELINE
 # ======================
 echo "🚀 Running ns-process-data..."
 
 set +e
-
-COLMAP_BIN=$(which colmap || true)
-
-if [ -z "$COLMAP_BIN" ]; then
-  echo "❌ COLMAP not found in PATH"
-  exit 1
-else
-  echo "COLMAP found in $COLMAP_BIN"
-fi
-
-# ======================
-# 🔧 WRAPPER COLMAP (FIX GPU BUG)
-# ======================
-echo "🔧 Wrapping COLMAP to force CPU"
-
-mkdir -p /tmp/bin
-
-cat << EOF > /tmp/bin/colmap
-#!/bin/bash
-"$COLMAP_BIN" "\$@" --SiftExtraction.use_gpu 0
-EOF
-
-chmod +x /tmp/bin/colmap
-export PATH="/tmp/bin:$PATH"
-
-echo "👉 Using COLMAP wrapper: $(which colmap)"
-
 
 ns-process-data images \
   --data "$DATA_DIR" \
@@ -171,49 +98,26 @@ ns-process-data images \
   --output-dir "$OUTPUT_DIR" \
   --camera-type $CAMERA_TYPE \
   --matching-method sequential \
-  --num-downscales 1 $VERBOSE
-  
-  2> "$LOG_FILE"
+  --num-downscales 1 \
+  > "$LOG_FILE" 2>&1
 
 STATUS=$?
 set -e
 
 # ======================
-# FALLBACK IF FAIL
+# STRICT VALIDATION
 # ======================
 if [ "$STATUS" -ne 0 ]; then
   echo "❌ PIPELINE FAILED"
-  echo "📄 Last logs:"
-  tail -n 40 "$LOG_FILE"
-
-  if [ -f "$COLMAP_DIR/cameras.bin" ] || [ -f "$COLMAP_DIR/images.bin" ]; then
-    echo "⚠️ COLMAP detected → fallback transforms"
-
-    python3 "$FALLBACK_SCRIPT" "$OUTPUT_DIR"
-
-    FALLBACK_STATUS=$?
-
-    if [ "$FALLBACK_STATUS" -eq 0 ]; then
-      echo "✅ fallback OK"
-      exit 0
-    else
-      echo "💀 fallback failed"
-      exit 1
-    fi
-  else
-    echo "💀 No COLMAP output → cannot recover"
-    exit 1
-  fi
-fi
-
-# ======================
-# 🔥 CRITICAL FIX: FAKE SUCCESS DETECTION
-# ======================
-if [ ! -f "$TRANSFORMS" ]; then
-  echo "💀 ns-process-data returned SUCCESS but transforms.json is missing"
-  echo "📄 Last logs:"
-  tail -n 40 "$LOG_FILE"
+  tail -n 50 "$LOG_FILE"
   exit 1
 fi
 
-echo "✅ ns-process-data SUCCESS"
+# 🔥 CRITICAL CHECK
+if [ ! -f "$TRANSFORMS" ]; then
+  echo "💀 SUCCESS BUT NO transforms.json"
+  tail -n 50 "$LOG_FILE"
+  exit 1
+fi
+
+echo "✅ ns-process-data SUCCESS (PYCOLMAP MODE)"
