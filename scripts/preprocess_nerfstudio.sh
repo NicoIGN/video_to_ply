@@ -15,7 +15,7 @@ OUTPUT_DIR=${2:-dataset/ori}
 DEVICE=${DEVICE:-cpu}
 
 SKIP_NS=false
-PYCOLMAP_MODE=true   # 🔥 NEW: force safe backend
+PYCOLMAP_MODE=false   # 🔥 NEW: force safe backend
 
 # ======================
 # FLAGS
@@ -68,6 +68,11 @@ else
   export MPLBACKEND=Agg
   export COLMAP_SIFT_NO_GPU=1
   export NS_DISABLE_GPU=1
+  export SIFT_DISABLE_GPU=1
+  export NS_EXTRA_COLMAP_FLAGS=""
+  export COLMAP_ARGS=""
+  export COLMAP_USE_GPU=0
+
 fi
 
 # ======================
