@@ -23,8 +23,10 @@ dependencies:
   - ffmpeg
 
   # 🧊 geometry / SfM stack
+  - "colmap>=3.8,<4.0"
+  - pycolmap>=0.6
   - cgal
-  - colmap
+  - faiss-cpu
 
   # 🖥️ UI
   - glew
