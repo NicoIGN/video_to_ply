@@ -147,6 +147,24 @@ else
   echo "COLMAP found in $COLMAP_BIN"
 fi
 
+# ======================
+# 🔧 WRAPPER COLMAP (FIX GPU BUG)
+# ======================
+echo "🔧 Wrapping COLMAP to force CPU"
+
+mkdir -p /tmp/bin
+
+cat << EOF > /tmp/bin/colmap
+#!/bin/bash
+"$COLMAP_BIN" "\$@" --SiftExtraction.use_gpu 0
+EOF
+
+chmod +x /tmp/bin/colmap
+export PATH="/tmp/bin:$PATH"
+
+echo "👉 Using COLMAP wrapper: $(which colmap)"
+
+
 ns-process-data images \
   --data "$DATA_DIR" \
   --sfm_tool colmap \
@@ -186,6 +204,16 @@ if [ "$STATUS" -ne 0 ]; then
     echo "💀 No COLMAP output → cannot recover"
     exit 1
   fi
+fi
+
+# ======================
+# 🔥 CRITICAL FIX: FAKE SUCCESS DETECTION
+# ======================
+if [ ! -f "$TRANSFORMS" ]; then
+  echo "💀 ns-process-data returned SUCCESS but transforms.json is missing"
+  echo "📄 Last logs:"
+  tail -n 40 "$LOG_FILE"
+  exit 1
 fi
 
 echo "✅ ns-process-data SUCCESS"
