@@ -25,7 +25,7 @@ dependencies:
   - imageio-ffmpeg
 
   # 🧊 geometry / SfM stack
-  - "colmap>=3.8,<4.0"
+  - colmap=3.8  # au dela, incomaptibilité avec nerfstudio
   - pycolmap>=0.6
   - cgal
   - faiss-cpu
