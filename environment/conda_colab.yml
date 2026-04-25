@@ -26,10 +26,10 @@ dependencies:
 
   # 🧊 geometry / SfM stack
   - colmap=3.8  # au dela, incomaptibilité avec nerfstudio
-  - pycolmap>=0.6
   - cgal
   - faiss-cpu
-  
+#  - pycolmap>=0.6
+
 
   # 🖥️ UI (souvent inutile mais requis par colmap)
   - glew

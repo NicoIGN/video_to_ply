@@ -15,7 +15,6 @@ OUTPUT_DIR=${2:-dataset/ori}
 DEVICE=${DEVICE:-cpu}
 
 SKIP_NS=false
-PYCOLMAP_MODE=false
 
 # ======================
 # FLAGS
@@ -24,9 +23,6 @@ for arg in "$@"; do
   case "$arg" in
     --skip-ns)
       SKIP_NS=true
-      ;;
-    --pycolmap)
-      PYCOLMAP_MODE=true
       ;;
   esac
 done
@@ -50,7 +46,6 @@ echo "────────────────────────�
 echo "📁 INPUT   : $DATA_DIR"
 echo "📁 OUTPUT  : $OUTPUT_DIR"
 echo "⚙️  DEVICE  : $DEVICE"
-echo "🧠 PYCOLMAP: $PYCOLMAP_MODE"
 echo "────────────────────────────────────"
 
 # ======================
@@ -66,14 +61,6 @@ export NUMEXPR_NUM_THREADS=1
 if [[ "$DEVICE" == "cpu" ]]; then
   echo "🧠 CPU MODE"
   export LIBGL_ALWAYS_SOFTWARE=1
-fi
-
-# ======================
-# PYCOLMAP MODE (OPTIONNEL)
-# ======================
-if [[ "$PYCOLMAP_MODE" == "true" ]]; then
-  echo "🚀 PYCOLMAP MODE ENABLED"
-  export NERFSTUDIO_SFM_BACKEND=pycolmap
 fi
 
 # ======================
