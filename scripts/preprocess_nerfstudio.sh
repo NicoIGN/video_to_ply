@@ -66,6 +66,8 @@ else
   export LIBGL_ALWAYS_SOFTWARE=1
   export QT_QPA_PLATFORM=offscreen
   export MPLBACKEND=Agg
+  export COLMAP_SIFT_NO_GPU=1
+  export NS_DISABLE_GPU=1
 fi
 
 # ======================
