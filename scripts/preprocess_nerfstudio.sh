@@ -78,6 +78,7 @@ if [[ "$PYCOLMAP_MODE" == "true" ]]; then
 
   export NERFSTUDIO_SFM_BACKEND=pycolmap
   export NS_USE_PYCOLMAP=1
+  echo colmap: `which which colmap`
 fi
 
 # ======================
