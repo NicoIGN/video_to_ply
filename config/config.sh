@@ -95,7 +95,7 @@ WITH_NERFSTUDIO="true"
 ############################
 
 #CAMERA_RES_SCALE_FACTOR=1.0
-CAMERA_RES_SCALE_FACTOR=0.25  # 0.5 = FAST MODE (~4x speedup)
+CAMERA_RES_SCALE_FACTOR=0.5  # 0.5 = FAST MODE (~4x speedup)
 
 ############################
 # TRAINING PARAMETERS (NERF CORE)
@@ -128,8 +128,8 @@ NUM_NERF_SAMPLES_PER_RAY=32
 # 1er nombre : exploration grossière (zones importantes)
 # 2e nombre : raffinement des zones sélectionnées
 # → améliore qualité et efficacité du rendu
-# NUM_PROPOSAL_SAMPLES_PER_RAY="160 64"
-NUM_PROPOSAL_SAMPLES_PER_RAY="64 32"
+NUM_PROPOSAL_SAMPLES_PER_RAY="160 64"
+#NUM_PROPOSAL_SAMPLES_PER_RAY="64 32"
 
 
 ############################
