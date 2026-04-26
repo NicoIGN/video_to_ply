@@ -36,7 +36,7 @@ fi
 # évite crash si non défini dans config
 TRAIN_VIS_MODE=${TRAIN_VIS_MODE:-tensorboard}
 
-MODEL_IMPLEMENTATION=""
+export MODEL_IMPLEMENTATION=""
 if [ "$DEVICE" = "gpu" ]; then
     MODEL_IMPLEMENTATION = "tcnn"
 elif [ "$DEVICE" = "cpu" ]; then
