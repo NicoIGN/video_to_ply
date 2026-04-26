@@ -51,16 +51,17 @@ echo "────────────────────────�
 # ======================
 # ENV
 # ======================
-export QT_QPA_PLATFORM=offscreen
-export MPLBACKEND=Agg
-export CUDA_VISIBLE_DEVICES=""
-export OMP_NUM_THREADS=1
-export MKL_NUM_THREADS=1
-export NUMEXPR_NUM_THREADS=1
+
 
 if [[ "$DEVICE" == "cpu" ]]; then
   echo "🧠 CPU MODE"
   export LIBGL_ALWAYS_SOFTWARE=1
+  export QT_QPA_PLATFORM=offscreen
+  export MPLBACKEND=Agg
+  export CUDA_VISIBLE_DEVICES=""
+  export OMP_NUM_THREADS=1
+  export MKL_NUM_THREADS=1
+  export NUMEXPR_NUM_THREADS=1
 fi
 
 # ======================
