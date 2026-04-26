@@ -37,11 +37,13 @@ fi
 TRAIN_VIS_MODE=${TRAIN_VIS_MODE:-tensorboard}
 
 export MODEL_IMPLEMENTATION=""
-
+export MACHINE_DEVICE_TYPE=""
 if [ "$DEVICE" = "gpu" ]; then
     MODEL_IMPLEMENTATION="tcnn"
+    MACHINE_DEVICE_TYPE="cuda"
 elif [ "$DEVICE" = "cpu" ]; then
     MODEL_IMPLEMENTATION="torch"
+        MACHINE_DEVICE_TYPE="cpu"
 else
     echo "❌ CONFIGURATION ERROR: DEVICE unknown, should be cpu or gpu"
     exit 1
@@ -94,12 +96,12 @@ echo "────────────────────────�
 # TRAIN
 # ======================
 #EXPERIMENT_NAME="$(basename "$OUTPUTDIR")"
-EXPERIMENT_NAME="outputs"
+export EXPERIMENT_NAME="model3d"
 
 ns-train "$MODEL" \
   --data "$DATA" \
   --output-dir "$OUTPUTDIR" \
-  --machine.device-type "$DEVICE" \
+  --machine.device-type "$MACHINE_DEVICE_TYPE" \
   --max-num-iterations "$MAX_ITER" \
   --experiment-name "$EXPERIMENT_NAME" \
   \
