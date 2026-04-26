@@ -98,7 +98,7 @@ echo "────────────────────────�
 # ======================
 # TRAIN
 # ======================
-
+export MAX_JOBS=2
 
 ns-train "$MODEL" \
     --output-dir "$OUTPUTDIR" \
