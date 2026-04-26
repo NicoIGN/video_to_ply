@@ -37,6 +37,7 @@ Options:
   --root                 Root output directory (default: runs/default)
   --fps                  Frame extraction FPS (default: 10)
   --device               cpu | gpu (default: cpu)
+  --model                nerfacto | splatfacto (default: nerfacto)
   --max-iter             Training iterations (default: 2000)
   --skip-conda           Skip conda environment setup (useful for Colab)
 
@@ -58,6 +59,7 @@ while [[ $# -gt 0 ]]; do
     --video) VIDEO="$2"; shift 2 ;;
     --fps) FPS="$2"; shift 2 ;;
     --device) DEVICE="$2"; shift 2 ;;
+    --model) MODEL="$2"; shift 2 ;;
     --root) ROOT_DIR="$2"; shift 2 ;;
     --max-iter) MAX_ITER="$2"; shift 2 ;;
     --skip-conda) SKIP_CONDA=true; shift ;;
