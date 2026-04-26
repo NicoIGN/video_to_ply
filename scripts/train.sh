@@ -98,18 +98,50 @@ echo "────────────────────────�
 # ======================
 # TRAIN
 # ======================
-export MAX_JOBS=2
 
-ns-train "$MODEL" \
-    --output-dir "$OUTPUTDIR" \
-    --experiment-name "$EXPERIMENT_NAME" \
-    --machine.device-type "$MACHINE_DEVICE_TYPE" \
-    --vis "$TRAIN_VIS_MODE" \
-    --max-num-iterations "$MAX_ITER" \
-    \
-    --steps-per-save 50 \
-    --steps-per-eval-all-images 50 \
-    --save-only-latest-checkpoint True \
-    \
+COMMON_ARGS=(
+  "$MODEL"
+  --output-dir "$OUTPUTDIR"
+  --experiment-name "$EXPERIMENT_NAME"
+  --machine.device-type "$MACHINE_DEVICE_TYPE"
+  --vis "$TRAIN_VIS_MODE"
+  --max-num-iterations "$MAX_ITER"
+  --steps-per-save 50
+  --steps-per-eval-all-images 50
+  --save-only-latest-checkpoint True
+)
+
+# ======================
+# DEVICE SWITCH
+# ======================
+
+if [[ "$DEVICE" == "gpu" ]]; then
+
+  ns-train "${COMMON_ARGS[@]}" \
+    --pipeline.datamanager.train-num-rays-per-batch "$TRAIN_RAYS_PER_BATCH" \
+    --pipeline.model.predict-normals True \
+    --pipeline.model.implementation "$MODEL_IMPLEMENTATION" \
     nerfstudio-data \
     --data "$DATA"
+
+elif [[ "$DEVICE" == "cpu" ]]; then
+
+  # CPU-safe overrides (IMPORTANT)
+  CPU_ARGS=(
+    --pipeline.datamanager.train-num-rays-per-batch "$TRAIN_RAYS_PER_BATCH"
+    --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
+    --pipeline.model.num-nerf-samples-per-ray "$NUM_NERF_SAMPLES_PER_RAY"
+    --pipeline.model.num-proposal-samples-per-ray $NUM_PROPOSAL_SAMPLES_PER_RAY
+    --pipeline.model.max-res "$MAX_RES"
+    --pipeline.model.predict-normals True
+    --pipeline.model.implementation "$MODEL_IMPLEMENTATION"
+  )
+
+  ns-train "${COMMON_ARGS[@]}" \
+    "${CPU_ARGS[@]}" \
+    --data "$DATA"
+
+else
+  echo "❌ CONFIGURATION ERROR: DEVICE must be cpu or gpu"
+  exit 1
+fi
