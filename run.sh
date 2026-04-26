@@ -313,6 +313,15 @@ else
     echo ""
     echo ""
     echo "🧠 Training..."
+    
+    if [ "$DEVICE" == "gpu" ]; then
+        MODEL_IMPLEMENTATION = "tcnn"
+    elif [ "$DEVICE" == "cpu" ]; then
+        MODEL_IMPLEMENTATION = "torch"
+    else
+        echo "❌ CONFIGURATION ERROR: DEVICE unknown, should be cpu or gpu"
+        exit 1
+    fi
 
     MODEL="$MODEL" \
     DEVICE="$DEVICE" \

@@ -59,7 +59,11 @@ export DEVICE
 # MODEL CONFIG
 ############################
 
-MODEL="nerfacto"
+if [ -z "${MODEL+x}" ]; then
+  MODEL="nerfacto"
+fi
+
+
 
 # Nerfstudio backend implementation
 MODEL_IMPLEMENTATION="torch"
