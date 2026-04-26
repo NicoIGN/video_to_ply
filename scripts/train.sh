@@ -51,6 +51,9 @@ fi
 
 export MODEL_IMPLEMENTATION
 
+#EXPERIMENT_NAME="$(basename "$OUTPUTDIR")"
+export EXPERIMENT_NAME="model3d"
+
 # ======================
 # SUMMARY (IMPORTANT)
 # ======================
@@ -95,28 +98,26 @@ echo "────────────────────────�
 # ======================
 # TRAIN
 # ======================
-#EXPERIMENT_NAME="$(basename "$OUTPUTDIR")"
-export EXPERIMENT_NAME="model3d"
 
 ns-train "$MODEL" \
-  --data "$DATA" \
-  --output-dir "$OUTPUTDIR" \
-  --machine.device-type "$MACHINE_DEVICE_TYPE" \
-  --max-num-iterations "$MAX_ITER" \
-  --experiment-name "$EXPERIMENT_NAME" \
-  \
-  --vis "$TRAIN_VIS_MODE" \
-  \
-  --pipeline.datamanager.train-num-rays-per-batch "$TRAIN_RAYS_PER_BATCH" \
-  --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR" \
-  \
-  --pipeline.model.num-nerf-samples-per-ray "$NUM_NERF_SAMPLES_PER_RAY" \
-  --pipeline.model.num-proposal-samples-per-ray $NUM_PROPOSAL_SAMPLES_PER_RAY \
-  --pipeline.model.max-res "$MAX_RES" \
-  --pipeline.model.predict-normals True \
-  \
-  --pipeline.model.implementation "$MODEL_IMPLEMENTATION" \
-  \
-  --steps-per-save 50 \
-  --steps-per-eval-all-images 50 \
-  --save-only-latest-checkpoint True
+    --output-dir "$OUTPUTDIR" \
+    --experiment-name "$EXPERIMENT_NAME" \
+    --machine.device-type "$MACHINE_DEVICE_TYPE" \
+    --vis "$TRAIN_VIS_MODE" \
+    --max-num-iterations "$MAX_ITER" \
+    \
+    --pipeline.datamanager.train-num-rays-per-batch "$TRAIN_RAYS_PER_BATCH" \
+    --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR" \
+    \
+    --pipeline.model.num-nerf-samples-per-ray "$NUM_NERF_SAMPLES_PER_RAY" \
+    --pipeline.model.num-proposal-samples-per-ray $NUM_PROPOSAL_SAMPLES_PER_RAY \
+    --pipeline.model.max-res "$MAX_RES" \
+    --pipeline.model.predict-normals True \
+    --pipeline.model.implementation "$MODEL_IMPLEMENTATION" \
+    \
+    --steps-per-save 50 \
+    --steps-per-eval-all-images 50 \
+    --save-only-latest-checkpoint True \
+    \
+    nerfstudio-data \
+    --data "$DATA"
