@@ -27,6 +27,7 @@ dependencies:
   - pycolmap>=0.6
   - cgal
   - faiss-cpu
+  - plyfile
 
   # 🖥️ UI
   - glew

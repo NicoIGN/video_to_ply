@@ -28,6 +28,7 @@ dependencies:
   - colmap=3.8  # au dela, incomaptibilité avec nerfstudio
   - cgal
   - faiss-cpu
+  - plyfile
 #  - pycolmap>=0.6
 
 
