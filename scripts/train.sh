@@ -98,6 +98,7 @@ ns-train "$MODEL" \
   --pipeline.model.num-nerf-samples-per-ray "$NUM_NERF_SAMPLES_PER_RAY" \
   --pipeline.model.num-proposal-samples-per-ray $NUM_PROPOSAL_SAMPLES_PER_RAY \
   --pipeline.model.max-res "$MAX_RES" \
+  --pipeline.model.predict-normals True \
   \
   --pipeline.model.implementation "$MODEL_IMPLEMENTATION" \
   \

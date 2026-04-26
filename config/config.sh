@@ -91,7 +91,7 @@ WITH_NERFSTUDIO="true"
 ############################
 
 #CAMERA_RES_SCALE_FACTOR=1.0
-CAMERA_RES_SCALE_FACTOR=0.5  # 0.5 = FAST MODE (~4x speedup)
+CAMERA_RES_SCALE_FACTOR=0.25  # 0.5 = FAST MODE (~4x speedup)
 
 ############################
 # TRAINING PARAMETERS (NERF CORE)
@@ -100,12 +100,15 @@ CAMERA_RES_SCALE_FACTOR=0.5  # 0.5 = FAST MODE (~4x speedup)
 # Nombre total d’itérations d’entraînement
 # → 1 itération = optimisation sur un batch de rayons
 # ↑ augmente la qualité mais augmente le temps de calcul
-MAX_ITER=2000
+if [ -z "${MAX_ITER+x}" ]; then
+  MAX_ITER=2000
+fi
 
 # Nombre de rayons (pixels simulés) traités par batch
 # → contrôle la stabilité et la mémoire utilisée
 # ↑ plus grand = plus stable mais plus lent
-TRAIN_RAYS_PER_BATCH=1024
+# TRAIN_RAYS_PER_BATCH=1024
+TRAIN_RAYS_PER_BATCH=256
 
 
 ############################
@@ -121,7 +124,8 @@ NUM_NERF_SAMPLES_PER_RAY=32
 # 1er nombre : exploration grossière (zones importantes)
 # 2e nombre : raffinement des zones sélectionnées
 # → améliore qualité et efficacité du rendu
-NUM_PROPOSAL_SAMPLES_PER_RAY="160 64"
+# NUM_PROPOSAL_SAMPLES_PER_RAY="160 64"
+NUM_PROPOSAL_SAMPLES_PER_RAY="64 32"
 
 
 ############################
@@ -131,7 +135,8 @@ NUM_PROPOSAL_SAMPLES_PER_RAY="160 64"
 # Résolution maximale utilisée pendant l’entraînement
 # → les images peuvent être downscalées automatiquement
 # ↑ plus élevé = plus de détails mais plus lent et plus gourmand
-MAX_RES=1024
+# MAX_RES=1024
+MAX_RES=256
 
 
 ############################
