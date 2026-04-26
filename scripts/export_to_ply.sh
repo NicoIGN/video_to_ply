@@ -18,7 +18,7 @@ if [ -z "$EXPORT_DIR" ] || [ -z "$ROOT_DIR" ]; then
   exit 1
 fi
 
-NERF_ROOT="$ROOT_DIR/model3d/nerfacto"
+NERF_ROOT="$ROOT_DIR/nerfacto"
 
 if [ ! -d "$NERF_ROOT" ]; then
   echo "❌ nerfacto folder not found: $NERF_ROOT"

@@ -18,7 +18,7 @@ if [ -z "$EXPORT_DIR" ] || [ -z "$ROOT_DIR" ]; then
   exit 1
 fi
 
-SPLAT_ROOT="$ROOT_DIR/model3d/splatfacto"
+SPLAT_ROOT="$ROOT_DIR/splatfacto"
 
 if [ ! -d "$SPLAT_ROOT" ]; then
   echo "❌ splatfacto folder not found: $SPLAT_ROOT"

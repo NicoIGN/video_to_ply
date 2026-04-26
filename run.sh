@@ -239,7 +239,7 @@ fi
 INPUT_DIR="$ROOT_DIR/input"
 ORI_DIR="$ROOT_DIR/ori"
 IMAGE_DIR="$ORI_DIR/images"
-OUTPUT_DIR="$ROOT_DIR/outputs"
+OUTPUT_DIR="$ROOT_DIR//model3d"
 EXPORT_DIR="$ROOT_DIR/exports"
 TRAIN_DIR="$ROOT_DIR"
 
