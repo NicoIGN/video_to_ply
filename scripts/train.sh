@@ -36,10 +36,10 @@ fi
 # évite crash si non défini dans config
 TRAIN_VIS_MODE=${TRAIN_VIS_MODE:-tensorboard}
 
-
-if [ "$DEVICE" == "gpu" ]; then
+MODEL_IMPLEMENTATION=""
+if [ "$DEVICE" = "gpu" ]; then
     MODEL_IMPLEMENTATION = "tcnn"
-elif [ "$DEVICE" == "cpu" ]; then
+elif [ "$DEVICE" = "cpu" ]; then
     MODEL_IMPLEMENTATION = "torch"
 else
     echo "❌ CONFIGURATION ERROR: DEVICE unknown, should be cpu or gpu"
@@ -56,6 +56,7 @@ echo "────────────────────────�
 echo "📁 DATA                     : $DATA"
 echo "📁 OUTPUTDIR                : $OUTPUTDIR"
 echo "🧪 MODEL                    : $MODEL"
+echo "🧪 MODEL_IMPLEMENTATION     : $MODEL_IMPLEMENTATION"
 echo "🧪 EXPERIMENT_NAME         : $EXPERIMENT_NAME"
 echo "⚙️ DEVICE                   : $DEVICE"
 echo "🔁 MAX ITERATIONS          : $MAX_ITER"
