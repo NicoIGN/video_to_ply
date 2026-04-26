@@ -16,6 +16,10 @@ NO_PROXY=true
 
 ROOT_DIR="runs/default"
 
+export SCENE_NAME="scene3d"
+
+
+
 INPUT_DIR=""
 FRAME_DIR=""
 ORI_DIR=""
@@ -95,7 +99,7 @@ WITH_NERFSTUDIO="true"
 ############################
 
 #CAMERA_RES_SCALE_FACTOR=1.0
-CAMERA_RES_SCALE_FACTOR=0.5  # 0.5 = FAST MODE (~4x speedup)
+CAMERA_RES_SCALE_FACTOR=0.75  # 0.5 = FAST MODE (~4x speedup)
 
 ############################
 # TRAINING PARAMETERS (NERF CORE)
@@ -105,14 +109,14 @@ CAMERA_RES_SCALE_FACTOR=0.5  # 0.5 = FAST MODE (~4x speedup)
 # → 1 itération = optimisation sur un batch de rayons
 # ↑ augmente la qualité mais augmente le temps de calcul
 if [ -z "${MAX_ITER+x}" ]; then
-  MAX_ITER=2000
+  MAX_ITER=3000
 fi
 
 # Nombre de rayons (pixels simulés) traités par batch
 # → contrôle la stabilité et la mémoire utilisée
 # ↑ plus grand = plus stable mais plus lent
 # TRAIN_RAYS_PER_BATCH=1024
-TRAIN_RAYS_PER_BATCH=256
+TRAIN_RAYS_PER_BATCH=512
 
 
 ############################
@@ -140,7 +144,7 @@ NUM_PROPOSAL_SAMPLES_PER_RAY="160 64"
 # → les images peuvent être downscalées automatiquement
 # ↑ plus élevé = plus de détails mais plus lent et plus gourmand
 # MAX_RES=1024
-MAX_RES=256
+MAX_RES=512
 
 
 ############################
@@ -196,7 +200,7 @@ NORMAL_METHOD="open3d"
 # - fast     → très rapide, preview / debug
 # - balanced → compromis qualité/vitesse (recommandé)
 # - quality  → export complet haute qualité (lent)
-EXPORT_MODE="balanced"
+EXPORT_MODE="quality"
 
 # PARAMÈTRES DÉRIVÉS (utilisés par export.sh)
 
