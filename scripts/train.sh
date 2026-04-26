@@ -92,7 +92,6 @@ echo "────────────────────────�
 # COMMON ARGS
 # ======================
 COMMON_ARGS=(
-  "$MODEL"
   --output-dir "$OUTPUTDIR"
   --experiment-name "$EXPERIMENT_NAME"
   --machine.device-type "$MACHINE_DEVICE_TYPE"
@@ -103,41 +102,29 @@ COMMON_ARGS=(
   --save-only-latest-checkpoint True
 )
 
-
 # ======================
 # DEVICE-SPECIFIC ARGS
 # ======================
 if [[ "$DEVICE" == "gpu" ]]; then
 
   DEVICE_ARGS=(
-    nerfstudio-data
-    --data "$DATA"
     --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
   )
-
-  # ⚠️ SAFE RULE:
-  # only enable normals for nerfacto models
-  if [[ "$MODEL" == *"nerfacto"* ]]; then
-    DEVICE_ARGS+=(
-      --pipeline.model.predict-normals True
-    )
-  fi
 
 elif [[ "$DEVICE" == "cpu" ]]; then
 
   DEVICE_ARGS=(
-    nerfstudio-data
-    --data "$DATA"
     --pipeline.datamanager.train-num-rays-per-batch "$TRAIN_RAYS_PER_BATCH"
     --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
-    --pipeline.model.implementation "$MODEL_IMPLEMENTATION"
-    --pipeline.datamanager.train-num-rays-per-batch "$TRAIN_RAYS_PER_BATCH"
     --pipeline.model.num-nerf-samples-per-ray "$NUM_NERF_SAMPLES_PER_RAY"
     --pipeline.model.num-proposal-samples-per-ray "$NUM_PROPOSAL_SAMPLES_PER_RAY"
     --pipeline.model.max-res "$MAX_RES"
-    --pipeline.model.implementation "$MODEL_IMPLEMENTATION"
+    --pipeline.model.predict-normals True
   )
 
+else
+  echo "❌ DEVICE must be cpu or gpu"
+  exit 1
 fi
 
 
@@ -145,8 +132,16 @@ fi
 # RUN (CRASH SAFE)
 # ======================
 set +e
-ns-train "${COMMON_ARGS[@]}" "${DEVICE_ARGS[@]}"
+
+ns-train \
+  "$MODEL" \
+  nerfstudio-data \
+  --data "$DATA" \
+  "${DEVICE_ARGS[@]}" \
+  "${COMMON_ARGS[@]}"
+
 STATUS=$?
+
 set -e
 
 if [ "$STATUS" -ne 0 ]; then
