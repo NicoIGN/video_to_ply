@@ -88,13 +88,11 @@ echo "────────────────────────�
 echo "🔥 STARTING TRAINING..."
 echo "────────────────────────────────────────────"
 
-
 # ======================
 # COMMON ARGS
 # ======================
 COMMON_ARGS=(
   "$MODEL"
-  --data "$DATA"
   --output-dir "$OUTPUTDIR"
   --experiment-name "$EXPERIMENT_NAME"
   --machine.device-type "$MACHINE_DEVICE_TYPE"
@@ -112,12 +110,14 @@ COMMON_ARGS=(
 if [[ "$DEVICE" == "gpu" ]]; then
 
   DEVICE_ARGS=(
+    nerfstudio-data
+    --data "$DATA"
     --pipeline.datamanager.train-num-rays-per-batch "$TRAIN_RAYS_PER_BATCH"
     --pipeline.model.implementation "$MODEL_IMPLEMENTATION"
   )
 
-  # ⚠️ IMPORTANT FIX:
-  # predict-normals = désactivé par défaut (splatfacto / gsplat crash sinon)
+  # ⚠️ SAFE RULE:
+  # only enable normals for nerfacto models
   if [[ "$MODEL" == *"nerfacto"* ]]; then
     DEVICE_ARGS+=(
       --pipeline.model.predict-normals True
@@ -127,10 +127,12 @@ if [[ "$DEVICE" == "gpu" ]]; then
 elif [[ "$DEVICE" == "cpu" ]]; then
 
   DEVICE_ARGS=(
+    nerfstudio-data
+    --data "$DATA"
     --pipeline.datamanager.train-num-rays-per-batch "$TRAIN_RAYS_PER_BATCH"
     --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
     --pipeline.model.num-nerf-samples-per-ray "$NUM_NERF_SAMPLES_PER_RAY"
-    --pipeline.model.num-proposal-samples-per-ray $NUM_PROPOSAL_SAMPLES_PER_RAY
+    --pipeline.model.num-proposal-samples-per-ray "$NUM_PROPOSAL_SAMPLES_PER_RAY"
     --pipeline.model.max-res "$MAX_RES"
     --pipeline.model.implementation "$MODEL_IMPLEMENTATION"
   )
