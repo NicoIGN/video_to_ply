@@ -99,8 +99,13 @@ echo "────────────────────────�
 # TRAIN
 # ======================
 
+# ======================
+# COMMON ARGS
+# ======================
+
 COMMON_ARGS=(
   "$MODEL"
+  --data "$DATA"
   --output-dir "$OUTPUTDIR"
   --experiment-name "$EXPERIMENT_NAME"
   --machine.device-type "$MACHINE_DEVICE_TYPE"
@@ -112,36 +117,44 @@ COMMON_ARGS=(
 )
 
 # ======================
-# DEVICE SWITCH
+# DEVICE-SPECIFIC ARGS
 # ======================
 
 if [[ "$DEVICE" == "gpu" ]]; then
 
-  ns-train "${COMMON_ARGS[@]}" \
-    --pipeline.datamanager.train-num-rays-per-batch "$TRAIN_RAYS_PER_BATCH" \
-    --pipeline.model.predict-normals True \
-    --pipeline.model.implementation "$MODEL_IMPLEMENTATION" \
-    nerfstudio-data \
-    --data "$DATA"
+  DEVICE_ARGS=(
+    --pipeline.datamanager.train-num-rays-per-batch "$TRAIN_RAYS_PER_BATCH"
+    --pipeline.model.predict-normals True
+    --pipeline.model.implementation "$MODEL_IMPLEMENTATION"
+  )
 
 elif [[ "$DEVICE" == "cpu" ]]; then
 
-  # CPU-safe overrides (IMPORTANT)
-  CPU_ARGS=(
+  DEVICE_ARGS=(
     --pipeline.datamanager.train-num-rays-per-batch "$TRAIN_RAYS_PER_BATCH"
     --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
     --pipeline.model.num-nerf-samples-per-ray "$NUM_NERF_SAMPLES_PER_RAY"
-    --pipeline.model.num-proposal-samples-per-ray $NUM_PROPOSAL_SAMPLES_PER_RAY
+    --pipeline.model.num-proposal-samples-per-ray "$NUM_PROPOSAL_SAMPLES_PER_RAY"
     --pipeline.model.max-res "$MAX_RES"
     --pipeline.model.predict-normals True
     --pipeline.model.implementation "$MODEL_IMPLEMENTATION"
   )
 
-  ns-train "${COMMON_ARGS[@]}" \
-    "${CPU_ARGS[@]}" \
-    --data "$DATA"
-
 else
-  echo "❌ CONFIGURATION ERROR: DEVICE must be cpu or gpu"
+  echo "❌ DEVICE must be cpu or gpu"
   exit 1
+fi
+
+# ======================
+# RUN
+# ======================
+
+set +e
+ns-train "${COMMON_ARGS[@]}" "${DEVICE_ARGS[@]}"
+STATUS=$?
+set -e
+
+if [ "$STATUS" -ne 0 ]; then
+  echo "❌ ns-train crashed (exit code: $STATUS)"
+  exit $STATUS
 fi
