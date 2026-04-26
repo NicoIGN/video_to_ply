@@ -59,8 +59,8 @@ echo "────────────────────────�
 # ======================
 # ENV FLAGS
 # ======================
-export TORCHDYNAMO_DISABLE=1
-export OMP_NUM_THREADS=1
+# export TORCHDYNAMO_DISABLE=1
+# export OMP_NUM_THREADS=1
 
 # ======================
 # DEBUG MODEL
@@ -106,4 +106,3 @@ else
   echo "   Install from: https://github.com/playcanvas/supersplat"
 fi
 
-echo "🎉 Export completed"
