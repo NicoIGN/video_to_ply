@@ -37,6 +37,15 @@ fi
 TRAIN_VIS_MODE=${TRAIN_VIS_MODE:-tensorboard}
 
 
+if [ "$DEVICE" == "gpu" ]; then
+    MODEL_IMPLEMENTATION = "tcnn"
+elif [ "$DEVICE" == "cpu" ]; then
+    MODEL_IMPLEMENTATION = "torch"
+else
+    echo "❌ CONFIGURATION ERROR: DEVICE unknown, should be cpu or gpu"
+    exit 1
+fi
+
 # ======================
 # SUMMARY (IMPORTANT)
 # ======================
