@@ -112,6 +112,7 @@ if [[ "$DEVICE" == "gpu" ]]; then
   DEVICE_ARGS=(
     nerfstudio-data
     --data "$DATA"
+    --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
   )
 
   # ⚠️ SAFE RULE:
@@ -128,8 +129,8 @@ elif [[ "$DEVICE" == "cpu" ]]; then
     nerfstudio-data
     --data "$DATA"
     --pipeline.datamanager.train-num-rays-per-batch "$TRAIN_RAYS_PER_BATCH"
-    --pipeline.model.implementation "$MODEL_IMPLEMENTATION"
     --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
+    --pipeline.model.implementation "$MODEL_IMPLEMENTATION"
     --pipeline.datamanager.train-num-rays-per-batch "$TRAIN_RAYS_PER_BATCH"
     --pipeline.model.num-nerf-samples-per-ray "$NUM_NERF_SAMPLES_PER_RAY"
     --pipeline.model.num-proposal-samples-per-ray "$NUM_PROPOSAL_SAMPLES_PER_RAY"
