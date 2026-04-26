@@ -334,12 +334,13 @@ fi
 # ----------------------
 if [ "$SKIP_EXPORT" = true ]; then
   echo "⏩ Skipping export (config)"
-elif find "$EXPORT_DIR" -name "*.ply" | grep -q .; then
-  echo "⏩ Skipping export"
-else
-  echo "📦 Exporting PLY..."
-  RUNS_DIR="$OUTPUT_DIR"
-  bash scripts/export.sh "$EXPORT_DIR" "$RUNS_DIR"
-fi
 
+elif find "$EXPORT_DIR" \( -name "*.ply" -o -name "*.spz" \) | grep -q .; then
+  echo "⏩ Skipping export (PLY/SPZ already exists)"
+
+else
+  echo "📦 Exporting Gaussian Splat + SPZ..."
+  RUNS_DIR="$OUTPUT_DIR"
+  bash scripts/export_to_spz.sh "$EXPORT_DIR" "$RUNS_DIR"
+fi
 echo "✅ DONE → $ROOT_DIR"
