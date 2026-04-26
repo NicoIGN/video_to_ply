@@ -130,7 +130,7 @@ elif [[ "$DEVICE" == "cpu" ]]; then
     --pipeline.datamanager.train-num-rays-per-batch "$TRAIN_RAYS_PER_BATCH"
     --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
     --pipeline.model.num-nerf-samples-per-ray "$NUM_NERF_SAMPLES_PER_RAY"
-    --pipeline.model.num-proposal-samples-per-ray "$NUM_PROPOSAL_SAMPLES_PER_RAY"
+    --pipeline.model.num-proposal-samples-per-ray $NUM_PROPOSAL_SAMPLES_PER_RAY
     --pipeline.model.max-res "$MAX_RES"
     --pipeline.model.implementation "$MODEL_IMPLEMENTATION"
   )
