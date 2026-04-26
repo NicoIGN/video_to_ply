@@ -90,6 +90,7 @@ echo "────────────────────────�
 
 # ======================
 # COMMON ARGS
+# (must come BEFORE nerfstudio-data)
 # ======================
 COMMON_ARGS=(
   --output-dir "$OUTPUTDIR"
@@ -104,6 +105,7 @@ COMMON_ARGS=(
 
 # ======================
 # DEVICE-SPECIFIC ARGS
+# (must come BEFORE nerfstudio-data)
 # ======================
 if [[ "$DEVICE" == "gpu" ]]; then
 
@@ -116,8 +118,9 @@ elif [[ "$DEVICE" == "cpu" ]]; then
   DEVICE_ARGS=(
     --pipeline.datamanager.train-num-rays-per-batch "$TRAIN_RAYS_PER_BATCH"
     --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
+    --pipeline.model.implementation "$MODEL_IMPLEMENTATION"
     --pipeline.model.num-nerf-samples-per-ray "$NUM_NERF_SAMPLES_PER_RAY"
-    --pipeline.model.num-proposal-samples-per-ray "$NUM_PROPOSAL_SAMPLES_PER_RAY"
+    --pipeline.model.num-proposal-samples-per-ray $NUM_PROPOSAL_SAMPLES_PER_RAY
     --pipeline.model.max-res "$MAX_RES"
     --pipeline.model.predict-normals True
   )
@@ -127,26 +130,26 @@ else
   exit 1
 fi
 
-
 # ======================
 # RUN (CRASH SAFE)
+# IMPORTANT: nerfstudio-data MUST be LAST
 # ======================
 set +e
 
 ns-train \
   "$MODEL" \
-  nerfstudio-data \
-  --data "$DATA" \
+  "${COMMON_ARGS[@]}" \
   "${DEVICE_ARGS[@]}" \
-  "${COMMON_ARGS[@]}"
+  nerfstudio-data \
+  --data "$DATA"
 
 STATUS=$?
 
 set -e
 
-if [ "$STATUS" -ne 0 ]; then
+if [[ "$STATUS" -ne 0 ]]; then
   echo "❌ ns-train crashed (exit code: $STATUS)"
-  exit $STATUS
+  exit "$STATUS"
 fi
 
 echo "✅ TRAINING COMPLETE"
