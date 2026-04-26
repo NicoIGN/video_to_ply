@@ -9,14 +9,6 @@ source "$SCRIPT_DIR/../config/config.sh"
 
 
 # ======================
-# ENV FLAGS
-# ======================
-export TORCHDYNAMO_DISABLE=1
-export OMP_NUM_THREADS=1
-export PYTORCH_ENABLE_MPS_FALLBACK=1
-
-
-# ======================
 # SAFETY CHECKS
 # ======================
 if [ -z "$DATA" ]; then
@@ -33,29 +25,33 @@ fi
 # ======================
 # DEFAULT VIS MODE FALLBACK
 # ======================
-# évite crash si non défini dans config
 TRAIN_VIS_MODE=${TRAIN_VIS_MODE:-tensorboard}
 
 export MODEL_IMPLEMENTATION=""
 export MACHINE_DEVICE_TYPE=""
+
 if [ "$DEVICE" = "gpu" ]; then
     MODEL_IMPLEMENTATION="tcnn"
     MACHINE_DEVICE_TYPE="cuda"
 elif [ "$DEVICE" = "cpu" ]; then
     MODEL_IMPLEMENTATION="torch"
-        MACHINE_DEVICE_TYPE="cpu"
+    MACHINE_DEVICE_TYPE="cpu"
+    export TORCHDYNAMO_DISABLE=1
+    export OMP_NUM_THREADS=1
+
 else
     echo "❌ CONFIGURATION ERROR: DEVICE unknown, should be cpu or gpu"
     exit 1
 fi
 
 export MODEL_IMPLEMENTATION
+export MACHINE_DEVICE_TYPE
 
-#EXPERIMENT_NAME="$(basename "$OUTPUTDIR")"
 export EXPERIMENT_NAME="model3d"
 
+
 # ======================
-# SUMMARY (IMPORTANT)
+# SUMMARY
 # ======================
 echo "────────────────────────────────────────────"
 echo "🚀 TRAINING CONFIG SUMMARY"
@@ -65,19 +61,17 @@ echo "📁 DATA                     : $DATA"
 echo "📁 OUTPUTDIR                : $OUTPUTDIR"
 echo "🧪 MODEL                    : $MODEL"
 echo "🧪 MODEL_IMPLEMENTATION     : $MODEL_IMPLEMENTATION"
-echo "🧪 EXPERIMENT_NAME         : $EXPERIMENT_NAME"
+echo "🧪 EXPERIMENT_NAME          : $EXPERIMENT_NAME"
 echo "⚙️ DEVICE                   : $DEVICE"
 echo "🔁 MAX ITERATIONS          : $MAX_ITER"
 echo "📊 VIS MODE                : $TRAIN_VIS_MODE"
 
 echo "────────────────────────────────────────────"
-
 echo "🧠 DATA PIPELINE"
 echo "  - train rays/batch       : $TRAIN_RAYS_PER_BATCH"
 echo "  - camera res scale       : $CAMERA_RES_SCALE_FACTOR"
 
 echo "────────────────────────────────────────────"
-
 echo "🧠 MODEL CONFIG"
 echo "  - nerf samples/ray       : $NUM_NERF_SAMPLES_PER_RAY"
 echo "  - proposal samples/ray   : $NUM_PROPOSAL_SAMPLES_PER_RAY"
@@ -85,7 +79,6 @@ echo "  - max resolution         : $MAX_RES"
 echo "  - implementation         : $MODEL_IMPLEMENTATION"
 
 echo "────────────────────────────────────────────"
-
 echo "💾 CHECKPOINTING"
 echo "  - steps per save         : 50"
 echo "  - steps per eval images  : 50"
@@ -95,14 +88,10 @@ echo "────────────────────────�
 echo "🔥 STARTING TRAINING..."
 echo "────────────────────────────────────────────"
 
-# ======================
-# TRAIN
-# ======================
 
 # ======================
 # COMMON ARGS
 # ======================
-
 COMMON_ARGS=(
   "$MODEL"
   --data "$DATA"
@@ -116,17 +105,24 @@ COMMON_ARGS=(
   --save-only-latest-checkpoint True
 )
 
+
 # ======================
 # DEVICE-SPECIFIC ARGS
 # ======================
-
 if [[ "$DEVICE" == "gpu" ]]; then
 
   DEVICE_ARGS=(
     --pipeline.datamanager.train-num-rays-per-batch "$TRAIN_RAYS_PER_BATCH"
-    --pipeline.model.predict-normals True
     --pipeline.model.implementation "$MODEL_IMPLEMENTATION"
   )
+
+  # ⚠️ IMPORTANT FIX:
+  # predict-normals = désactivé par défaut (splatfacto / gsplat crash sinon)
+  if [[ "$MODEL" == *"nerfacto"* ]]; then
+    DEVICE_ARGS+=(
+      --pipeline.model.predict-normals True
+    )
+  fi
 
 elif [[ "$DEVICE" == "cpu" ]]; then
 
@@ -136,19 +132,15 @@ elif [[ "$DEVICE" == "cpu" ]]; then
     --pipeline.model.num-nerf-samples-per-ray "$NUM_NERF_SAMPLES_PER_RAY"
     --pipeline.model.num-proposal-samples-per-ray "$NUM_PROPOSAL_SAMPLES_PER_RAY"
     --pipeline.model.max-res "$MAX_RES"
-    --pipeline.model.predict-normals True
     --pipeline.model.implementation "$MODEL_IMPLEMENTATION"
   )
 
-else
-  echo "❌ DEVICE must be cpu or gpu"
-  exit 1
 fi
 
-# ======================
-# RUN
-# ======================
 
+# ======================
+# RUN (CRASH SAFE)
+# ======================
 set +e
 ns-train "${COMMON_ARGS[@]}" "${DEVICE_ARGS[@]}"
 STATUS=$?
@@ -158,3 +150,5 @@ if [ "$STATUS" -ne 0 ]; then
   echo "❌ ns-train crashed (exit code: $STATUS)"
   exit $STATUS
 fi
+
+echo "✅ TRAINING COMPLETE"
