@@ -33,6 +33,7 @@ export MACHINE_DEVICE_TYPE=""
 if [ "$DEVICE" = "gpu" ]; then
     MODEL_IMPLEMENTATION="tcnn"
     MACHINE_DEVICE_TYPE="cuda"
+    export MAX_JOBS=2
 elif [ "$DEVICE" = "cpu" ]; then
     MODEL_IMPLEMENTATION="torch"
     MACHINE_DEVICE_TYPE="cpu"
@@ -98,8 +99,8 @@ COMMON_ARGS=(
   --machine.device-type "$MACHINE_DEVICE_TYPE"
   --vis "$TRAIN_VIS_MODE"
   --max-num-iterations "$MAX_ITER"
-  --steps-per-save 50
-  --steps-per-eval-all-images 50
+  --steps-per-save 250
+  --steps-per-eval-all-images 250
   --save-only-latest-checkpoint True
 )
 
