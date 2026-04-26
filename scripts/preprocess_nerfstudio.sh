@@ -45,7 +45,7 @@ rm -f "$LOG_FILE"
 echo "────────────────────────────────────"
 echo "📁 INPUT   : $DATA_DIR"
 echo "📁 OUTPUT  : $OUTPUT_DIR"
-echo "⚙️  DEVICE  : $DEVICE"
+echo "⚙️ DEVICE  : $DEVICE"
 echo "────────────────────────────────────"
 
 # ======================
