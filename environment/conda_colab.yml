@@ -43,8 +43,9 @@ dependencies:
   # ======================
   - pip:
       # 🔥 ML stack (GPU auto sur Colab)
-      - torch
+      - torch==2.51
       - torchvision
+      - torchaudio
 
       # nerfstudio
       - nerfstudio==1.1.5

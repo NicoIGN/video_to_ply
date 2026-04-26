@@ -37,8 +37,9 @@ dependencies:
 
   - pip:
       # 🔥 ML stack stable
-      - torch
+      - torch==2.51
       - torchvision
+      - torchaudio
 
       # nerfstudio stable
       - nerfstudio==1.1.5

@@ -18,20 +18,20 @@ if [ -z "$EXPORT_DIR" ] || [ -z "$ROOT_DIR" ]; then
   exit 1
 fi
 
-NERF_ROOT="$ROOT_DIR/nerfacto"
+SPLAT_ROOT="$ROOT_DIR/splatfacto"
 
-if [ ! -d "$NERF_ROOT" ]; then
-  echo "❌ nerfacto folder not found: $NERF_ROOT"
+if [ ! -d "$SPLAT_ROOT" ]; then
+  echo "❌ splatfacto folder not found: $SPLAT_ROOT"
   exit 1
 fi
 
 # ======================
 # FIND LATEST RUN
 # ======================
-RUN_DIR=$(ls -dt "$NERF_ROOT"/* 2>/dev/null | head -n 1)
+RUN_DIR=$(ls -dt "$SPLAT_ROOT"/* 2>/dev/null | head -n 1)
 
 if [ -z "$RUN_DIR" ]; then
-  echo "❌ No nerfacto runs found in $NERF_ROOT"
+  echo "❌ No splatfacto runs found in $SPLAT_ROOT"
   exit 1
 fi
 
@@ -50,7 +50,7 @@ mkdir -p "$EXPORT_DIR"
 
 echo "────────────────────────────────────────────"
 echo "📦 ROOT DIR       : $ROOT_DIR"
-echo "📦 NERF ROOT      : $NERF_ROOT"
+echo "📦 SPLAT ROOT      : $SPLAT_ROOT"
 echo "📦 RUN DIR        : $RUN_DIR"
 echo "📄 CONFIG         : $CONFIG"
 echo "📁 EXPORT DIR     : $EXPORT_DIR"
