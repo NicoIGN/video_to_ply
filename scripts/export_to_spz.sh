@@ -14,7 +14,7 @@ ROOT_DIR="$2"
 # CHECKS
 # ======================
 if [ -z "$EXPORT_DIR" ] || [ -z "$ROOT_DIR" ]; then
-  echo "❌ Usage: export_gs.sh <EXPORT_DIR> <ROOT_DIR>"
+  echo "❌ Usage: export_to_spz.sh <EXPORT_DIR> <ROOT_DIR>"
   exit 1
 fi
 

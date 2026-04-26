@@ -334,15 +334,47 @@ fi
 # ----------------------
 # 4. EXPORT
 # ----------------------
-if [ "$SKIP_EXPORT" = true ]; then
+if [[ "$SKIP_EXPORT" == "true" ]]; then
   echo "⏩ Skipping export (config)"
 
-elif find "$EXPORT_DIR" \( -name "*.ply" -o -name "*.spz" \) | grep -q .; then
-  echo "⏩ Skipping export (PLY/SPZ already exists)"
+elif [[ "$MODEL" == *"nerfacto"* ]] && find "$EXPORT_DIR" -type f -name "*.ply" | grep -q .; then
+  echo "⏩ Skipping export (PLY already exists)"
+
+elif [[ "$MODEL" == *"splatfacto"* ]] && find "$EXPORT_DIR" -type f -name "*.spz" | grep -q .; then
+  echo "⏩ Skipping export (SPZ already exists)"
+
+elif [[ "$MODEL" == *"nerfacto"* ]]; then
+  echo "📦 Exporting Nerfacto point cloud (.ply)..."
+
+  bash scripts/export_to_ply.sh "$EXPORT_DIR" "$OUTPUT_DIR"
+
+  PLY_FILE="$(find "$EXPORT_DIR" -type f -name '*.ply' | head -n 1)"
+
+  if [[ -n "$PLY_FILE" && -f "$PLY_FILE" ]]; then
+    echo "✅ PLY export successful: $PLY_FILE"
+  else
+    echo "❌ PLY export failed"
+    exit 1
+  fi
+
+elif [[ "$MODEL" == *"splatfacto"* ]]; then
+  echo "📦 Exporting Gaussian Splat (.spz)..."
+
+  bash scripts/export_to_spz.sh "$EXPORT_DIR" "$OUTPUT_DIR"
+
+  SPZ_FILE="$(find "$EXPORT_DIR" -type f -name '*.spz' | head -n 1)"
+
+  if [[ -n "$SPZ_FILE" && -f "$SPZ_FILE" ]]; then
+    echo "✅ SPZ export successful: $SPZ_FILE"
+  else
+    echo "❌ SPZ export failed"
+    exit 1
+  fi
 
 else
-  echo "📦 Exporting Gaussian Splat + SPZ..."
-  RUNS_DIR="$OUTPUT_DIR"
-  bash scripts/export_to_spz.sh "$EXPORT_DIR" "$RUNS_DIR"
+  echo "⚠️ Unsupported model for export: $MODEL"
+  exit 1
 fi
+
+
 echo "✅ DONE → $ROOT_DIR"

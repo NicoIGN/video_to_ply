@@ -79,11 +79,6 @@ echo "  - proposal samples/ray   : $NUM_PROPOSAL_SAMPLES_PER_RAY"
 echo "  - max resolution         : $MAX_RES"
 echo "  - implementation         : $MODEL_IMPLEMENTATION"
 
-echo "────────────────────────────────────────────"
-echo "💾 CHECKPOINTING"
-echo "  - steps per save         : 50"
-echo "  - steps per eval images  : 50"
-echo "  - keep only latest       : true"
 
 echo "────────────────────────────────────────────"
 echo "🔥 STARTING TRAINING..."
