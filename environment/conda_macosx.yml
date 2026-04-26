@@ -38,7 +38,7 @@ dependencies:
 
   - pip:
       # 🔥 ML stack stable
-      - torch==2.51
+      - torch==2.5.1
       - torchvision
       - torchaudio
 

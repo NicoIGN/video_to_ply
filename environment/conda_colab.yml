@@ -44,7 +44,7 @@ dependencies:
   # ======================
   - pip:
       # 🔥 ML stack (GPU auto sur Colab)
-      - torch==2.51
+      - torch==2.5.1
       - torchvision
       - torchaudio
 
