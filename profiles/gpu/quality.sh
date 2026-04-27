@@ -1,15 +1,19 @@
 ########################################
-# PERFORMANCE PROFILE 
+# PERFORMANCE PROFILE - QUALITY ONLY
 ########################################
 
-TRAINING_PROFILE="balanced"
+TRAINING_PROFILE="quality"
 
+DEVICE="gpu"
+MODEL="splatfacto"
+MODEL_IMPLEMENTATION="tcnn"
+TRAIN_VIS_MODE="tensorboard"
 ########################################
 # IMAGE / PREPROCESSING
 ########################################
 
-CAMERA_RES_SCALE_FACTOR=0.75
-MAX_RES=512
+CAMERA_RES_SCALE_FACTOR=1.0
+MAX_RES=1024
 NUM_DOWNSCALES=1
 SKIP_IMAGE_PROCESSING=true
 
@@ -17,16 +21,16 @@ SKIP_IMAGE_PROCESSING=true
 # TRAINING
 ########################################
 
-MAX_ITER=3000
-TRAIN_RAYS_PER_BATCH=256
+MAX_ITER=6000
+TRAIN_RAYS_PER_BATCH=512
 
-NUM_NERF_SAMPLES_PER_RAY=32
-NUM_PROPOSAL_SAMPLES_PER_RAY="64 32"
+NUM_NERF_SAMPLES_PER_RAY=64
+NUM_PROPOSAL_SAMPLES_PER_RAY="128 64"
 
 ########################################
-# EXPORT BALANCED
+# EXPORT QUALITY
 ########################################
 
-EXPORT_NUM_POINTS=500000
+EXPORT_NUM_POINTS=2000000
 EXPORT_DOWNSAMPLE=1
 

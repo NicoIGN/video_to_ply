@@ -4,6 +4,10 @@
 
 TRAINING_PROFILE="quality"
 
+DEVICE="cpu"
+MODEL="nerfacto"
+MODEL_IMPLEMENTATION="torch"
+TRAIN_VIS_MODE="tensorboard"
 ########################################
 # IMAGE / PREPROCESSING
 ########################################

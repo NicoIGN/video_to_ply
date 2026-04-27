@@ -71,18 +71,20 @@ fi
 
 
 # Nerfstudio backend implementation
-MODEL_IMPLEMENTATION="torch"
+if [ -z "${MODEL_IMPLEMENTATION+x}" ]; then
+    MODEL_IMPLEMENTATION="torch"
 # torch  -> CPU / safe fallback
 # tcnn   -> GPU ONLY (tiny-cuda-nn required)
-
+fi
 
 ############################
 # VIDEO PIPELINE
 ############################
 
 VIDEO_NAME="video.mov"
-FPS=10
-
+if [ -z "${FPS+x}" ]; then
+    FPS=10
+fi
 
 ############################
 # COLMAP / PREPROCESS
@@ -181,11 +183,9 @@ CAMERA_MODE="off"
 # ⚠️ IMPORTANT :
 # - "viewer" pour voir le resultat dans Nerfstudio
 # - "tensorboard" pour mode headless réel (batch / scripts)
-TRAIN_VIS_MODE="tensorboard"
-#TRAIN_VIS_MODE="viewer"
-
-if [ "$DEVICE" == "gpu" ]; then
+if [ -z "${TRAIN_VIS_MODE+x}" ]; then
     TRAIN_VIS_MODE="tensorboard"
+    #TRAIN_VIS_MODE="viewer"
 fi
 
 ############################
