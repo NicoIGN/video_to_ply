@@ -115,10 +115,11 @@ fi
 # Nombre de rayons (pixels simulés) traités par batch
 # → contrôle la stabilité et la mémoire utilisée
 # ↑ plus grand = plus stable mais plus lent
-# TRAIN_RAYS_PER_BATCH=1024
-#TRAIN_RAYS_PER_BATCH=512
-TRAIN_RAYS_PER_BATCH=256
-
+if [ -z "${TRAIN_RAYS_PER_BATCH+x}" ]; then
+    # TRAIN_RAYS_PER_BATCH=1024
+    #TRAIN_RAYS_PER_BATCH=512
+    TRAIN_RAYS_PER_BATCH=256
+fi
 
 ############################
 # SAMPLING (RECONSTRUCTION 3D)
@@ -127,15 +128,18 @@ TRAIN_RAYS_PER_BATCH=256
 # Nombre de points échantillonnés par rayon caméra
 # → chaque rayon est "découpé" en 3D pour estimer couleur + densité
 # ↑ plus élevé = détails plus fins mais calcul plus lourd
-NUM_NERF_SAMPLES_PER_RAY=32
+if [ -z "${NUM_NERF_SAMPLES_PER_RAY+x}" ]; then
+    NUM_NERF_SAMPLES_PER_RAY=32
+fi
 
 # Échantillonnage en 2 étapes (proposal network)
 # 1er nombre : exploration grossière (zones importantes)
 # 2e nombre : raffinement des zones sélectionnées
 # → améliore qualité et efficacité du rendu
-#NUM_PROPOSAL_SAMPLES_PER_RAY="160 64"
-NUM_PROPOSAL_SAMPLES_PER_RAY="64 32"
-
+if [ -z "${NUM_PROPOSAL_SAMPLES_PER_RAY+x}" ]; then
+    #NUM_PROPOSAL_SAMPLES_PER_RAY="160 64"
+    NUM_PROPOSAL_SAMPLES_PER_RAY="64 32"
+fi
 
 ############################
 # IMAGE / DATA RESOLUTION
@@ -144,16 +148,16 @@ NUM_PROPOSAL_SAMPLES_PER_RAY="64 32"
 # Résolution maximale utilisée pendant l’entraînement
 # → les images peuvent être downscalées automatiquement
 # ↑ plus élevé = plus de détails mais plus lent et plus gourmand
-# MAX_RES=1024
-MAX_RES=512
-
+if [ -z "${MAX_RES+x}" ]; then
+    # MAX_RES=1024
+    MAX_RES=512
+fi
 
 ############################
 # NERF ADVANCED SETTINGS
 ############################
 
 CAMERA_MODE="off"
-
 
 
 ############################
@@ -182,49 +186,12 @@ if [ "$DEVICE" == "gpu" ]; then
 fi
 
 ############################
-# PERFORMANCE FLAGS
-############################
-
-OMP_NUM_THREADS=1
-TORCHDYNAMO_DISABLE=1
-PYTORCH_ENABLE_MPS_FALLBACK=1
-
-
-
-############################
 # EXPORT CONFIG
 ############################
+# normales
 
 NORMAL_METHOD="open3d"
-
-# MODE GLOBAL D'EXPORT
-# - fast     → très rapide, preview / debug
-# - balanced → compromis qualité/vitesse (recommandé)
-# - quality  → export complet haute qualité (lent)
-EXPORT_MODE="balanced"
-
-# PARAMÈTRES DÉRIVÉS (utilisés par export.sh)
-
-# nombre de points exportés
-EXPORT_NUM_POINTS_FAST=200000
-EXPORT_NUM_POINTS_BALANCED=500000
-EXPORT_NUM_POINTS_QUALITY=2000000
-
-# normales
-EXPORT_NORMALS_FAST="open3d"
-EXPORT_NORMALS_BALANCED="open3d"
-EXPORT_NORMALS_QUALITY="open3d"
-
-# nettoyage
-EXPORT_REMOVE_OUTLIERS_FAST=True
-EXPORT_REMOVE_OUTLIERS_BALANCED=True
-EXPORT_REMOVE_OUTLIERS_QUALITY=True
-
-# downsampling global
-EXPORT_DOWNSAMPLE_FAST=2
-EXPORT_DOWNSAMPLE_BALANCED=1
-EXPORT_DOWNSAMPLE_QUALITY=1
-
+REMOVE_OUTLIERS=true
 
 ############################
 # CONDA

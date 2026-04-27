@@ -9,12 +9,27 @@ source "$SCRIPT_DIR/../config/config.sh"
 
 EXPORT_DIR="$1"
 ROOT_DIR="$2"
+PROFILE="$3"
+
+
+if [ -z "$PROFILE" ]; then
+  echo "⚠️  no profile loaded"
+else
+  if [ -f "profiles/${PROFILE}.sh" ]; then
+    echo "👉 profile ${PROFILE}"
+    source profiles/${PROFILE}.sh
+  else
+    echo "❌  profile ${PROFILE} not found"
+    echo "❌  use profile fast, quality or balanced"
+    exit 1
+  fi
+fi
 
 # ======================
 # CHECKS
 # ======================
 if [ -z "$EXPORT_DIR" ] || [ -z "$ROOT_DIR" ]; then
-  echo "❌ Usage: export_to_ply.sh <EXPORT_DIR> <ROOT_DIR>"
+  echo "❌ Usage: export_to_ply.sh <EXPORT_DIR> <ROOT_DIR> <PROFILE>"
   exit 1
 fi
 
@@ -54,32 +69,8 @@ echo "📦 NERF ROOT      : $NERF_ROOT"
 echo "📦 RUN DIR        : $RUN_DIR"
 echo "📄 CONFIG         : $CONFIG"
 echo "📁 EXPORT DIR     : $EXPORT_DIR"
-echo "⚙️ EXPORT MODE    : $EXPORT_MODE"
 echo "────────────────────────────────────────────"
 
-# ======================
-# EXPORT MODE
-# ======================
-case "$EXPORT_MODE" in
-  fast)
-    NUM_POINTS="$EXPORT_NUM_POINTS_FAST"
-    NORMAL_METHOD="$EXPORT_NORMALS_FAST"
-    REMOVE_OUTLIERS="$EXPORT_REMOVE_OUTLIERS_FAST"
-    DOWNSAMPLE="$EXPORT_DOWNSAMPLE_FAST"
-    ;;
-  quality)
-    NUM_POINTS="$EXPORT_NUM_POINTS_QUALITY"
-    NORMAL_METHOD="$EXPORT_NORMALS_QUALITY"
-    REMOVE_OUTLIERS="$EXPORT_REMOVE_OUTLIERS_QUALITY"
-    DOWNSAMPLE="$EXPORT_DOWNSAMPLE_QUALITY"
-    ;;
-  *)
-    NUM_POINTS="$EXPORT_NUM_POINTS_BALANCED"
-    NORMAL_METHOD="$EXPORT_NORMALS_BALANCED"
-    REMOVE_OUTLIERS="$EXPORT_REMOVE_OUTLIERS_BALANCED"
-    DOWNSAMPLE="$EXPORT_DOWNSAMPLE_BALANCED"
-    ;;
-esac
 
 
 # ======================
@@ -102,7 +93,6 @@ echo "🚀 Export settings:"
 echo "   - points: $NUM_POINTS"
 echo "   - normals: $NORMAL_METHOD"
 echo "   - outliers: $REMOVE_OUTLIERS"
-# echo "   - downsample: $DOWNSAMPLE"
 
 ns-export pointcloud \
   --load-config "$CONFIG" \

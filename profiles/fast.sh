@@ -1,0 +1,33 @@
+########################################
+# PERFORMANCE PROFILE - FAST ONLY
+########################################
+
+TRAINING_PROFILE="fast"
+
+########################################
+# IMAGE / PREPROCESSING
+########################################
+
+CAMERA_RES_SCALE_FACTOR=0.5
+MAX_RES=256
+NUM_DOWNSCALES=2
+SKIP_IMAGE_PROCESSING=true
+
+########################################
+# TRAINING
+########################################
+
+MAX_ITER=500
+TRAIN_RAYS_PER_BATCH=128
+
+NUM_NERF_SAMPLES_PER_RAY=16
+NUM_PROPOSAL_SAMPLES_PER_RAY="32 16"
+
+########################################
+# EXPORT FAST
+########################################
+
+EXPORT_NUM_POINTS=200000
+EXPORT_DOWNSAMPLE=2
+EXPORT_REMOVE_OUTLIERS=true
+

@@ -86,23 +86,3 @@ fi
 
 echo "✅ PLY exported:"
 echo "   $PLY_FILE"
-
-# ======================
-# OPTIONAL SPZ
-# ======================
-if command -v supersplat >/dev/null 2>&1; then
-  echo "🪄 Converting to SPZ..."
-
-  SPZ_FILE="${PLY_FILE%.ply}.spz"
-
-  supersplat convert \
-    "$PLY_FILE" \
-    "$SPZ_FILE"
-
-  echo "✅ SPZ exported:"
-  echo "   $SPZ_FILE"
-else
-  echo "ℹ️ SuperSplat CLI not installed"
-  echo "   Install from: https://github.com/playcanvas/supersplat"
-fi
-

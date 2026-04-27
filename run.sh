@@ -40,6 +40,7 @@ Options:
   --model                nerfacto | splatfacto (default: nerfacto)
   --max-iter             Training iterations (default: 2000)
   --skip-conda           Skip conda environment setup (useful for Colab)
+  --profile              profil de calcul: fast | balanced | quality
 
   --skip-frame-extraction  Skip frame extraction step
   --skip-colmap            Skip COLMAP step
@@ -59,6 +60,7 @@ while [[ $# -gt 0 ]]; do
     --video) VIDEO="$2"; shift 2 ;;
     --fps) FPS="$2"; shift 2 ;;
     --device) DEVICE="$2"; shift 2 ;;
+    --profile) PROFILE="$2"; shift 2 ;;
     --model) MODEL="$2"; shift 2 ;;
     --root) ROOT_DIR="$2"; shift 2 ;;
     --max-iter) MAX_ITER="$2"; shift 2 ;;
@@ -88,6 +90,20 @@ fi
 if [ ! -f "$VIDEO" ]; then
   echo "❌ video not found"
   exit 1
+fi
+
+
+if [ -z "$PROFILE" ]; then
+  echo "⚠️  no profile loaded"
+else
+  if [ -f "profiles/${PROFILE}.sh" ]; then
+    source profiles/${PROFILE}.sh
+     echo "👉 profile ${TRAINING_PROFILE}"
+  else
+    echo "❌  profile ${PROFILE} not found"
+    echo "❌  use profile fast, quality or balanced"
+    exit 1
+  fi
 fi
 
 # ======================
@@ -239,7 +255,7 @@ fi
 INPUT_DIR="$ROOT_DIR/input"
 ORI_DIR="$ROOT_DIR/ori"
 IMAGE_DIR="$ORI_DIR/images"
-OUTPUT_DIR="$ROOT_DIR//model3d"
+OUTPUT_DIR="$ROOT_DIR/model3d"
 EXPORT_DIR="$ROOT_DIR/exports"
 TRAIN_DIR="$ROOT_DIR"
 
@@ -344,11 +360,11 @@ else
   case "$MODEL" in
     *nerfacto*)
       echo "📦 Exporting Nerfacto point cloud (.ply)..."
-      bash scripts/export_nerf_to_ply.sh "$EXPORT_DIR" "$OUTPUT_DIR"
+      bash scripts/export_nerf_to_ply.sh "$EXPORT_DIR" "$OUTPUT_DIR" "POFILE"
       ;;
     *splatfacto*)
       echo "📦 Exporting Gaussian Splat (.spz)..."
-      bash scripts/export_splat_to_ply.sh "$EXPORT_DIR" "$OUTPUT_DIR"
+      bash scripts/export_splat_to_ply.sh "$EXPORT_DIR" "$OUTPUT_DIR" "POFILE"
       ;;
     *)
       echo "⚠️ Unsupported model for export: $MODEL"
