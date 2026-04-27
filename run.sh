@@ -6,7 +6,6 @@ set -e
 # DEFAULTS
 # ======================
 FPS=10
-MAX_ITER=2000
 DEVICE="cpu"
 ROOT_DIR="runs/default"
 VIDEO=""
@@ -36,9 +35,6 @@ Required:
 Options:
   --root                 Root output directory (default: runs/default)
   --fps                  Frame extraction FPS (default: 10)
-  --device               cpu | gpu (default: cpu)
-  --model                nerfacto | splatfacto (default: nerfacto)
-  --max-iter             Training iterations (default: 2000)
   --skip-conda           Skip conda environment setup (useful for Colab)
   --profile              profil de calcul: fast | balanced | quality
 
@@ -59,11 +55,8 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --video) VIDEO="$2"; shift 2 ;;
     --fps) FPS="$2"; shift 2 ;;
-    --device) DEVICE="$2"; shift 2 ;;
     --profile) PROFILE="$2"; shift 2 ;;
-    --model) MODEL="$2"; shift 2 ;;
     --root) ROOT_DIR="$2"; shift 2 ;;
-    --max-iter) MAX_ITER="$2"; shift 2 ;;
     --skip-conda) SKIP_CONDA=true; shift ;;
     --no-proxy) NO_PROXY=true; shift ;;
 
