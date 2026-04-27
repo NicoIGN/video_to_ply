@@ -2,12 +2,6 @@
 set -e
 
 # ======================
-# LOAD CONFIG
-# ======================
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/../config/config.sh"
-
-# ======================
 # CHECKS
 # ======================
 if [[ -z "$EXPORT_DIR" || -z "$OUTPUT_DIR" ]]; then

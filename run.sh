@@ -362,10 +362,10 @@ else
   case "$MODEL" in
     *nerfacto*)
       echo "📦 Exporting Nerfacto point cloud (.ply)..."
-
+echo EXPORT_NUM_POINTS: $EXPORT_NUM_POINTS
       OUTPUT_DIR="$TRAIN_DIR/$EXPERIMENT_NAME" \
       EXPORT_DIR="$EXPORT_DIR" \
-      NUM_POINTS="$NUM_POINTS" \
+      NUM_POINTS="$EXPORT_NUM_POINTS" \
       NORMAL_METHOD="$NORMAL_METHOD" \
       REMOVE_OUTLIERS="$REMOVE_OUTLIERS" \
       bash scripts/export_nerf_to_ply.sh
