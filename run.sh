@@ -320,6 +320,7 @@ fi
 # ----------------------
 # 3. TRAIN
 # ----------------------
+
 if [ "$SKIP_TRAINING" = true ]; then
   echo "⏩ Skipping training (config)"
 else
@@ -337,6 +338,7 @@ else
     DEVICE="$DEVICE" \
     MAX_ITER="$MAX_ITER" \
     DATA="$ORI_DIR" \
+    EXPERIMENT_NAME="$EXPERIMENT_NAME" \
     OUTPUTDIR="$TRAIN_DIR" \
     TRAIN_RAYS_PER_BATCH="$TRAIN_RAYS_PER_BATCH" \
     CAMERA_RES_SCALE_FACTOR="$CAMERA_RES_SCALE_FACTOR" \
@@ -361,7 +363,7 @@ else
     *nerfacto*)
       echo "📦 Exporting Nerfacto point cloud (.ply)..."
 
-      OUTPUTDIR="$TRAIN_DIR" \
+      OUTPUTDIR="$TRAIN_DIR/$EXPERIMENT_NAME" \
       EXPORTDIR="$EXPORT_DIR" \
       NUM_POINTS="$NUM_POINTS" \
       NORMAL_METHOD="$NORMAL_METHOD" \
@@ -372,7 +374,7 @@ else
     *splatfacto*)
       echo "📦 Exporting Gaussian Splat (.ply)..."
 
-      OUTPUTDIR="$TRAIN_DIR" \
+      OUTPUTDIR="$TRAIN_DIR/$EXPERIMENT_NAME" \
       EXPORTDIR="$EXPORT_DIR" \
       bash scripts/export_splat_to_ply.sh
       ;;

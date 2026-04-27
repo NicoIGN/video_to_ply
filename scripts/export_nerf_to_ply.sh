@@ -10,11 +10,26 @@ source "$SCRIPT_DIR/../config/config.sh"
 # ======================
 # CHECKS
 # ======================
-if [ -z "$EXPORT_DIR" ] || [ -z "$ROOT_DIR" ]; then
-  echo "❌ Usage: export_to_ply.sh"
+if [[ -z "$EXPORTDIR" || -z "$OUTPUTDIR" ]]; then
+  echo "❌ Missing required environment variables:"
+  echo "   EXPORTDIR=$EXPORTDIR"
+  echo "   OUTPUTDIR=$OUTPUTDIR"
   exit 1
 fi
 
+if [[ ! -d "$EXPORTDIR" ]]; then
+  echo "❌ Export directory does not exist: $EXPORTDIR"
+  exit 1
+fi
+
+if [[ ! -d "$OUTPUTDIR" ]]; then
+  echo "❌ Output directory does not exist: $OUTPUTDIR"
+  exit 1
+fi
+
+  echo "   EXPORTDIR=$EXPORTDIR"
+  echo "   OUTPUTDIR=$OUTPUTDIR"
+  
 NERF_ROOT="$ROOT_DIR/nerfacto"
 
 if [ ! -d "$NERF_ROOT" ]; then

@@ -49,7 +49,6 @@ fi
 export MODEL_IMPLEMENTATION
 export MACHINE_DEVICE_TYPE
 
-export EXPERIMENT_NAME="model3d"
 
 
 # ======================

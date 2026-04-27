@@ -62,6 +62,7 @@ export DEVICE
 ############################
 # MODEL CONFIG
 ############################
+EXPERIMENT_NAME="model3d"
 
 if [ -z "${MODEL+x}" ]; then
   MODEL="nerfacto"
