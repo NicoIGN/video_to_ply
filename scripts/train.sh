@@ -27,16 +27,12 @@ fi
 # ======================
 TRAIN_VIS_MODE=${TRAIN_VIS_MODE:-tensorboard}
 
-export MODEL_IMPLEMENTATION=""
 export MACHINE_DEVICE_TYPE=""
 
 if [ "$DEVICE" = "gpu" ]; then
-    MODEL_IMPLEMENTATION="tcnn"
     MACHINE_DEVICE_TYPE="cuda"
-    export MAX_JOBS=2
 
 elif [ "$DEVICE" = "cpu" ]; then
-    MODEL_IMPLEMENTATION="torch"
     MACHINE_DEVICE_TYPE="cpu"
     export TORCHDYNAMO_DISABLE=1
     export OMP_NUM_THREADS=1
@@ -48,6 +44,7 @@ fi
 
 export MODEL_IMPLEMENTATION
 export MACHINE_DEVICE_TYPE
+export MAX_JOBS
 
 
 
@@ -64,7 +61,8 @@ echo "🧪 MODEL                    : $MODEL"
 echo "🧪 MODEL_IMPLEMENTATION     : $MODEL_IMPLEMENTATION"
 echo "🧪 EXPERIMENT_NAME          : $EXPERIMENT_NAME"
 echo "⚙️ DEVICE                   : $DEVICE"
-echo "🔁 MAX ITERATIONS          : $MAX_ITER"
+echo "🔁 MAX ITERATIONS           : $MAX_ITER"
+echo "🔁 MAX JOBS                 : $MAX_JOBS"
 echo "📊 VIS MODE                 : $TRAIN_VIS_MODE"
 
 

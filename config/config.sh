@@ -117,6 +117,11 @@ if [ -z "${MAX_ITER+x}" ]; then
   MAX_ITER=3000
 fi
 
+if [ -z "${MAX_JOBS+x}" ]; then
+  MAX_JOBS=2
+fi
+
+
 # Nombre de rayons (pixels simulés) traités par batch
 # → contrôle la stabilité et la mémoire utilisée
 # ↑ plus grand = plus stable mais plus lent
