@@ -2,7 +2,7 @@
 # PERFORMANCE PROFILE - QUALITY ONLY
 ########################################
 
-TRAINING_PROFILE="quality"
+TRAINING_PROFILE="gpu/quality"
 
 DEVICE="gpu"
 MODEL="splatfacto"

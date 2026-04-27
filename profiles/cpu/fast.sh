@@ -2,7 +2,7 @@
 # PERFORMANCE PROFILE - FAST ONLY
 ########################################
 
-TRAINING_PROFILE="fast"
+TRAINING_PROFILE="cpu/fast"
 
 DEVICE="cpu"
 MODEL="nerfacto"

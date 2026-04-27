@@ -101,7 +101,7 @@ else
      echo "👉 using profile: ${TRAINING_PROFILE}"
   else
     echo "❌  profile ${PROFILE} not found"
-    echo "❌  use profile fast, quality or balanced"
+    echo "❌  use profile [gpu|cpu]/fast|quality|balanced"
     exit 1
   fi
 fi

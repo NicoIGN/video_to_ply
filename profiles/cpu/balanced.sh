@@ -2,7 +2,7 @@
 # PERFORMANCE PROFILE 
 ########################################
 
-TRAINING_PROFILE="balanced"
+TRAINING_PROFILE="cpu/balanced"
 
 
 DEVICE="cpu"
