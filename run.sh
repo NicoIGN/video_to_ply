@@ -98,7 +98,7 @@ if [ -z "$PROFILE" ]; then
 else
   if [ -f "profiles/${PROFILE}.sh" ]; then
     source profiles/${PROFILE}.sh
-     echo "👉 profile ${TRAINING_PROFILE}"
+     echo "👉 using profile: ${TRAINING_PROFILE}"
   else
     echo "❌  profile ${PROFILE} not found"
     echo "❌  use profile fast, quality or balanced"
