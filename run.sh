@@ -407,10 +407,11 @@ if [[ -f "$CLEANED_PLY" ]]; then
 fi
 
 python3 "scripts/clean_gaussian_ply.py" \
-    --nb-neighbors 50 \
-    --std-ratio 2.5 \
-    --dbscan-eps 0.12 \
-    --dbscan-min-points 20 \
+    --nb-neighbors 60 \
+    --std-ratio 3.0 \
+    --dbscan-eps 0.10 \
+    --dbscan-min-points 25 \
+    --center-percentile 95 \
     "$PLY_FILE" \
     "$CLEANED_PLY"
     
