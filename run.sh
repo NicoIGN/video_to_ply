@@ -363,8 +363,8 @@ else
     *nerfacto*)
       echo "📦 Exporting Nerfacto point cloud (.ply)..."
 
-      OUTPUTDIR="$TRAIN_DIR/$EXPERIMENT_NAME" \
-      EXPORTDIR="$EXPORT_DIR" \
+      OUTPUT_DIR="$TRAIN_DIR/$EXPERIMENT_NAME" \
+      EXPORT_DIR="$EXPORT_DIR" \
       NUM_POINTS="$NUM_POINTS" \
       NORMAL_METHOD="$NORMAL_METHOD" \
       REMOVE_OUTLIERS="$REMOVE_OUTLIERS" \
@@ -374,8 +374,8 @@ else
     *splatfacto*)
       echo "📦 Exporting Gaussian Splat (.ply)..."
 
-      OUTPUTDIR="$TRAIN_DIR/$EXPERIMENT_NAME" \
-      EXPORTDIR="$EXPORT_DIR" \
+      OUTPUT_DIR="$TRAIN_DIR/$EXPERIMENT_NAME" \
+      EXPORT_DIR="$EXPORT_DIR" \
       bash scripts/export_splat_to_ply.sh
       ;;
 

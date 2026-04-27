@@ -10,25 +10,25 @@ source "$SCRIPT_DIR/../config/config.sh"
 # ======================
 # CHECKS
 # ======================
-if [[ -z "$EXPORTDIR" || -z "$OUTPUTDIR" ]]; then
+if [[ -z "$EXPORT_DIR" || -z "$OUTPUT_DIR" ]]; then
   echo "❌ Missing required environment variables:"
-  echo "   EXPORTDIR=$EXPORTDIR"
-  echo "   OUTPUTDIR=$OUTPUTDIR"
+  echo "   EXPORT_DIR=$EXPORT_DIR"
+  echo "   OUTPUT_DIR=$OUTPUT_DIR"
   exit 1
 fi
 
-if [[ ! -d "$EXPORTDIR" ]]; then
-  echo "❌ Export directory does not exist: $EXPORTDIR"
+if [[ ! -d "$EXPORT_DIR" ]]; then
+  echo "❌ Export directory does not exist: $EXPORT_DIR"
   exit 1
 fi
 
-if [[ ! -d "$OUTPUTDIR" ]]; then
-  echo "❌ Output directory does not exist: $OUTPUTDIR"
+if [[ ! -d "$OUTPUT_DIR" ]]; then
+  echo "❌ Output directory does not exist: $OUTPUT_DIR"
   exit 1
 fi
 
 
-SPLAT_ROOT="$OUTPUTDIR/splatfacto"
+SPLAT_ROOT="$OUTPUT_DIR/splatfacto"
 
 if [ ! -d "$SPLAT_ROOT" ]; then
   echo "❌ splatfacto folder not found: $SPLAT_ROOT"
