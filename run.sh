@@ -407,13 +407,13 @@ if [[ -f "$CLEANED_PLY" ]]; then
 fi
 
 python3 "scripts/clean_gaussian_ply.py" \
-    --nb-neighbors 32 \
-    --std-ratio 1.5 \
-    --dbscan-eps 0.05 \
-    --dbscan-min-points 50 \
+    --nb-neighbors 50 \
+    --std-ratio 2.5 \
+    --dbscan-eps 0.12 \
+    --dbscan-min-points 20 \
     "$PLY_FILE" \
     "$CLEANED_PLY"
-
+    
 if [[ ! -f "$CLEANED_PLY" ]]; then
     echo "❌ PLY cleaning failed"
     exit 1
