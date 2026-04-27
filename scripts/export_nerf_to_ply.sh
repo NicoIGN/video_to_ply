@@ -30,7 +30,7 @@ fi
   echo "   EXPORTDIR=$EXPORTDIR"
   echo "   OUTPUTDIR=$OUTPUTDIR"
   
-NERF_ROOT="$ROOT_DIR/nerfacto"
+NERF_ROOT="$OUTPUTDIR/nerfacto"
 
 if [ ! -d "$NERF_ROOT" ]; then
   echo "❌ nerfacto folder not found: $NERF_ROOT"

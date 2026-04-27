@@ -28,7 +28,7 @@ if [[ ! -d "$OUTPUTDIR" ]]; then
 fi
 
 
-SPLAT_ROOT="$ROOT_DIR/splatfacto"
+SPLAT_ROOT="$OUTPUTDIR/splatfacto"
 
 if [ ! -d "$SPLAT_ROOT" ]; then
   echo "❌ splatfacto folder not found: $SPLAT_ROOT"
