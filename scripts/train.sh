@@ -34,6 +34,7 @@ if [ "$DEVICE" = "gpu" ]; then
     MODEL_IMPLEMENTATION="tcnn"
     MACHINE_DEVICE_TYPE="cuda"
     export MAX_JOBS=4
+
 elif [ "$DEVICE" = "cpu" ]; then
     MODEL_IMPLEMENTATION="torch"
     MACHINE_DEVICE_TYPE="cpu"
@@ -65,12 +66,14 @@ echo "🧪 MODEL_IMPLEMENTATION     : $MODEL_IMPLEMENTATION"
 echo "🧪 EXPERIMENT_NAME          : $EXPERIMENT_NAME"
 echo "⚙️ DEVICE                   : $DEVICE"
 echo "🔁 MAX ITERATIONS          : $MAX_ITER"
-echo "📊 VIS MODE                : $TRAIN_VIS_MODE"
+echo "📊 VIS MODE                 : $TRAIN_VIS_MODE"
+
 
 echo "────────────────────────────────────────────"
 echo "🧠 DATA PIPELINE"
 echo "  - train rays/batch       : $TRAIN_RAYS_PER_BATCH"
 echo "  - camera res scale       : $CAMERA_RES_SCALE_FACTOR"
+
 
 echo "────────────────────────────────────────────"
 echo "🧠 MODEL CONFIG"
@@ -84,9 +87,33 @@ echo "────────────────────────�
 echo "🔥 STARTING TRAINING..."
 echo "────────────────────────────────────────────"
 
+
+# ======================
+# CHECKPOINT AUTO-RESUME
+# ======================
+LOAD_DIR=""
+
+if [ -d "$OUTPUTDIR/nerfstudio_models" ]; then
+    LOAD_DIR="$OUTPUTDIR/nerfstudio_models"
+fi
+
+if [ -d "$OUTPUTDIR" ]; then
+    LAST_RUN=$(ls -td "$OUTPUTDIR"/*/nerfstudio_models 2>/dev/null | head -n 1)
+    if [ ! -z "$LAST_RUN" ]; then
+        LOAD_DIR="$LAST_RUN"
+    fi
+fi
+
+if [ ! -z "$LOAD_DIR" ]; then
+    echo "♻️ CHECKPOINT FOUND → RESUMING TRAINING"
+    echo "📦 LOAD_DIR: $LOAD_DIR"
+else
+    echo "🆕 NO CHECKPOINT FOUND → TRAINING FROM SCRATCH"
+fi
+
+
 # ======================
 # COMMON ARGS
-# (must come BEFORE nerfstudio-data)
 # ======================
 COMMON_ARGS=(
   --output-dir "$OUTPUTDIR"
@@ -102,9 +129,9 @@ COMMON_ARGS=(
   --viewer.quit-on-train-completion True
 )
 
+
 # ======================
 # DEVICE-SPECIFIC ARGS
-# (must come BEFORE nerfstudio-data)
 # ======================
 if [[ "$DEVICE" == "gpu" ]]; then
 
@@ -119,7 +146,7 @@ elif [[ "$DEVICE" == "cpu" ]]; then
     --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
     --pipeline.model.implementation "$MODEL_IMPLEMENTATION"
     --pipeline.model.num-nerf-samples-per-ray "$NUM_NERF_SAMPLES_PER_RAY"
-    --pipeline.model.num-proposal-samples-per-ray $NUM_PROPOSAL_SAMPLES_PER_RAY
+    --pipeline.model.num-proposal-samples-per-ray "$NUM_PROPOSAL_SAMPLES_PER_RAY"
     --pipeline.model.max-res "$MAX_RES"
     --pipeline.model.predict-normals True
   )
@@ -129,37 +156,52 @@ else
   exit 1
 fi
 
+
 # ======================
-# RUN (CRASH SAFE)
-# IMPORTANT: nerfstudio-data MUST be LAST
+# RUN TRAINING
 # ======================
 set +e
 
-ns-train \
-  "$MODEL" \
-  "${COMMON_ARGS[@]}" \
-  "${DEVICE_ARGS[@]}" \
-  nerfstudio-data \
-  --data "$DATA"
+if [ ! -z "$LOAD_DIR" ]; then
+  ns-train \
+    "$MODEL" \
+    "${COMMON_ARGS[@]}" \
+    "${DEVICE_ARGS[@]}" \
+    --load-dir "$LOAD_DIR" \
+    nerfstudio-data \
+    --data "$DATA"
+else
+  ns-train \
+    "$MODEL" \
+    "${COMMON_ARGS[@]}" \
+    "${DEVICE_ARGS[@]}" \
+    nerfstudio-data \
+    --data "$DATA"
+fi
 
 STATUS=$?
 
 set -e
 
+
+# ======================
+# CHECK RESULT
+# ======================
 if [[ "$STATUS" -ne 0 ]]; then
   echo "❌ ns-train crashed (exit code: $STATUS)"
   exit "$STATUS"
 fi
 
-CHECKPOINT=$(find "$OUTPUTDIR" -name "*.ckpt" | head -n 1)
 
-if [[ -z "$CHECKPOINT" ]]; then
-  echo "⚠️ Training ended, but no checkpoint was created."
-  echo "💡 Possible causes:"
-  echo "   - training stopped before step 250"
-  echo "   - crash during early iterations"
-  echo "   - insufficient runtime"
+# ======================
+# CHECKPOINT VALIDATION
+# ======================
+CKPT_DIR=$(find "$OUTPUTDIR" -type d -name "nerfstudio_models" 2>/dev/null | head -n 1)
+
+if [[ -z "$CKPT_DIR" ]]; then
+  echo "⚠️ Training finished but no checkpoint found"
   exit 1
 fi
 
 echo "✅ TRAINING COMPLETE"
+echo "📦 Checkpoint directory: $CKPT_DIR"
