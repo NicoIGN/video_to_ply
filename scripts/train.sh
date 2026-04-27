@@ -146,7 +146,7 @@ elif [[ "$DEVICE" == "cpu" ]]; then
     --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
     --pipeline.model.implementation "$MODEL_IMPLEMENTATION"
     --pipeline.model.num-nerf-samples-per-ray "$NUM_NERF_SAMPLES_PER_RAY"
-    --pipeline.model.num-proposal-samples-per-ray "$NUM_PROPOSAL_SAMPLES_PER_RAY"
+    --pipeline.model.num-proposal-samples-per-ray $NUM_PROPOSAL_SAMPLES_PER_RAY
     --pipeline.model.max-res "$MAX_RES"
     --pipeline.model.predict-normals True
   )
@@ -160,6 +160,11 @@ fi
 # ======================
 # RUN TRAINING
 # ======================
+
+export LOGLEVEL=DEBUG
+export TORCH_SHOW_CPP_STACKTRACES=1
+#export PYTHONVERBOSE=1
+
 set +e
 
 if [ ! -z "$LOAD_DIR" ]; then
