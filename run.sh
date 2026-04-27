@@ -412,7 +412,7 @@ python3 "scripts/clean_gaussian_ply.py" \
     --dbscan-eps 0.10 \
     --dbscan-min-points 25 \
     --center-percentile 95 \
-    --supersplat \
+    --recenter \
     "$PLY_FILE" \
     "$CLEANED_PLY"
     

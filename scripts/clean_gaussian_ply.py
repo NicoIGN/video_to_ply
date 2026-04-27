@@ -23,18 +23,19 @@ def parse_args():
     p.add_argument("--dbscan-eps", type=float, default=0.05)
     p.add_argument("--dbscan-min-points", type=int, default=50)
 
+    p.add_argument("--center-percentile", type=float, default=95.0)
+
+    # NEW FLAGS (mutually exclusive conceptually)
     p.add_argument(
-        "--center-percentile",
-        type=float,
-        default=95.0,
-        help="Keep points within this percentile distance from center"
+        "--recenter",
+        action="store_true",
+        help="Safe recentering only (translation only)"
     )
 
-    # NEW FLAG
     p.add_argument(
         "--supersplat",
         action="store_true",
-        help="Apply Supersplat-style centering + normalization"
+        help="Experimental Supersplat mode (center + normalize scale)"
     )
 
     return p.parse_args()
@@ -43,20 +44,23 @@ def parse_args():
 def main():
     args = parse_args()
 
+    if args.recenter and args.supersplat:
+        print("❌ Cannot use --recenter and --supersplat together")
+        sys.exit(1)
+
     print(f"📥 Loading: {args.input}")
 
     ply = PlyData.read(str(args.input))
     vertex = ply["vertex"].data
 
     xyz = np.vstack([vertex["x"], vertex["y"], vertex["z"]]).T
-    n = xyz.shape[0]
 
-    print(f"📊 Points: {n:,}")
+    print(f"📊 Points: {len(xyz):,}")
 
     # =========================
     # CENTER FILTER
     # =========================
-    print("🎯 Center distance filtering...")
+    print("🎯 Center filtering...")
 
     center = np.median(xyz, axis=0)
     dist_center = np.linalg.norm(xyz - center, axis=1)
@@ -101,12 +105,11 @@ def main():
     valid = labels >= 0
 
     if valid.sum() == 0:
-        print("⚠️ No clusters found → fallback SOR+center only")
+        print("⚠️ No clusters found → fallback")
         final_idx = idx_map
     else:
         largest = np.bincount(labels[valid]).argmax()
-        keep = labels == largest
-        final_idx = idx_map[keep]
+        final_idx = idx_map[labels == largest]
 
     print(f"📊 Final points: {len(final_idx):,}")
 
@@ -122,10 +125,18 @@ def main():
     ]).T
 
     # =========================
-    # SUPERSPLAT MODE
+    # MODE HANDLING
     # =========================
-    if args.supersplat:
-        print("🚀 Supersplat mode ON")
+    if args.recenter:
+        print("📍 SAFE RECENTER MODE")
+
+        center = xyz_new.mean(axis=0)
+        xyz_new = xyz_new - center
+
+        print(f"📍 Translation applied: {center}")
+
+    elif args.supersplat:
+        print("🚀 SUPERSPLAT EXPERIMENTAL MODE")
 
         center = xyz_new.mean(axis=0)
         xyz_new = xyz_new - center
@@ -135,11 +146,12 @@ def main():
             xyz_new = xyz_new / scale
 
         print(f"📍 Center: {center}")
-        print(f"📏 Scale normalization: {scale:.6f}")
+        print(f"📏 Scale: {scale:.6f}")
 
-        new_vertex["x"] = xyz_new[:, 0]
-        new_vertex["y"] = xyz_new[:, 1]
-        new_vertex["z"] = xyz_new[:, 2]
+    # write back (ONLY geometry changes)
+    new_vertex["x"] = xyz_new[:, 0]
+    new_vertex["y"] = xyz_new[:, 1]
+    new_vertex["z"] = xyz_new[:, 2]
 
     # =========================
     # SAVE
