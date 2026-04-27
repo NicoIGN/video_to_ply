@@ -403,7 +403,7 @@ if [[ -f "$CLEANED_PLY" ]]; then
     rm -f "$CLEANED_PLY"
 fi
 
-python3 "$ROOT_DIR/scripts/clean_gaussian_ply.py" \
+python3 "scripts/clean_gaussian_ply.py" \
     "$PLY_FILE" \
     "$CLEANED_PLY" \
     --nb-neighbors 32 \
