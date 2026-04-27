@@ -395,6 +395,9 @@ fi
 # ======================
 echo "🧹 Cleaning Gaussian Splat..."
 
+
+PLY_FILE="$(find "$EXPORT_DIR" -type f -name '*.ply' ! -name '*_cleaned.ply' | head -n 1)"
+
 CLEANED_PLY="${PLY_FILE%.ply}_cleaned.ply"
 
 if [[ -f "$CLEANED_PLY" ]]; then
@@ -404,8 +407,8 @@ if [[ -f "$CLEANED_PLY" ]]; then
 fi
 
 python3 "scripts/clean_gaussian_ply.py" \
-    "$PLY_FILE" \
-    "$CLEANED_PLY" \
+    --input "$PLY_FILE" \
+    --output "$CLEANED_PLY" \
     --nb-neighbors 32 \
     --std-ratio 1.5 \
     --dbscan-eps 0.05 \
