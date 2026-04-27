@@ -7,29 +7,11 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../config/config.sh"
 
-EXPORT_DIR="$1"
-ROOT_DIR="$2"
-PROFILE="$3"
-
-
-if [ -z "$PROFILE" ]; then
-  echo "⚠️  no profile loaded"
-else
-  if [ -f "profiles/${PROFILE}.sh" ]; then
-    echo "👉 profile ${PROFILE}"
-    source profiles/${PROFILE}.sh
-  else
-    echo "❌  profile ${PROFILE} not found"
-    echo "❌  use profile fast, quality or balanced"
-    exit 1
-  fi
-fi
-
 # ======================
 # CHECKS
 # ======================
 if [ -z "$EXPORT_DIR" ] || [ -z "$ROOT_DIR" ]; then
-  echo "❌ Usage: export_to_ply.sh <EXPORT_DIR> <ROOT_DIR> <PROFILE>"
+  echo "❌ Usage: export_to_ply.sh"
   exit 1
 fi
 

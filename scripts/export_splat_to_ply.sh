@@ -7,16 +7,26 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../config/config.sh"
 
-EXPORT_DIR="$1"
-ROOT_DIR="$2"
-
 # ======================
 # CHECKS
 # ======================
-if [ -z "$EXPORT_DIR" ] || [ -z "$ROOT_DIR" ]; then
-  echo "❌ Usage: export_to_spz.sh <EXPORT_DIR> <ROOT_DIR>"
+if [[ -z "$EXPORTDIR" || -z "$OUTPUTDIR" ]]; then
+  echo "❌ Missing required environment variables:"
+  echo "   EXPORTDIR=$EXPORTDIR"
+  echo "   OUTPUTDIR=$OUTPUTDIR"
   exit 1
 fi
+
+if [[ ! -d "$EXPORTDIR" ]]; then
+  echo "❌ Export directory does not exist: $EXPORTDIR"
+  exit 1
+fi
+
+if [[ ! -d "$OUTPUTDIR" ]]; then
+  echo "❌ Output directory does not exist: $OUTPUTDIR"
+  exit 1
+fi
+
 
 SPLAT_ROOT="$ROOT_DIR/splatfacto"
 

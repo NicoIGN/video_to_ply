@@ -193,7 +193,7 @@ fi
 # normales
 
 NORMAL_METHOD="open3d"
-REMOVE_OUTLIERS=true
+REMOVE_OUTLIERS=True
 
 ############################
 # CONDA

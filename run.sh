@@ -360,12 +360,23 @@ else
   case "$MODEL" in
     *nerfacto*)
       echo "📦 Exporting Nerfacto point cloud (.ply)..."
-      bash scripts/export_nerf_to_ply.sh "$EXPORT_DIR" "$OUTPUT_DIR" "$PROFILE"
+
+      OUTPUTDIR="$TRAIN_DIR" \
+      EXPORTDIR="$EXPORT_DIR" \
+      NUM_POINTS="$NUM_POINTS" \
+      NORMAL_METHOD="$NORMAL_METHOD" \
+      REMOVE_OUTLIERS="$REMOVE_OUTLIERS" \
+      bash scripts/export_nerf_to_ply.sh
       ;;
+
     *splatfacto*)
-      echo "📦 Exporting Gaussian Splat (.spz)..."
-      bash scripts/export_splat_to_ply.sh "$EXPORT_DIR" "$OUTPUT_DIR" "$PROFILE"
+      echo "📦 Exporting Gaussian Splat (.ply)..."
+
+      OUTPUTDIR="$TRAIN_DIR" \
+      EXPORTDIR="$EXPORT_DIR" \
+      bash scripts/export_splat_to_ply.sh
       ;;
+
     *)
       echo "⚠️ Unsupported model for export: $MODEL"
       exit 1
