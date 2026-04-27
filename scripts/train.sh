@@ -92,11 +92,14 @@ COMMON_ARGS=(
   --output-dir "$OUTPUTDIR"
   --experiment-name "$EXPERIMENT_NAME"
   --machine.device-type "$MACHINE_DEVICE_TYPE"
-  --vis "$TRAIN_VIS_MODE"
   --max-num-iterations "$MAX_ITER"
   --steps-per-save 250
   --steps-per-eval-all-images 250
   --save-only-latest-checkpoint True
+  --vis "$TRAIN_VIS_MODE"
+  --logging.local-writer.enable True
+  --logging.steps-per-log 10
+  --viewer.quit-on-train-completion True
 )
 
 # ======================
@@ -146,6 +149,17 @@ set -e
 if [[ "$STATUS" -ne 0 ]]; then
   echo "❌ ns-train crashed (exit code: $STATUS)"
   exit "$STATUS"
+fi
+
+CHECKPOINT=$(find "$OUTPUTDIR" -name "*.ckpt" | head -n 1)
+
+if [[ -z "$CHECKPOINT" ]]; then
+  echo "⚠️ Training ended, but no checkpoint was created."
+  echo "💡 Possible causes:"
+  echo "   - training stopped before step 250"
+  echo "   - crash during early iterations"
+  echo "   - insufficient runtime"
+  exit 1
 fi
 
 echo "✅ TRAINING COMPLETE"

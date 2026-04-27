@@ -116,7 +116,8 @@ fi
 # → contrôle la stabilité et la mémoire utilisée
 # ↑ plus grand = plus stable mais plus lent
 # TRAIN_RAYS_PER_BATCH=1024
-TRAIN_RAYS_PER_BATCH=512
+#TRAIN_RAYS_PER_BATCH=512
+TRAIN_RAYS_PER_BATCH=256
 
 
 ############################
@@ -132,8 +133,8 @@ NUM_NERF_SAMPLES_PER_RAY=32
 # 1er nombre : exploration grossière (zones importantes)
 # 2e nombre : raffinement des zones sélectionnées
 # → améliore qualité et efficacité du rendu
-NUM_PROPOSAL_SAMPLES_PER_RAY="160 64"
-#NUM_PROPOSAL_SAMPLES_PER_RAY="64 32"
+#NUM_PROPOSAL_SAMPLES_PER_RAY="160 64"
+NUM_PROPOSAL_SAMPLES_PER_RAY="64 32"
 
 
 ############################
@@ -200,7 +201,7 @@ NORMAL_METHOD="open3d"
 # - fast     → très rapide, preview / debug
 # - balanced → compromis qualité/vitesse (recommandé)
 # - quality  → export complet haute qualité (lent)
-EXPORT_MODE="quality"
+EXPORT_MODE="balanced"
 
 # PARAMÈTRES DÉRIVÉS (utilisés par export.sh)
 
