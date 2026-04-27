@@ -98,8 +98,10 @@ WITH_NERFSTUDIO="true"
 # IMAGE PREPROCESSING
 ############################
 
-#CAMERA_RES_SCALE_FACTOR=1.0
-CAMERA_RES_SCALE_FACTOR=0.75  # 0.5 = FAST MODE (~4x speedup)
+if [ -z "${CAMERA_RES_SCALE_FACTOR+x}" ]; then
+    #CAMERA_RES_SCALE_FACTOR=1.0
+    CAMERA_RES_SCALE_FACTOR=0.75  # 0.5 = FAST MODE (~4x speedup)
+fi
 
 ############################
 # TRAINING PARAMETERS (NERF CORE)
