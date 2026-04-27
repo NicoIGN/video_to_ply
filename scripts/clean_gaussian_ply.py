@@ -23,12 +23,18 @@ def parse_args():
     p.add_argument("--dbscan-eps", type=float, default=0.05)
     p.add_argument("--dbscan-min-points", type=int, default=50)
 
-    # NEW: spatial cutoff
     p.add_argument(
         "--center-percentile",
         type=float,
         default=95.0,
-        help="Keep points within this percentile distance from center (default: 95)"
+        help="Keep points within this percentile distance from center"
+    )
+
+    # NEW FLAG
+    p.add_argument(
+        "--supersplat",
+        action="store_true",
+        help="Apply Supersplat-style centering + normalization"
     )
 
     return p.parse_args()
@@ -48,7 +54,7 @@ def main():
     print(f"📊 Points: {n:,}")
 
     # =========================
-    # CENTER DISTANCE FILTER (NEW)
+    # CENTER FILTER
     # =========================
     print("🎯 Center distance filtering...")
 
@@ -105,10 +111,39 @@ def main():
     print(f"📊 Final points: {len(final_idx):,}")
 
     # =========================
-    # REBUILD PLY
+    # REBUILD
     # =========================
     new_vertex = vertex[final_idx]
 
+    xyz_new = np.vstack([
+        new_vertex["x"],
+        new_vertex["y"],
+        new_vertex["z"]
+    ]).T
+
+    # =========================
+    # SUPERSPLAT MODE
+    # =========================
+    if args.supersplat:
+        print("🚀 Supersplat mode ON")
+
+        center = xyz_new.mean(axis=0)
+        xyz_new = xyz_new - center
+
+        scale = np.max(np.linalg.norm(xyz_new, axis=1))
+        if scale > 0:
+            xyz_new = xyz_new / scale
+
+        print(f"📍 Center: {center}")
+        print(f"📏 Scale normalization: {scale:.6f}")
+
+        new_vertex["x"] = xyz_new[:, 0]
+        new_vertex["y"] = xyz_new[:, 1]
+        new_vertex["z"] = xyz_new[:, 2]
+
+    # =========================
+    # SAVE
+    # =========================
     el = PlyElement.describe(new_vertex, "vertex")
     PlyData([el], text=False).write(str(args.output))
 
