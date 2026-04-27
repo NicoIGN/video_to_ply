@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-"""
-Clean a Gaussian Splat PLY by removing outliers and keeping
-the main connected component.
-"""
 
 from pathlib import Path
 import argparse
@@ -10,220 +6,91 @@ import sys
 import traceback
 
 import numpy as np
-import open3d as o3d
+from plyfile import PlyData, PlyElement
+from sklearn.neighbors import NearestNeighbors
+from sklearn.cluster import DBSCAN
 
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Clean Gaussian Splat PLY files."
-    )
-
-    parser.add_argument("input", type=Path, help="Input PLY file")
-    parser.add_argument("output", type=Path, help="Output cleaned PLY file")
-
-    parser.add_argument(
-        "--nb-neighbors",
-        type=int,
-        default=32,
-        help="SOR neighbor count",
-    )
-
-    parser.add_argument(
-        "--std-ratio",
-        type=float,
-        default=1.5,
-        help="SOR standard deviation ratio",
-    )
-
-    parser.add_argument(
-        "--dbscan-eps",
-        type=float,
-        default=0.05,
-        help="DBSCAN epsilon",
-    )
-
-    parser.add_argument(
-        "--dbscan-min-points",
-        type=int,
-        default=50,
-        help="DBSCAN minimum cluster size",
-    )
-
-    return parser.parse_args()
+def parse_args():
+    p = argparse.ArgumentParser()
+    p.add_argument("input", type=Path)
+    p.add_argument("output", type=Path)
+    p.add_argument("--nb-neighbors", type=int, default=32)
+    p.add_argument("--std-ratio", type=float, default=1.5)
+    p.add_argument("--dbscan-eps", type=float, default=0.05)
+    p.add_argument("--dbscan-min-points", type=int, default=50)
+    return p.parse_args()
 
 
-def inspect_ply_header(path: Path, max_lines: int = 30) -> None:
-    """Display the beginning of the PLY file for debugging."""
-    print("\n📄 PLY header preview:")
-    try:
-        with path.open("rb") as f:
-            for i in range(max_lines):
-                line = f.readline()
-                if not line:
-                    break
-                try:
-                    print(f"   {line.decode('utf-8', errors='replace').rstrip()}")
-                except Exception:
-                    print(f"   {line!r}")
-
-                if line.strip() == b"end_header":
-                    break
-    except Exception as e:
-        print(f"   ⚠️ Unable to read header: {e}")
-
-
-def fail(msg: str, code: int = 1) -> None:
-    print(f"\n❌ {msg}")
-    sys.exit(code)
-
-
-def main() -> None:
+def main():
     args = parse_args()
 
-    try:
-        # ==========================================
-        # Validate input
-        # ==========================================
-        if not args.input.exists():
-            fail(f"Input file not found: {args.input}")
+    print(f"📥 Loading: {args.input}")
 
-        if not args.input.is_file():
-            fail(f"Input path is not a file: {args.input}")
+    ply = PlyData.read(str(args.input))
+    vertex = ply["vertex"].data
 
-        if args.input.suffix.lower() != ".ply":
-            print(
-                f"⚠️ Unexpected extension: '{args.input.suffix}' "
-                "(expected .ply)"
-            )
+    xyz = np.vstack([vertex["x"], vertex["y"], vertex["z"]]).T
+    n = xyz.shape[0]
 
-        file_size = args.input.stat().st_size
+    print(f"📊 Points: {n:,}")
 
-        print("────────────────────────────────────────────")
-        print(f"📥 Input file : {args.input}")
-        print(f"📤 Output file: {args.output}")
-        print(f"📦 Size       : {file_size:,} bytes")
-        print("────────────────────────────────────────────")
+    # =========================
+    # SOR (manual)
+    # =========================
+    print("🧹 SOR filtering...")
 
-        if file_size == 0:
-            fail("Input file is empty (0 bytes)")
+    nn = NearestNeighbors(n_neighbors=args.nb_neighbors).fit(xyz)
+    dists, _ = nn.kneighbors(xyz)
 
-        print("⚙️ Parameters:")
-        print(f"   nb_neighbors      = {args.nb_neighbors}")
-        print(f"   std_ratio         = {args.std_ratio}")
-        print(f"   dbscan_eps        = {args.dbscan_eps}")
-        print(f"   dbscan_min_points = {args.dbscan_min_points}")
+    mean_dist = dists.mean(axis=1)
+    thresh = mean_dist.mean() + args.std_ratio * mean_dist.std()
 
-        inspect_ply_header(args.input)
+    mask_sor = mean_dist < thresh
+    xyz_f = xyz[mask_sor]
 
-        # ==========================================
-        # Load point cloud
-        # ==========================================
-        print("\n📥 Loading point cloud with Open3D...")
+    print(f"📊 After SOR: {len(xyz_f):,}")
 
-        pcd = o3d.io.read_point_cloud(
-            str(args.input),
-            format="ply",
-            remove_nan_points=True,
-            remove_infinite_points=True,
-        )
+    # map index
+    idx_map = np.where(mask_sor)[0]
 
-        point_count = len(pcd.points)
+    # =========================
+    # DBSCAN
+    # =========================
+    print("🔗 DBSCAN clustering...")
 
-        if point_count == 0:
-            print("\n⚠️ Open3D returned an empty point cloud.")
-            print("Possible causes:")
-            print("   • Invalid or corrupted PLY file")
-            print("   • Unsupported Gaussian Splat PLY format")
-            print("   • Missing vertex data")
-            print("   • Header/content mismatch")
-            fail("Unable to load any 3D points")
+    labels = DBSCAN(
+        eps=args.dbscan_eps,
+        min_samples=args.dbscan_min_points
+    ).fit_predict(xyz_f)
 
-        print(f"📊 Original points: {point_count:,}")
+    valid = labels >= 0
 
-        # ==========================================
-        # Statistical Outlier Removal
-        # ==========================================
-        print("\n🧹 Removing statistical outliers...")
+    if valid.sum() == 0:
+        print("⚠️ No clusters found → fallback SOR only")
+        final_idx = idx_map
+    else:
+        largest = np.bincount(labels[valid]).argmax()
+        keep = labels == largest
+        final_idx = idx_map[keep]
 
-        pcd, _ = pcd.remove_statistical_outlier(
-            nb_neighbors=args.nb_neighbors,
-            std_ratio=args.std_ratio,
-        )
+    print(f"📊 Final points: {len(final_idx):,}")
 
-        print(f"📊 After SOR: {len(pcd.points):,}")
+    # =========================
+    # Rebuild FULL PLY (IMPORTANT)
+    # =========================
+    new_vertex = vertex[final_idx]
 
-        if len(pcd.points) == 0:
-            fail("All points were removed by statistical filtering")
+    el = PlyElement.describe(new_vertex, "vertex")
+    PlyData([el], text=False).write(str(args.output))
 
-        # ==========================================
-        # Largest DBSCAN Cluster
-        # ==========================================
-        print("\n🔗 Finding largest cluster...")
-
-        labels = np.array(
-            pcd.cluster_dbscan(
-                eps=args.dbscan_eps,
-                min_points=args.dbscan_min_points,
-                print_progress=False,
-            )
-        )
-
-        valid_labels = labels[labels >= 0]
-
-        if len(valid_labels) > 0:
-            cluster_sizes = np.bincount(valid_labels)
-            largest_label = cluster_sizes.argmax()
-            largest_size = cluster_sizes[largest_label]
-
-            print(f"📦 Clusters found: {len(cluster_sizes)}")
-            print(f"🏆 Largest cluster: #{largest_label}")
-            print(f"📊 Largest size   : {largest_size:,}")
-
-            indices = np.where(labels == largest_label)[0]
-            pcd = pcd.select_by_index(indices)
-        else:
-            print("⚠️ No DBSCAN clusters found; keeping SOR result")
-
-        final_points = len(pcd.points)
-
-        if final_points == 0:
-            fail("No points remain after clustering")
-
-        # ==========================================
-        # Save
-        # ==========================================
-        print("\n💾 Saving cleaned point cloud...")
-
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-
-        if args.output.exists():
-            print(f"🗑️ Removing existing file: {args.output}")
-            args.output.unlink()
-
-        success = o3d.io.write_point_cloud(
-            str(args.output),
-            pcd,
-            write_ascii=False,
-            compressed=False,
-        )
-
-        if not success:
-            fail("Open3D failed to write the output file")
-
-        output_size = args.output.stat().st_size
-
-        print("\n✅ Cleaning completed successfully")
-        print(f"📄 Output file : {args.output}")
-        print(f"📦 Output size : {output_size:,} bytes")
-        print(f"📊 Final points: {final_points:,}")
-
-    except Exception as e:
-        print("\n💥 Unexpected error:")
-        print(f"   {type(e).__name__}: {e}")
-        print()
-        traceback.print_exc()
-        sys.exit(1)
+    print(f"✅ Saved: {args.output}")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print("\n💥 ERROR:")
+        traceback.print_exc()
+        sys.exit(1)
