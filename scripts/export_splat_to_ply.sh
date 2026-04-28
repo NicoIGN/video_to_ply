@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+
 # ======================
 # CHECKS
 # ======================
@@ -91,25 +94,3 @@ fi
 echo "✅ PLY exported:"
 echo "   $PLY_FILE"
 
-# ======================
-# CLEAN PLY
-# ======================
-echo "🧹 Cleaning Gaussian Splat..."
-
-CLEANED_PLY="${PLY_FILE%.ply}_cleaned.ply"
-
-python3 "$ROOT_DIR/scripts/clean_gaussian_ply.py" \
-    "$PLY_FILE" \
-    "$CLEANED_PLY" \
-    --nb-neighbors 32 \
-    --std-ratio 1.5 \
-    --dbscan-eps 0.05 \
-    --dbscan-min-points 50
-
-if [[ ! -f "$CLEANED_PLY" ]]; then
-    echo "❌ PLY cleaning failed"
-    exit 1
-fi
-
-echo "✅ Cleaned PLY:"
-echo "   $CLEANED_PLY"
