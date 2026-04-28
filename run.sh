@@ -520,15 +520,17 @@ if [[ -f "$CLEANED_PLY" ]]; then
 fi
 
 cd
+
 python3 "$SCRIPT_DIR/scripts/clean_gaussian_ply.py" \
-    --nb-neighbors 60 \
-    --std-ratio 3.0 \
-    --dbscan-eps 0.10 \
-    --dbscan-min-points 25 \
-    --center-percentile 95 \
+    --nb-neighbors 32 \
+    --std-ratio 1.0 \
+    --dbscan-min-points 30 \
+    --center-percentile 90 \
+    --inner-percentile 2 \
     --recenter \
     "$PLY_FILE" \
     "$CLEANED_PLY"
+    
     
 if [[ ! -f "$CLEANED_PLY" ]]; then
     echo "❌ PLY cleaning failed"
