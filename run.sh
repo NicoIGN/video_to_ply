@@ -53,7 +53,7 @@ Options:
   --root                 Root output directory (default: runs/default)
   --fps                  Frame extraction FPS (video mode only)
   --skip-conda           Skip conda environment setup
-  --profile              fast | balanced | quality
+  --profile              fast | balanced | quality | best
 
   --skip-frame-extraction
   --skip-colmap
@@ -145,7 +145,7 @@ else
      echo "👉 using profile: ${TRAINING_PROFILE}"
   else
     echo "❌  profile ${PROFILE} not found"
-    echo "❌  use profile [gpu|cpu]/fast|quality|balanced"
+    echo "❌  use profile [gpu|cpu]/fast|quality|balanced|best"
     exit 1
   fi
 fi
