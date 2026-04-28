@@ -313,7 +313,7 @@ case "$INPUT_MODE" in
   images)
     echo "🖼️ Importing images from: $IMAGES"
 
-    mkdir -p "$IMAGE_DIR"
+    mkdir -p "$INPUT_DIR"
 
     if [ ! -d "$IMAGES" ]; then
       echo "❌ Images directory not found: $IMAGES"
@@ -323,7 +323,7 @@ case "$INPUT_MODE" in
     SOURCE_COUNT=$(find "$IMAGES" -maxdepth 1 -type f \
       \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) | wc -l)
 
-    TARGET_COUNT=$(find "$IMAGE_DIR" -maxdepth 1 -type f \
+    TARGET_COUNT=$(find "$INPUT_DIR" -maxdepth 1 -type f \
       \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) | wc -l)
 
     if [ "$SOURCE_COUNT" -eq 0 ]; then
@@ -332,12 +332,12 @@ case "$INPUT_MODE" in
     fi
 
     if [ "$TARGET_COUNT" -eq "$SOURCE_COUNT" ]; then
-      echo "⏩ All images already imported in $IMAGE_DIR, skipping copy"
+      echo "⏩ All images already imported in $INPUT_DIR, skipping copy"
     else
-      echo "📥 Copying $SOURCE_COUNT images to $IMAGE_DIR"
+      echo "📥 Copying $SOURCE_COUNT images to $INPUT_DIR"
       find "$IMAGES" -maxdepth 1 -type f \
         \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) \
-        -exec cp {} "$IMAGE_DIR"/ \;
+        -exec cp {} "$INPUT_DIR"/ \;
     fi
     ;;
 
