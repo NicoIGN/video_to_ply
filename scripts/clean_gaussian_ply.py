@@ -19,7 +19,7 @@ def parse_args():
 
     p.add_argument("--nb-neighbors", type=int, default=32)
 
-    # ✅ remplacé proprement (plus std-ratio)
+    # SOR control
     p.add_argument("--sor-percentile", type=float, default=85.0)
 
     p.add_argument("--dbscan-min-points", type=int, default=50)
@@ -28,6 +28,12 @@ def parse_args():
 
     # global aggressivity control
     p.add_argument("--clean-level", type=float, default=1.0)
+
+    # 🔥 NEW PARAMETER (IMPORTANT)
+    p.add_argument("--edge-percentile", type=float, default=20.0)
+    # 10 = very aggressive
+    # 20 = balanced
+    # 35 = conservative
 
     p.add_argument("--recenter", action="store_true")
     p.add_argument("--supersplat", action="store_true")
@@ -61,14 +67,13 @@ def main():
     print(f"📊 After center filter: {len(xyz_f):,}")
 
     # =========================
-    # SOR FILTER (robust)
+    # SOR FILTER
     # =========================
     nn = NearestNeighbors(n_neighbors=args.nb_neighbors).fit(xyz_f)
     dists, _ = nn.kneighbors(xyz_f)
 
     mean_dist = dists.mean(axis=1)
 
-    # scale-independent percentile control
     sor_thresh = np.percentile(
         mean_dist,
         80 + (10 / args.clean_level)
@@ -79,6 +84,27 @@ def main():
     idx_map = idx_map[mask_sor]
 
     print(f"📊 After SOR: {len(xyz_f):,}")
+
+    # =========================
+    # EDGE REMOVAL (IMPROVED + PARAMETERIZED)
+    # =========================
+
+    global_center = np.mean(xyz_f, axis=0)
+    dist_global = np.linalg.norm(xyz_f - global_center, axis=1)
+
+    density = 1.0 / (mean_dist[mask_sor] + 1e-8)
+
+    score = density / (dist_global + 1e-8)
+
+    # 🔥 now fully controllable
+    edge_thresh = np.percentile(score, args.edge_percentile)
+
+    mask_edge = score > edge_thresh
+
+    xyz_f = xyz_f[mask_edge]
+    idx_map = idx_map[mask_edge]
+
+    print(f"📊 After EDGE removal: {len(xyz_f):,}")
 
     # =========================
     # DBSCAN (scale-free)

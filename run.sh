@@ -526,36 +526,42 @@ LEVELS=("minimal" "balanced" "strong" "aggressive" "destructive")
 
 declare -A NB_NEIGHBORS
 declare -A SOR_PERCENTILE
+declare -A EDGE_PERCENTILE
 declare -A DBSCAN_MIN
 declare -A CENTER_PERC
 
-# minimal
+# minimal (safe, conserve presque tout)
 NB_NEIGHBORS[minimal]=24
 SOR_PERCENTILE[minimal]=88
+EDGE_PERCENTILE[minimal]=35
 DBSCAN_MIN[minimal]=20
 CENTER_PERC[minimal]=97
 
 # balanced
 NB_NEIGHBORS[balanced]=32
 SOR_PERCENTILE[balanced]=85
+EDGE_PERCENTILE[balanced]=25
 DBSCAN_MIN[balanced]=30
 CENTER_PERC[balanced]=95
 
 # strong
 NB_NEIGHBORS[strong]=40
 SOR_PERCENTILE[strong]=82
+EDGE_PERCENTILE[strong]=20
 DBSCAN_MIN[strong]=40
 CENTER_PERC[strong]=92
 
-# aggressive
+# aggressive (good default for messy scenes)
 NB_NEIGHBORS[aggressive]=48
 SOR_PERCENTILE[aggressive]=80
+EDGE_PERCENTILE[aggressive]=15
 DBSCAN_MIN[aggressive]=50
 CENTER_PERC[aggressive]=90
 
-# destructive
+# destructive (hard cleanup, removes background aggressively)
 NB_NEIGHBORS[destructive]=64
 SOR_PERCENTILE[destructive]=75
+EDGE_PERCENTILE[destructive]=10
 DBSCAN_MIN[destructive]=80
 CENTER_PERC[destructive]=85
 
@@ -593,14 +599,16 @@ for LEVEL in "${LEVELS[@]}"; do
     [[ -f "$CLEANED_PLY" ]] && rm -f "$CLEANED_PLY"
 
     echo "⚙️ Params:"
-    echo "   nb-neighbors     : ${NB_NEIGHBORS[$LEVEL]}"
-    echo "   sor-percentile   : ${SOR_PERCENTILE[$LEVEL]}"
-    echo "   dbscan-min       : ${DBSCAN_MIN[$LEVEL]}"
-    echo "   center-percentile: ${CENTER_PERC[$LEVEL]}"
+    echo "   nb-neighbors      : ${NB_NEIGHBORS[$LEVEL]}"
+    echo "   sor-percentile    : ${SOR_PERCENTILE[$LEVEL]}"
+    echo "   edge-percentile   : ${EDGE_PERCENTILE[$LEVEL]}"
+    echo "   dbscan-min        : ${DBSCAN_MIN[$LEVEL]}"
+    echo "   center-percentile : ${CENTER_PERC[$LEVEL]}"
 
     python3 "$SCRIPT_DIR/scripts/clean_gaussian_ply.py" \
         --nb-neighbors "${NB_NEIGHBORS[$LEVEL]}" \
         --sor-percentile "${SOR_PERCENTILE[$LEVEL]}" \
+        --edge-percentile "${EDGE_PERCENTILE[$LEVEL]}" \
         --dbscan-min-points "${DBSCAN_MIN[$LEVEL]}" \
         --center-percentile "${CENTER_PERC[$LEVEL]}" \
         --recenter \
