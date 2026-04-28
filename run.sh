@@ -503,39 +503,106 @@ echo EXPORT_NUM_POINTS: $EXPORT_NUM_POINTS
   fi
 fi
 
+
 # ======================
-# 5. CLEAN PLY
+# 5. CLEAN PLY (ALL LEVELS)
 # ======================
-echo "🧹 Cleaning Gaussian Splat..."
+echo "🧹 Cleaning Gaussian Splat (ALL LEVELS)..."
 
+PLY_FILE="$(find "$EXPORT_DIR" -type f -name '*.ply' ! -name '*_cleaned*.ply' | head -n 1)"
 
-PLY_FILE="$(find "$EXPORT_DIR" -type f -name '*.ply' ! -name '*_cleaned.ply' | head -n 1)"
-
-CLEANED_PLY="${PLY_FILE%.ply}_cleaned.ply"
-
-if [[ -f "$CLEANED_PLY" ]]; then
-    echo "🗑️ Removing existing cleaned PLY:"
-    echo "   $CLEANED_PLY"
-    rm -f "$CLEANED_PLY"
-fi
-
-cd
-
-python3 "$SCRIPT_DIR/scripts/clean_gaussian_ply.py" \
-    --nb-neighbors 32 \
-    --std-ratio 1.0 \
-    --dbscan-min-points 30 \
-    --center-percentile 90 \
-    --recenter \
-    "$PLY_FILE" \
-    "$CLEANED_PLY"
-    
-    
-if [[ ! -f "$CLEANED_PLY" ]]; then
-    echo "❌ PLY cleaning failed"
+if [[ -z "$PLY_FILE" ]]; then
+    echo "❌ No PLY file found in $EXPORT_DIR"
     exit 1
 fi
 
+echo "📦 Input PLY: $PLY_FILE"
+
+# ======================
+# LEVEL CONFIGS
+# ======================
+LEVELS=("minimal" "balanced" "strong" "aggressive" "destructive")
+
+declare -A NB_NEIGHBORS
+declare -A STD_RATIO
+declare -A DBSCAN_MIN
+declare -A CENTER_PERC
+
+# minimal
+NB_NEIGHBORS[minimal]=24
+STD_RATIO[minimal]=2.0
+DBSCAN_MIN[minimal]=20
+CENTER_PERC[minimal]=97
+
+# balanced
+NB_NEIGHBORS[balanced]=32
+STD_RATIO[balanced]=1.5
+DBSCAN_MIN[balanced]=30
+CENTER_PERC[balanced]=95
+
+# strong
+NB_NEIGHBORS[strong]=40
+STD_RATIO[strong]=1.0
+DBSCAN_MIN[strong]=40
+CENTER_PERC[strong]=92
+
+# aggressive
+NB_NEIGHBORS[aggressive]=48
+STD_RATIO[aggressive]=0.8
+DBSCAN_MIN[aggressive]=50
+CENTER_PERC[aggressive]=90
+
+# destructive
+NB_NEIGHBORS[destructive]=64
+STD_RATIO[destructive]=0.6
+DBSCAN_MIN[destructive]=80
+CENTER_PERC[destructive]=85
+
+# ======================
+# RUN ALL LEVELS
+# ======================
+cd
+
+for LEVEL in "${LEVELS[@]}"; do
+
+    echo ""
+    echo "🚀 =============================="
+    echo "🚀 CLEAN LEVEL: $LEVEL"
+    echo "🚀 =============================="
+
+    CLEANED_PLY="${PLY_FILE%.ply}_${LEVEL}.ply"
+
+    if [[ -f "$CLEANED_PLY" ]]; then
+        echo "🗑️ Removing existing: $CLEANED_PLY"
+        rm -f "$CLEANED_PLY"
+    fi
+
+    echo "⚙️ Params:"
+    echo "   nb-neighbors      : ${NB_NEIGHBORS[$LEVEL]}"
+    echo "   std-ratio         : ${STD_RATIO[$LEVEL]}"
+    echo "   dbscan-min-points : ${DBSCAN_MIN[$LEVEL]}"
+    echo "   center-percentile : ${CENTER_PERC[$LEVEL]}"
+
+    python3 "$SCRIPT_DIR/scripts/clean_gaussian_ply.py" \
+        --nb-neighbors "${NB_NEIGHBORS[$LEVEL]}" \
+        --std-ratio "${STD_RATIO[$LEVEL]}" \
+        --dbscan-min-points "${DBSCAN_MIN[$LEVEL]}" \
+        --center-percentile "${CENTER_PERC[$LEVEL]}" \
+        --recenter \
+        "$PLY_FILE" \
+        "$CLEANED_PLY"
+
+    if [[ ! -f "$CLEANED_PLY" ]]; then
+        echo "❌ FAILED LEVEL: $LEVEL"
+        exit 1
+    fi
+
+    echo "✅ DONE → $CLEANED_PLY"
+
+done
+
+echo ""
+echo "🎉 ALL CLEAN LEVELS GENERATED"
 echo "✅ Cleaned PLY:"
 echo "   $CLEANED_PLY"
 
