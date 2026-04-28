@@ -143,54 +143,101 @@ LAST_RUN=$(ls -td "$MODEL_ROOT"/* 2>/dev/null | head -n 1 || true)
 
 echo "🧪 LAST_RUN DETECTED: $LAST_RUN"
 
-# ----------------------
-# 3. check checkpoints inside runs
-# ----------------------
-if [ -n "$LAST_RUN" ]; then
-    echo "🔍 SEARCHING CHECKPOINTS IN: $LAST_RUN"
 
-    find "$LAST_RUN" -type f -name "*.ckpt" -print || true
+# ======================
+# CHECKPOINT SEARCH SWITCH
+# ======================
+SEARCH_CHECKPOINT=${SEARCH_CHECKPOINT:-false}
+echo "🧭 SEARCH_CHECKPOINT = $SEARCH_CHECKPOINT"
 
-    CHECKPOINT_DIR=$(find "$LAST_RUN" -type d -name "nerfstudio_models" 2>/dev/null | head -n 1 || true)
+# ======================
+# CHECKPOINT AUTO-RESUME (DEBUG + SWITCHABLE)
+# ======================
 
-    echo "📦 CHECKPOINT_DIR FOUND: $CHECKPOINT_DIR"
+LOAD_DIR=""
+CHECKPOINT_SRC=""
 
-    if [ -d "$CHECKPOINT_DIR" ]; then
-        CHECKPOINT_SRC="$CHECKPOINT_DIR"
-    fi
-fi
+MODEL_ROOT="$OUTPUTDIR/model3d/splatfacto"
 
-# ----------------------
-# 4. fallback scan global
-# ----------------------
-if [ -z "$CHECKPOINT_SRC" ]; then
-    echo "🔁 FALLBACK: scanning all runs..."
+echo "🔍 CHECKPOINT DEBUG"
+echo "📁 OUTPUTDIR     : $OUTPUTDIR"
+echo "📁 MODEL_ROOT    : $MODEL_ROOT"
 
-    CHECKPOINT_SRC=$(find "$MODEL_ROOT" -type d -path "*/nerfstudio_models" 2>/dev/null \
-        | sort -r | head -n 1 || true)
-
-    echo "📦 FALLBACK CHECKPOINT_SRC: $CHECKPOINT_SRC"
-fi
-
-# ----------------------
-# 5. final decision
-# ----------------------
-if [ -n "$CHECKPOINT_SRC" ] && [ -d "$CHECKPOINT_SRC" ]; then
-
-    RUN_CKPT_DIR="$OUTPUTDIR/nerfstudio_models"
-
-    echo "♻️ CHECKPOINT FOUND → COPYING"
-    echo "FROM: $CHECKPOINT_SRC"
-    echo "TO  : $RUN_CKPT_DIR"
-
-    mkdir -p "$RUN_CKPT_DIR"
-
-    rsync -av "$CHECKPOINT_SRC/" "$RUN_CKPT_DIR/"
-
-    LOAD_DIR="$RUN_CKPT_DIR"
-
+# ======================
+# SWITCH OFF → SKIP EVERYTHING
+# ======================
+if [[ "$SEARCH_CHECKPOINT" != "true" ]]; then
+    echo "⏭️ SEARCH_CHECKPOINT disabled → skipping checkpoint search"
+    echo "🆕 TRAINING FROM SCRATCH"
+    LOAD_DIR=""
 else
-    echo "🆕 NO CHECKPOINT FOUND → TRAINING FROM SCRATCH"
+
+    # ----------------------
+    # 1. list all runs
+    # ----------------------
+    if [ -d "$MODEL_ROOT" ]; then
+        echo "📂 RUNS FOUND IN MODEL ROOT:"
+        ls -1 "$MODEL_ROOT" || true
+    else
+        echo "❌ MODEL_ROOT DOES NOT EXIST: $MODEL_ROOT"
+    fi
+
+    # ----------------------
+    # 2. find latest run folder
+    # ----------------------
+    LAST_RUN=$(ls -td "$MODEL_ROOT"/* 2>/dev/null | head -n 1 || true)
+
+    echo "🧪 LAST_RUN DETECTED: $LAST_RUN"
+
+    # ----------------------
+    # 3. search inside last run
+    # ----------------------
+    if [ -n "$LAST_RUN" ]; then
+        echo "🔍 SEARCHING CHECKPOINTS IN: $LAST_RUN"
+
+        find "$LAST_RUN" -type f -name "*.ckpt" -print || true
+
+        CHECKPOINT_DIR=$(find "$LAST_RUN" -type d -name "nerfstudio_models" 2>/dev/null | head -n 1 || true)
+
+        echo "📦 CHECKPOINT_DIR FOUND: $CHECKPOINT_DIR"
+
+        if [ -d "$CHECKPOINT_DIR" ]; then
+            CHECKPOINT_SRC="$CHECKPOINT_DIR"
+        fi
+    fi
+
+    # ----------------------
+    # 4. fallback scan global
+    # ----------------------
+    if [ -z "$CHECKPOINT_SRC" ]; then
+        echo "🔁 FALLBACK: scanning all runs..."
+
+        CHECKPOINT_SRC=$(find "$MODEL_ROOT" -type d -path "*/nerfstudio_models" 2>/dev/null \
+            | sort -r | head -n 1 || true)
+
+        echo "📦 FALLBACK CHECKPOINT_SRC: $CHECKPOINT_SRC"
+    fi
+
+    # ----------------------
+    # 5. final decision
+    # ----------------------
+    if [ -n "$CHECKPOINT_SRC" ] && [ -d "$CHECKPOINT_SRC" ]; then
+
+        RUN_CKPT_DIR="$OUTPUTDIR/nerfstudio_models"
+
+        echo "♻️ CHECKPOINT FOUND → COPYING"
+        echo "FROM: $CHECKPOINT_SRC"
+        echo "TO  : $RUN_CKPT_DIR"
+
+        mkdir -p "$RUN_CKPT_DIR"
+
+        rsync -av "$CHECKPOINT_SRC/" "$RUN_CKPT_DIR/"
+
+        LOAD_DIR="$RUN_CKPT_DIR"
+
+    else
+        echo "🆕 NO CHECKPOINT FOUND → TRAINING FROM SCRATCH"
+    fi
 fi
 
 echo "🚀 FINAL LOAD_DIR = $LOAD_DIR"
