@@ -5,7 +5,7 @@ set -e
 # ======================
 # DEFAULTS
 # ======================
-FPS=10
+NUM_FRAMES=100
 DEVICE="cpu"
 ROOT_DIR="runs/default"
 SKIP_CONDA=false
@@ -51,7 +51,7 @@ Required:
 
 Options:
   --root                 Root output directory (default: runs/default)
-  --fps                  Frame extraction FPS (video mode only)
+  --num_frames           Number of frames to extract (video mode only)
   --skip-conda           Skip conda environment setup
   --profile              fast | balanced | quality | best
   --name                 base name of the outputfile
@@ -72,7 +72,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --video) VIDEO="$2"; INPUT_MODE="video"; shift 2 ;;
     --images) IMAGES="$2"; INPUT_MODE="images"; shift 2 ;;
-    --fps) FPS="$2"; shift 2 ;;
+    --num_frames) NUM_FRAMES="$2"; shift 2 ;;
     --profile) PROFILE="$2"; shift 2 ;;
     --name) BASENAME="$2"; shift 2 ;;
     --root) ROOT_DIR="$2"; shift 2 ;;
@@ -369,8 +369,11 @@ case "$INPUT_MODE" in
     elif [ -d "$IMAGE_DIR" ] && [ "$(ls -A "$IMAGE_DIR" 2>/dev/null)" ]; then
       echo "⏩ Skipping frame extraction"
     else
-      echo "🎬 Extracting frames → $IMAGE_DIR"
-      bash scripts/extract_frames.sh "$VIDEO" "$FPS" "$IMAGE_DIR"
+      echo "🎬 Extracting $NUM_FRAMES frames → $IMAGE_DIR"
+      NUM_IMAGES="$NUM_FRAMES" \
+      IMAGE_DIR="$IMAGE_DIR" \
+      VIDEO="$VIDEO" \
+      bash scripts/extract_frames.sh
     fi
     ;;
 
