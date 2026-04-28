@@ -114,45 +114,86 @@ echo "────────────────────────�
 
 
 # ======================
-# CHECKPOINT AUTO-RESUME
+# CHECKPOINT AUTO-RESUME (DEBUG + FIXED)
 # ======================
+
 LOAD_DIR=""
 CHECKPOINT_SRC=""
 
-BASE_MODEL_DIR="$OUTPUTDIR/$MODEL"
+MODEL_ROOT="$OUTPUTDIR/model3d/splatfacto"
 
-if [ -d "$BASE_MODEL_DIR" ]; then
-    LAST_RUN=$(ls -td "$BASE_MODEL_DIR"/*/nerfstudio_models 2>/dev/null | head -n 1 || true)
-    if [ -n "$LAST_RUN" ]; then
-        CHECKPOINT_SRC="$LAST_RUN"
+echo "🔍 CHECKPOINT DEBUG"
+echo "📁 OUTPUTDIR     : $OUTPUTDIR"
+echo "📁 MODEL_ROOT    : $MODEL_ROOT"
+
+# ----------------------
+# 1. list all runs
+# ----------------------
+if [ -d "$MODEL_ROOT" ]; then
+    echo "📂 RUNS FOUND IN MODEL ROOT:"
+    ls -1 "$MODEL_ROOT" || true
+else
+    echo "❌ MODEL_ROOT DOES NOT EXIST: $MODEL_ROOT"
+fi
+
+# ----------------------
+# 2. find latest run folder
+# ----------------------
+LAST_RUN=$(ls -td "$MODEL_ROOT"/* 2>/dev/null | head -n 1 || true)
+
+echo "🧪 LAST_RUN DETECTED: $LAST_RUN"
+
+# ----------------------
+# 3. check checkpoints inside runs
+# ----------------------
+if [ -n "$LAST_RUN" ]; then
+    echo "🔍 SEARCHING CHECKPOINTS IN: $LAST_RUN"
+
+    find "$LAST_RUN" -type f -name "*.ckpt" -print || true
+
+    CHECKPOINT_DIR=$(find "$LAST_RUN" -type d -name "nerfstudio_models" 2>/dev/null | head -n 1 || true)
+
+    echo "📦 CHECKPOINT_DIR FOUND: $CHECKPOINT_DIR"
+
+    if [ -d "$CHECKPOINT_DIR" ]; then
+        CHECKPOINT_SRC="$CHECKPOINT_DIR"
     fi
 fi
 
-# fallback legacy
-if [ -z "$CHECKPOINT_SRC" ] && [ -d "$OUTPUTDIR/nerfstudio_models" ]; then
-    CHECKPOINT_SRC="$OUTPUTDIR/nerfstudio_models"
+# ----------------------
+# 4. fallback scan global
+# ----------------------
+if [ -z "$CHECKPOINT_SRC" ]; then
+    echo "🔁 FALLBACK: scanning all runs..."
+
+    CHECKPOINT_SRC=$(find "$MODEL_ROOT" -type d -path "*/nerfstudio_models" 2>/dev/null \
+        | sort -r | head -n 1 || true)
+
+    echo "📦 FALLBACK CHECKPOINT_SRC: $CHECKPOINT_SRC"
 fi
 
-
-# ======================
-# COPY CHECKPOINT INTO CURRENT RUN
-# ======================
-if [ -n "$CHECKPOINT_SRC" ]; then
+# ----------------------
+# 5. final decision
+# ----------------------
+if [ -n "$CHECKPOINT_SRC" ] && [ -d "$CHECKPOINT_SRC" ]; then
 
     RUN_CKPT_DIR="$OUTPUTDIR/nerfstudio_models"
 
-    echo "♻️ CHECKPOINT FOUND"
-    echo "📦 FROM: $CHECKPOINT_SRC"
-    echo "📦 TO  : $RUN_CKPT_DIR"
+    echo "♻️ CHECKPOINT FOUND → COPYING"
+    echo "FROM: $CHECKPOINT_SRC"
+    echo "TO  : $RUN_CKPT_DIR"
 
     mkdir -p "$RUN_CKPT_DIR"
-    rsync -a "$CHECKPOINT_SRC/" "$RUN_CKPT_DIR/"
+
+    rsync -av "$CHECKPOINT_SRC/" "$RUN_CKPT_DIR/"
 
     LOAD_DIR="$RUN_CKPT_DIR"
 
 else
     echo "🆕 NO CHECKPOINT FOUND → TRAINING FROM SCRATCH"
 fi
+
+echo "🚀 FINAL LOAD_DIR = $LOAD_DIR"
 
 
 # ======================
