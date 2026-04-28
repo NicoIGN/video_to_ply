@@ -18,12 +18,19 @@ def parse_args():
     p.add_argument("output", type=Path)
 
     p.add_argument("--nb-neighbors", type=int, default=32)
-    p.add_argument("--std-ratio", type=float, default=1.5)
 
-    p.add_argument("--dbscan-eps", type=float, default=None)
+    # 🔥 remplace std-ratio fragile
+    p.add_argument("--sor-percentile", type=float, default=85.0)
+
     p.add_argument("--dbscan-min-points", type=int, default=50)
 
     p.add_argument("--center-percentile", type=float, default=95.0)
+
+    # 🔥 NEW: global aggressivity control
+    p.add_argument("--clean-level", type=float, default=1.0)
+    # 0.5 = very aggressive
+    # 1.0 = balanced
+    # 2.0 = safe
 
     p.add_argument("--recenter", action="store_true")
     p.add_argument("--supersplat", action="store_true")
@@ -34,72 +41,57 @@ def parse_args():
 def main():
     args = parse_args()
 
-    if args.recenter and args.supersplat:
-        print("❌ Cannot use both modes")
-        sys.exit(1)
-
     print(f"📥 Loading: {args.input}")
 
     ply = PlyData.read(str(args.input))
     vertex = ply["vertex"].data
 
     xyz = np.vstack([vertex["x"], vertex["y"], vertex["z"]]).T
-
     print(f"📊 Points: {len(xyz):,}")
 
     # =========================
-    # CENTER FILTER (UNCHANGED)
+    # CENTER FILTER (STABLE)
     # =========================
-    print("🎯 Center filtering...")
-
     center = np.median(xyz, axis=0)
     dist_center = np.linalg.norm(xyz - center, axis=1)
 
     threshold = np.percentile(dist_center, args.center_percentile)
+    mask = dist_center < threshold
 
-    mask_center = dist_center < threshold
-    xyz_f = xyz[mask_center]
+    xyz_f = xyz[mask]
+    idx_map = np.where(mask)[0]
 
     print(f"📊 After center filter: {len(xyz_f):,}")
-
-    idx_map = np.where(mask_center)[0]
 
     # =========================
     # SOR (ROBUST VERSION)
     # =========================
-    print("🧹 SOR filtering...")
-
     nn = NearestNeighbors(n_neighbors=args.nb_neighbors).fit(xyz_f)
     dists, _ = nn.kneighbors(xyz_f)
 
     mean_dist = dists.mean(axis=1)
 
-    # 🔥 robust threshold (percentile instead of mean/std)
-    perc = 90 + (args.std_ratio * 2)  # approx mapping
-    perc = min(perc, 99)
+    # 🔥 percentile-based SOR (stable across scales)
+    sor_thresh = np.percentile(
+        mean_dist,
+        80 + (10 / args.clean_level)  # cleaner = more aggressive
+    )
 
-    thresh = np.percentile(mean_dist, perc)
+    mask_sor = mean_dist < sor_thresh
 
-    mask_sor = mean_dist < thresh
     xyz_f = xyz_f[mask_sor]
+    idx_map = idx_map[mask_sor]
 
     print(f"📊 After SOR: {len(xyz_f):,}")
 
-    idx_map = idx_map[mask_sor]
-
     # =========================
-    # DBSCAN (ADAPTIVE BUT SAFE)
+    # DBSCAN (SCALE-FREE FIX)
     # =========================
     print("🔗 DBSCAN clustering...")
 
-    # estimate local scale
     local_scale = np.median(mean_dist)
 
-    if args.dbscan_eps is None:
-        eps = local_scale * 2.5   # 🔥 clé : relatif mais stable
-        print(f"⚙️ Auto eps: {eps:.6f}")
-    else:
-        eps = args.dbscan_eps
+    eps = local_scale * (2.0 / args.clean_level)
 
     labels = DBSCAN(
         eps=eps,
@@ -132,22 +124,17 @@ def main():
     # MODE
     # =========================
     if args.recenter:
-        print("📍 SAFE RECENTER")
-
         center = xyz_new.mean(axis=0)
-        xyz_new = xyz_new - center
-
-        print(f"📍 Translation applied: {center}")
+        xyz_new -= center
+        print(f"📍 Recenter applied: {center}")
 
     elif args.supersplat:
-        print("🚀 SUPERSPLAT")
-
         center = xyz_new.mean(axis=0)
-        xyz_new = xyz_new - center
+        xyz_new -= center
 
         scale = np.max(np.linalg.norm(xyz_new, axis=1))
         if scale > 0:
-            xyz_new = xyz_new / scale
+            xyz_new /= scale
 
         print(f"📏 Scale: {scale:.6f}")
 

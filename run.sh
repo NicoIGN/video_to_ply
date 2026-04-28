@@ -521,6 +521,7 @@ echo "📦 Input PLY: $PLY_FILE"
 # ======================
 # LEVEL CONFIGS
 # ======================
+
 LEVELS=("minimal" "balanced" "strong" "aggressive" "destructive")
 
 declare -A NB_NEIGHBORS
@@ -558,20 +559,38 @@ STD_RATIO[destructive]=0.6
 DBSCAN_MIN[destructive]=80
 CENTER_PERC[destructive]=85
 
+
+# ======================
+# CHECK INPUT
+# ======================
+
+if [[ -z "$PLY_FILE" ]]; then
+    echo "❌ PLY_FILE is empty"
+    exit 1
+fi
+
+if [[ ! -f "$PLY_FILE" ]]; then
+    echo "❌ PLY file not found: $PLY_FILE"
+    exit 1
+fi
+
+
 # ======================
 # RUN ALL LEVELS
 # ======================
-cd
+
+echo "🧹 Input PLY: $PLY_FILE"
+echo ""
 
 for LEVEL in "${LEVELS[@]}"; do
 
-    echo ""
     echo "🚀 =============================="
     echo "🚀 CLEAN LEVEL: $LEVEL"
     echo "🚀 =============================="
 
     CLEANED_PLY="${PLY_FILE%.ply}_${LEVEL}.ply"
 
+    # remove old file
     if [[ -f "$CLEANED_PLY" ]]; then
         echo "🗑️ Removing existing: $CLEANED_PLY"
         rm -f "$CLEANED_PLY"
@@ -582,6 +601,12 @@ for LEVEL in "${LEVELS[@]}"; do
     echo "   std-ratio         : ${STD_RATIO[$LEVEL]}"
     echo "   dbscan-min-points : ${DBSCAN_MIN[$LEVEL]}"
     echo "   center-percentile : ${CENTER_PERC[$LEVEL]}"
+
+    # safety check script exists
+    if [[ ! -f "$SCRIPT_DIR/scripts/clean_gaussian_ply.py" ]]; then
+        echo "❌ cleaner script not found"
+        exit 1
+    fi
 
     python3 "$SCRIPT_DIR/scripts/clean_gaussian_ply.py" \
         --nb-neighbors "${NB_NEIGHBORS[$LEVEL]}" \
@@ -598,12 +623,21 @@ for LEVEL in "${LEVELS[@]}"; do
     fi
 
     echo "✅ DONE → $CLEANED_PLY"
+    echo ""
 
 done
 
-echo ""
-echo "🎉 ALL CLEAN LEVELS GENERATED"
-echo "✅ Cleaned PLY:"
-echo "   $CLEANED_PLY"
 
-echo "✅ DONE → $ROOT_DIR"
+# ======================
+# FINAL SUMMARY
+# ======================
+
+echo "🎉 ALL CLEAN LEVELS GENERATED"
+
+echo "📦 Outputs:"
+for LEVEL in "${LEVELS[@]}"; do
+    echo "   ${PLY_FILE%.ply}_${LEVEL}.ply"
+done
+
+echo ""
+echo "✅ DONE → $SCRIPT_DIR"
