@@ -18,31 +18,17 @@ def parse_args():
     p.add_argument("output", type=Path)
 
     p.add_argument("--nb-neighbors", type=int, default=32)
-    p.add_argument("--std-ratio", type=float, default=1.0)
+    p.add_argument("--std-ratio", type=float, default=1.5)
 
-    p.add_argument("--dbscan-min-points", type=int, default=30)
+    p.add_argument("--dbscan-eps", type=float, default=None)
+    p.add_argument("--dbscan-min-points", type=int, default=50)
 
-    p.add_argument("--center-percentile", type=float, default=90.0)
-    p.add_argument("--inner-percentile", type=float, default=2.0)
+    p.add_argument("--center-percentile", type=float, default=95.0)
 
     p.add_argument("--recenter", action="store_true")
     p.add_argument("--supersplat", action="store_true")
 
     return p.parse_args()
-
-
-def robust_scale(xyz):
-    """Scale robuste basé sur percentiles (évite outliers)"""
-    center = np.median(xyz, axis=0)
-    dist = np.linalg.norm(xyz - center, axis=1)
-
-    scale = np.percentile(dist, 95)
-
-    if scale < 1e-6:
-        scale = 1.0
-
-    xyz_norm = (xyz - center) / scale
-    return xyz_norm, center, scale
 
 
 def main():
@@ -58,33 +44,28 @@ def main():
     vertex = ply["vertex"].data
 
     xyz = np.vstack([vertex["x"], vertex["y"], vertex["z"]]).T
+
     print(f"📊 Points: {len(xyz):,}")
 
     # =========================
-    # NORMALIZATION (CRITICAL)
-    # =========================
-    xyz, global_center, global_scale = robust_scale(xyz)
-    print(f"📏 Auto-scale applied (p95): {global_scale:.6f}")
-
-    # =========================
-    # CENTER FILTER (IMPROVED)
+    # CENTER FILTER (UNCHANGED)
     # =========================
     print("🎯 Center filtering...")
 
-    dist_center = np.linalg.norm(xyz, axis=1)
+    center = np.median(xyz, axis=0)
+    dist_center = np.linalg.norm(xyz - center, axis=1)
 
-    outer = np.percentile(dist_center, args.center_percentile)
-    inner = np.percentile(dist_center, args.inner_percentile)
+    threshold = np.percentile(dist_center, args.center_percentile)
 
-    mask_center = (dist_center < outer) & (dist_center > inner)
-
+    mask_center = dist_center < threshold
     xyz_f = xyz[mask_center]
-    idx_map = np.where(mask_center)[0]
 
     print(f"📊 After center filter: {len(xyz_f):,}")
 
+    idx_map = np.where(mask_center)[0]
+
     # =========================
-    # SOR
+    # SOR (ROBUST VERSION)
     # =========================
     print("🧹 SOR filtering...")
 
@@ -93,23 +74,32 @@ def main():
 
     mean_dist = dists.mean(axis=1)
 
-    thresh = np.mean(mean_dist) + args.std_ratio * np.std(mean_dist)
-    mask_sor = mean_dist < thresh
+    # 🔥 robust threshold (percentile instead of mean/std)
+    perc = 90 + (args.std_ratio * 2)  # approx mapping
+    perc = min(perc, 99)
 
+    thresh = np.percentile(mean_dist, perc)
+
+    mask_sor = mean_dist < thresh
     xyz_f = xyz_f[mask_sor]
-    idx_map = idx_map[mask_sor]
 
     print(f"📊 After SOR: {len(xyz_f):,}")
 
+    idx_map = idx_map[mask_sor]
+
     # =========================
-    # DBSCAN (AUTO SCALE 🔥)
+    # DBSCAN (ADAPTIVE BUT SAFE)
     # =========================
     print("🔗 DBSCAN clustering...")
 
-    # 🔥 clé : eps basé sur distances locales
-    eps = np.percentile(mean_dist, 80)
+    # estimate local scale
+    local_scale = np.median(mean_dist)
 
-    print(f"⚙️ Auto eps: {eps:.6f}")
+    if args.dbscan_eps is None:
+        eps = local_scale * 2.5   # 🔥 clé : relatif mais stable
+        print(f"⚙️ Auto eps: {eps:.6f}")
+    else:
+        eps = args.dbscan_eps
 
     labels = DBSCAN(
         eps=eps,
@@ -139,29 +129,27 @@ def main():
     ]).T
 
     # =========================
-    # APPLY SAME NORMALIZATION
-    # =========================
-    xyz_new = (xyz_new - global_center) / global_scale
-
-    # =========================
     # MODE
     # =========================
     if args.recenter:
         print("📍 SAFE RECENTER")
+
         center = xyz_new.mean(axis=0)
-        xyz_new -= center
-        print(f"📍 Translation: {center}")
+        xyz_new = xyz_new - center
+
+        print(f"📍 Translation applied: {center}")
 
     elif args.supersplat:
         print("🚀 SUPERSPLAT")
+
         center = xyz_new.mean(axis=0)
-        xyz_new -= center
+        xyz_new = xyz_new - center
 
         scale = np.max(np.linalg.norm(xyz_new, axis=1))
         if scale > 0:
-            xyz_new /= scale
+            xyz_new = xyz_new / scale
 
-        print(f"📏 Final scale: {scale:.6f}")
+        print(f"📏 Scale: {scale:.6f}")
 
     # =========================
     # SAVE

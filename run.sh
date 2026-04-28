@@ -526,7 +526,6 @@ python3 "$SCRIPT_DIR/scripts/clean_gaussian_ply.py" \
     --std-ratio 1.0 \
     --dbscan-min-points 30 \
     --center-percentile 90 \
-    --inner-percentile 2 \
     --recenter \
     "$PLY_FILE" \
     "$CLEANED_PLY"
