@@ -8,7 +8,6 @@ set -e
 FPS=10
 DEVICE="cpu"
 ROOT_DIR="runs/default"
-VIDEO=""
 SKIP_CONDA=false
 NO_PROXY=false
 
@@ -23,28 +22,41 @@ SKIP_EXPORT=false
 source config/config.sh
 
 # ======================
+# INPUT MODE
+# ======================
+INPUT_MODE="video"
+VIDEO=""
+IMAGES=""
+
+# ======================
 # HELP
 # ======================
 show_help() {
   cat << EOF
-Usage: ./run.sh --video <path> --root <dir> [options]
+Usage:
+  Video mode:
+    ./run.sh --video <path> --root <dir> [options]
+
+  Images mode:
+    ./run.sh --images <dir> --root <dir> [options]
 
 Required:
-  --video       Path to input video
+  --video <file>         Input video
+       or
+  --images <directory>   Directory containing source images
 
 Options:
   --root                 Root output directory (default: runs/default)
-  --fps                  Frame extraction FPS (default: 10)
-  --skip-conda           Skip conda environment setup (useful for Colab)
-  --profile              profil de calcul: fast | balanced | quality
+  --fps                  Frame extraction FPS (video mode only)
+  --skip-conda           Skip conda environment setup
+  --profile              fast | balanced | quality
 
-  --skip-frame-extraction  Skip frame extraction step
-  --skip-colmap            Skip COLMAP step
-  --skip-training          Skip training step
-  --skip-export            Skip export step
-  --no-proxy               ignore all proxy config
-
-  --help                 Show this help
+  --skip-frame-extraction
+  --skip-colmap
+  --skip-training
+  --skip-export
+  --no-proxy
+  --help
 EOF
 }
 
@@ -254,29 +266,74 @@ TRAIN_DIR="$ROOT_DIR"
 
 mkdir -p "$INPUT_DIR" "$IMAGE_DIR" "$OUTPUT_DIR" "$EXPORT_DIR" "$TRAIN_DIR"
 
-# copy video
-if [ ! -f "$INPUT_DIR/video.mov" ]; then
-  cp "$VIDEO" "$INPUT_DIR/video.mov"
-fi
-VIDEO="$INPUT_DIR/video.mov"
+# copy input dataset
+case "$INPUT_MODE" in
+  video)
+    if [ ! -f "$INPUT_DIR/video.mov" ]; then
+      cp "$VIDEO" "$INPUT_DIR/video.mov"
+    fi
+    VIDEO="$INPUT_DIR/video.mov"
+    ;;
+
+  images)
+    echo "🖼️ Importing images from: $IMAGES"
+
+    mkdir -p "$IMAGE_DIR"
+
+    if [ ! -d "$IMAGES" ]; then
+      echo "❌ Images directory not found: $IMAGES"
+      exit 1
+    fi
+
+    find "$IMAGES" -maxdepth 1 -type f \
+      \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) \
+      -exec cp {} "$IMAGE_DIR"/ \;
+
+    if [ -z "$(ls -A "$IMAGE_DIR" 2>/dev/null)" ]; then
+      echo "❌ No images found in: $IMAGES"
+      exit 1
+    fi
+    ;;
+
+  *)
+    echo "❌ Invalid INPUT_MODE: $INPUT_MODE"
+    exit 1
+    ;;
+esac
 
 echo "📦 ROOT: $ROOT_DIR"
 
-# ======================
-# SKIP LOGIC
-# ======================
 
 # ----------------------
-# 1. FRAME EXTRACTION
+# 1. INPUT PREPARATION
 # ----------------------
-if [ "$SKIP_FRAME_EXTRACTION" = true ]; then
-  echo "⏩ Skipping frame extraction (config)"
-elif [ -d "$IMAGE_DIR" ] && [ "$(ls -A "$IMAGE_DIR" 2>/dev/null)" ]; then
-  echo "⏩ Skipping frame extraction"
-else
-  echo "🎬 Extracting frames → $IMAGE_DIR"
-  bash scripts/extract_frames.sh "$VIDEO" "$FPS" "$IMAGE_DIR"
-fi
+case "$INPUT_MODE" in
+  video)
+    if [ "$SKIP_FRAME_EXTRACTION" = true ]; then
+      echo "⏩ Skipping frame extraction (config)"
+    elif [ -d "$IMAGE_DIR" ] && [ "$(ls -A "$IMAGE_DIR" 2>/dev/null)" ]; then
+      echo "⏩ Skipping frame extraction"
+    else
+      echo "🎬 Extracting frames → $IMAGE_DIR"
+      bash scripts/extract_frames.sh "$VIDEO" "$FPS" "$IMAGE_DIR"
+    fi
+    ;;
+
+  images)
+    if [ ! -d "$IMAGES" ]; then
+      echo "❌ Images directory not found: $IMAGES"
+      exit 1
+    fi
+
+    echo "🖼️ Preparing images → $IMAGE_DIR"
+    bash scripts/prepare_images.sh "$IMAGES" "$IMAGE_DIR"
+    ;;
+
+  *)
+    echo "❌ Invalid INPUT_MODE: $INPUT_MODE"
+    exit 1
+    ;;
+esac
 
 # ----------------------
 # 2. COLMAP
