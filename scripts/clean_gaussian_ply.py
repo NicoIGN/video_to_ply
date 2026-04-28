@@ -19,18 +19,15 @@ def parse_args():
 
     p.add_argument("--nb-neighbors", type=int, default=32)
 
-    # 🔥 remplace std-ratio fragile
+    # ✅ remplacé proprement (plus std-ratio)
     p.add_argument("--sor-percentile", type=float, default=85.0)
 
     p.add_argument("--dbscan-min-points", type=int, default=50)
 
     p.add_argument("--center-percentile", type=float, default=95.0)
 
-    # 🔥 NEW: global aggressivity control
+    # global aggressivity control
     p.add_argument("--clean-level", type=float, default=1.0)
-    # 0.5 = very aggressive
-    # 1.0 = balanced
-    # 2.0 = safe
 
     p.add_argument("--recenter", action="store_true")
     p.add_argument("--supersplat", action="store_true")
@@ -50,7 +47,7 @@ def main():
     print(f"📊 Points: {len(xyz):,}")
 
     # =========================
-    # CENTER FILTER (STABLE)
+    # CENTER FILTER
     # =========================
     center = np.median(xyz, axis=0)
     dist_center = np.linalg.norm(xyz - center, axis=1)
@@ -64,33 +61,31 @@ def main():
     print(f"📊 After center filter: {len(xyz_f):,}")
 
     # =========================
-    # SOR (ROBUST VERSION)
+    # SOR FILTER (robust)
     # =========================
     nn = NearestNeighbors(n_neighbors=args.nb_neighbors).fit(xyz_f)
     dists, _ = nn.kneighbors(xyz_f)
 
     mean_dist = dists.mean(axis=1)
 
-    # 🔥 percentile-based SOR (stable across scales)
+    # scale-independent percentile control
     sor_thresh = np.percentile(
         mean_dist,
-        80 + (10 / args.clean_level)  # cleaner = more aggressive
+        80 + (10 / args.clean_level)
     )
 
     mask_sor = mean_dist < sor_thresh
-
     xyz_f = xyz_f[mask_sor]
     idx_map = idx_map[mask_sor]
 
     print(f"📊 After SOR: {len(xyz_f):,}")
 
     # =========================
-    # DBSCAN (SCALE-FREE FIX)
+    # DBSCAN (scale-free)
     # =========================
     print("🔗 DBSCAN clustering...")
 
     local_scale = np.median(mean_dist)
-
     eps = local_scale * (2.0 / args.clean_level)
 
     labels = DBSCAN(
@@ -126,7 +121,7 @@ def main():
     if args.recenter:
         center = xyz_new.mean(axis=0)
         xyz_new -= center
-        print(f"📍 Recenter applied: {center}")
+        print(f"📍 Recenter applied")
 
     elif args.supersplat:
         center = xyz_new.mean(axis=0)
@@ -136,7 +131,7 @@ def main():
         if scale > 0:
             xyz_new /= scale
 
-        print(f"📏 Scale: {scale:.6f}")
+        print(f"📏 Normalized scale: {scale:.6f}")
 
     # =========================
     # SAVE

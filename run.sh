@@ -525,37 +525,37 @@ echo "📦 Input PLY: $PLY_FILE"
 LEVELS=("minimal" "balanced" "strong" "aggressive" "destructive")
 
 declare -A NB_NEIGHBORS
-declare -A STD_RATIO
+declare -A SOR_PERCENTILE
 declare -A DBSCAN_MIN
 declare -A CENTER_PERC
 
 # minimal
 NB_NEIGHBORS[minimal]=24
-STD_RATIO[minimal]=2.0
+SOR_PERCENTILE[minimal]=88
 DBSCAN_MIN[minimal]=20
 CENTER_PERC[minimal]=97
 
 # balanced
 NB_NEIGHBORS[balanced]=32
-STD_RATIO[balanced]=1.5
+SOR_PERCENTILE[balanced]=85
 DBSCAN_MIN[balanced]=30
 CENTER_PERC[balanced]=95
 
 # strong
 NB_NEIGHBORS[strong]=40
-STD_RATIO[strong]=1.0
+SOR_PERCENTILE[strong]=82
 DBSCAN_MIN[strong]=40
 CENTER_PERC[strong]=92
 
 # aggressive
 NB_NEIGHBORS[aggressive]=48
-STD_RATIO[aggressive]=0.8
+SOR_PERCENTILE[aggressive]=80
 DBSCAN_MIN[aggressive]=50
 CENTER_PERC[aggressive]=90
 
 # destructive
 NB_NEIGHBORS[destructive]=64
-STD_RATIO[destructive]=0.6
+SOR_PERCENTILE[destructive]=75
 DBSCAN_MIN[destructive]=80
 CENTER_PERC[destructive]=85
 
@@ -590,27 +590,17 @@ for LEVEL in "${LEVELS[@]}"; do
 
     CLEANED_PLY="${PLY_FILE%.ply}_${LEVEL}.ply"
 
-    # remove old file
-    if [[ -f "$CLEANED_PLY" ]]; then
-        echo "🗑️ Removing existing: $CLEANED_PLY"
-        rm -f "$CLEANED_PLY"
-    fi
+    [[ -f "$CLEANED_PLY" ]] && rm -f "$CLEANED_PLY"
 
     echo "⚙️ Params:"
-    echo "   nb-neighbors      : ${NB_NEIGHBORS[$LEVEL]}"
-    echo "   std-ratio         : ${STD_RATIO[$LEVEL]}"
-    echo "   dbscan-min-points : ${DBSCAN_MIN[$LEVEL]}"
-    echo "   center-percentile : ${CENTER_PERC[$LEVEL]}"
-
-    # safety check script exists
-    if [[ ! -f "$SCRIPT_DIR/scripts/clean_gaussian_ply.py" ]]; then
-        echo "❌ cleaner script not found"
-        exit 1
-    fi
+    echo "   nb-neighbors     : ${NB_NEIGHBORS[$LEVEL]}"
+    echo "   sor-percentile   : ${SOR_PERCENTILE[$LEVEL]}"
+    echo "   dbscan-min       : ${DBSCAN_MIN[$LEVEL]}"
+    echo "   center-percentile: ${CENTER_PERC[$LEVEL]}"
 
     python3 "$SCRIPT_DIR/scripts/clean_gaussian_ply.py" \
         --nb-neighbors "${NB_NEIGHBORS[$LEVEL]}" \
-        --std-ratio "${STD_RATIO[$LEVEL]}" \
+        --sor-percentile "${SOR_PERCENTILE[$LEVEL]}" \
         --dbscan-min-points "${DBSCAN_MIN[$LEVEL]}" \
         --center-percentile "${CENTER_PERC[$LEVEL]}" \
         --recenter \
@@ -626,18 +616,3 @@ for LEVEL in "${LEVELS[@]}"; do
     echo ""
 
 done
-
-
-# ======================
-# FINAL SUMMARY
-# ======================
-
-echo "🎉 ALL CLEAN LEVELS GENERATED"
-
-echo "📦 Outputs:"
-for LEVEL in "${LEVELS[@]}"; do
-    echo "   ${PLY_FILE%.ply}_${LEVEL}.ply"
-done
-
-echo ""
-echo "✅ DONE → $SCRIPT_DIR"
