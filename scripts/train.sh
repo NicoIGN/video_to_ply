@@ -134,7 +134,6 @@ if [[ "$DEVICE" == "gpu" ]]; then
 
   DEVICE_ARGS=(
     --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
-    --pipeline.datamanager.train-num-rays-per-batch "$TRAIN_RAYS_PER_BATCH"
   )
 
 elif [[ "$DEVICE" == "cpu" ]]; then
