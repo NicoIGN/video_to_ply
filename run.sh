@@ -93,7 +93,7 @@ done
 case "$INPUT_MODE" in
   video)
     if [ -z "$VIDEO" ]; then
-      echo "❌ --video is required"
+      echo "❌ --video is required in $INPUT_MODE mode"
       exit 1
     fi
 
@@ -105,7 +105,7 @@ case "$INPUT_MODE" in
 
   images)
     if [ -z "$IMAGES" ]; then
-      echo "❌ --images is required"
+      echo "❌ --images is required in $INPUT_MODE mode"
       exit 1
     fi
 
