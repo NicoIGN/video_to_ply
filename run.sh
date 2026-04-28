@@ -54,6 +54,7 @@ Options:
   --fps                  Frame extraction FPS (video mode only)
   --skip-conda           Skip conda environment setup
   --profile              fast | balanced | quality | best
+  --name                 base name of the outputfile
 
   --skip-frame-extraction
   --skip-colmap
@@ -73,6 +74,7 @@ while [[ $# -gt 0 ]]; do
     --images) IMAGES="$2"; INPUT_MODE="images"; shift 2 ;;
     --fps) FPS="$2"; shift 2 ;;
     --profile) PROFILE="$2"; shift 2 ;;
+    --name) BASENAME="$2"; shift 2 ;;
     --root) ROOT_DIR="$2"; shift 2 ;;
     --skip-conda) SKIP_CONDA=true; shift ;;
     --no-proxy) NO_PROXY=true; shift ;;
@@ -94,6 +96,9 @@ done
 # ======================
 # VALIDATION
 # ======================
+
+BASENAME=${BASENAME:-gsplat_$(date +%Y%m%d_%H%M%S)}
+
 case "$INPUT_MODE" in
   video)
     if [ -z "$VIDEO" ]; then
@@ -522,7 +527,8 @@ echo "📦 Input PLY: $PLY_FILE"
 # LEVEL CONFIGS
 # ======================
 
-LEVELS=("minimal" "balanced" "strong" "aggressive" "destructive")
+#LEVELS=("minimal" "balanced" "strong" "aggressive" "destructive")
+LEVELS=("minimal" "strong" "destructive")
 
 declare -A NB_NEIGHBORS
 declare -A SOR_PERCENTILE
@@ -594,8 +600,8 @@ for LEVEL in "${LEVELS[@]}"; do
     echo "🚀 CLEAN LEVEL: $LEVEL"
     echo "🚀 =============================="
 
-    CLEANED_PLY="${PLY_FILE%.ply}_${LEVEL}.ply"
-
+    CLEANED_PLY="$EXPORT_DIR/${BASENAME}_${LEVEL}.ply"
+    
     [[ -f "$CLEANED_PLY" ]] && rm -f "$CLEANED_PLY"
 
     echo "⚙️ Params:"
