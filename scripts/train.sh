@@ -45,7 +45,7 @@ fi
 export MODEL_IMPLEMENTATION
 export MACHINE_DEVICE_TYPE
 export MAX_JOBS
-
+export CMAKE_BUILD_PARALLEL_LEVEL=$MAX_JOBS
 
 
 # ======================
