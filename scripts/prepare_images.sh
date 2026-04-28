@@ -27,39 +27,40 @@ fi
 # PREPARE OUTPUT
 # ======================
 mkdir -p "$OUT_DIR"
-
-# Remove previous extracted/prepared frames
 rm -f "$OUT_DIR"/frame_*.png
 
 echo "🖼️ Preparing images from: $SRC_DIR"
 echo "📁 Output: $OUT_DIR"
 
 # ======================
-# COPY + NORMALIZE
+# COPY + RENAME (SAFE LOOP)
 # ======================
+
 COUNT=1
-FOUND=0
 
-find "$SRC_DIR" -maxdepth 1 -type f \
+while IFS= read -r FILE; do
+  INDEX=$(printf "%05d" "$COUNT")
+
+  # convert/normalize every image
+  ffmpeg -hide_banner -loglevel error -y \
+    -i "$FILE" \
+    -vf "scale=1280:-1" \
+    "$OUT_DIR/frame_${INDEX}.png"
+
+  COUNT=$((COUNT + 1))
+
+done < <(find "$SRC_DIR" -maxdepth 1 -type f \
   \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) \
-  | sort \
-  | while read -r FILE; do
-      FOUND=1
-      printf -v INDEX "%05d" "$COUNT"
+  | sort)
 
-      ffmpeg -hide_banner -loglevel error -y \
-        -i "$FILE" \
-        -vf "scale=1280:-1" \
-        "$OUT_DIR/frame_${INDEX}.png"
+# ======================
+# VALIDATION
+# ======================
+TOTAL=$(find "$OUT_DIR" -maxdepth 1 -name 'frame_*.png' | wc -l | tr -d ' ')
 
-      COUNT=$((COUNT + 1))
-    done
-
-if [ -z "$(ls -A "$OUT_DIR"/frame_*.png 2>/dev/null)" ]; then
+if [ "$TOTAL" -eq 0 ]; then
   echo "❌ No supported images found in: $SRC_DIR"
   exit 1
 fi
-
-TOTAL=$(find "$OUT_DIR" -maxdepth 1 -name 'frame_*.png' | wc -l | tr -d ' ')
 
 echo "✅ Prepared $TOTAL images"
