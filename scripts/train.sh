@@ -47,6 +47,30 @@ export MACHINE_DEVICE_TYPE
 export MAX_JOBS
 export CMAKE_BUILD_PARALLEL_LEVEL=$MAX_JOBS
 
+# ======================
+# CUDA ARCH AUTO-DETECTION
+# ======================
+
+if command -v python3 >/dev/null 2>&1; then
+  if python3 -c "import torch" >/dev/null 2>&1; then
+
+    export TORCH_CUDA_ARCH_LIST=$(python3 - << 'EOF'
+import torch
+
+if torch.cuda.is_available():
+    cap = torch.cuda.get_device_capability()
+    print(f"{cap[0]}.{cap[1]}")
+EOF
+)
+
+    echo "⚙️ TORCH_CUDA_ARCH_LIST auto-set to: $TORCH_CUDA_ARCH_LIST"
+
+  else
+    echo "⚠️ torch not available in python, skipping TORCH_CUDA_ARCH_LIST"
+  fi
+else
+  echo "⚠️ python3 not found, skipping TORCH_CUDA_ARCH_LIST"
+fi
 
 # ======================
 # SUMMARY

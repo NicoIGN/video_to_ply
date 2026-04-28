@@ -13,10 +13,14 @@ Original file is located at
 # #!/bin/bash
 # 
 # export ROOTDIR="/content/work"
-# export VIDEOSOURCE="gsplat/input/IMG_4770.MOV"
-# export FPS=4
+# export VIDEOSOURCE="gsplat/input/IMG_4765.MOV"
+# export IMAGESET="gsplat/input/perfume/images"
+# export INPUT_MODE="images"
+# 
+# export FPS=25
+# #export PROFILE="gpu/quality"
 # export PROFILE="gpu/fast"
-# export PROFILE="cpu/fast"
+# #export PROFILE="cpu/fast"
 # EOF
 
 !cat /content/config.sh
@@ -30,9 +34,18 @@ from google.colab import drive
 drive.mount('/content/drive')
 
 !source /content/config.sh && \
-mkdir -p $ROOTDIR && \
-cp /content/drive/MyDrive/$VIDEOSOURCE $ROOTDIR/video.mp4 && \
-ls $ROOTDIR/
+mkdir -p "$ROOTDIR" && \
+if [ -n "$VIDEOSOURCE" ]; then \
+  cp "/content/drive/MyDrive/$VIDEOSOURCE" "$ROOTDIR/video.mp4"; \
+fi && \
+if [ -n "$IMAGESET" ]; then \
+  mkdir -p "$(dirname "/content/$IMAGESET")" && \
+  cp -r "/content/drive/MyDrive/$IMAGESET" "/content/$IMAGESET"; \
+fi && \
+ls -R "$ROOTDIR" && \
+if [ -n "$IMAGESET" ]; then \
+  ls -R "/content/$IMAGESET"; \
+fi
 
 # Commented out IPython magic to ensure Python compatibility.
 !git clone https://github.com/NicoIGN/video_to_ply.git
@@ -41,7 +54,7 @@ ls $ROOTDIR/
 # Commented out IPython magic to ensure Python compatibility.
 # %%bash
 # cd /content/video_to_ply
-# git checkout dev && git pull
+# git stash save && git checkout dev && git pull
 
 # Commented out IPython magic to ensure Python compatibility.
 # %%bash
@@ -54,16 +67,42 @@ ls $ROOTDIR/
 # conda env create -n gsplat -f environment/conda_colab.yml
 #
 
-!source /usr/local/miniconda/etc/profile.d/conda.sh && source /content/config.sh && cd /content/video_to_ply/ && conda activate gsplat && bash run.sh --video $ROOTDIR/video.mp4 --root $ROOTDIR --fps $FPS --skip-conda --profile $PROFILE --no-proxy
+!rm -rf /content/work/ori/
 
-!source /usr/local/miniconda/etc/profile.d/conda.sh && source /content/config.sh && cd /content/video_to_ply/ && conda activate gsplat && bash run.sh --video $ROOTDIR/video.mp4 --root $ROOTDIR --skip-conda --skip-frame-extraction --skip-colmap  --skip-training --profile $PROFILE --no-proxy
+!source /usr/local/miniconda/etc/profile.d/conda.sh && \
+source /content/config.sh && \
+echo INPUT_MODE=$INPUT_MODE && \
+cd /content/video_to_ply/ && \
+conda activate gsplat && \
+INPUT_ARG="" && \
+if [ "$INPUT_MODE" = "images" ] && [ -n "$IMAGESET" ]; then \
+  INPUT_ARG="--images /content/$IMAGESET"; \
+elif [ "$INPUT_MODE" = "video" ] && [ -n "$VIDEOSOURCE" ]; then \
+  INPUT_ARG="--video $ROOTDIR/video.mp4 --fps $FPS"; \
+fi && \
+bash run.sh $INPUT_ARG --root "$ROOTDIR" --skip-conda --profile "$PROFILE" --no-proxy
+
+!source /usr/local/miniconda/etc/profile.d/conda.sh && \
+source /content/config.sh && \
+echo "skipping all steps except exporting step" && \
+cd /content/video_to_ply/ && \
+conda activate gsplat && \
+INPUT_ARG="" && \
+if [ "$INPUT_MODE" = "images" ] && [ -n "$IMAGESET" ]; then \
+  INPUT_ARG="--images /content/$IMAGESET"; \
+elif [ "$INPUT_MODE" = "video" ] && [ -n "$VIDEOSOURCE" ]; then \
+  INPUT_ARG="--video $ROOTDIR/video.mp4 --fps $FPS"; \
+fi && \
+bash run.sh $INPUT_ARG --root "$ROOTDIR" --skip-conda --profile "$PROFILE" --no-proxy --skip-conda --skip-frame-extraction --skip-colmap  --skip-training
 
 from google.colab import files
 import os
 import subprocess
 import glob
 
-# Load config.sh
+# =========================
+# LOAD CONFIG.SH VARIABLES
+# =========================
 result = subprocess.run(
     "source /content/config.sh && env",
     shell=True,
@@ -77,14 +116,22 @@ for line in result.stdout.splitlines():
         key, value = line.split("=", 1)
         os.environ[key] = value
 
-# Find first PLY
+# =========================
+# FIND ALL PLY FILES
+# =========================
 rootdir = os.environ.get("ROOTDIR", "/content/work")
-ply_files = glob.glob(os.path.join(rootdir, "exports", "*.ply"))
+export_dir = os.path.join(rootdir, "exports")
 
-if ply_files:
-    ply_path = ply_files[0]
-    print(f"✅ Downloading: {ply_path}")
-    files.download(ply_path)
+ply_files = sorted(
+    glob.glob(os.path.join(export_dir, "*.ply"))
+)
+
+if not ply_files:
+    print("⚠️ No PLY files found.")
+    print(f"📂 Searched in: {export_dir}")
 else:
-    print("⚠️ No PLY file found in exports directory.")
-    print(f"📂 Searched in: {os.path.join(rootdir, 'exports')}")
+    print(f"📦 Found {len(ply_files)} PLY file(s):")
+
+    for ply_path in ply_files:
+        print(f"⬇️ Downloading: {os.path.basename(ply_path)}")
+        files.download(ply_path)
