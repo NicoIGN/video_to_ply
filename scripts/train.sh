@@ -2,7 +2,7 @@
 set -e
 
 # ======================
-# LOAD CONFIG (CRITICAL)
+# LOAD CONFIG
 # ======================
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../config/config.sh"
@@ -114,27 +114,38 @@ echo "────────────────────────�
 
 
 # ======================
-# CHECKPOINT AUTO-RESUME
+# CHECKPOINT AUTO-RESUME (FIXED + COPY)
 # ======================
 LOAD_DIR=""
+CHECKPOINT_SRC=""
 
 if [ -d "$OUTPUTDIR/nerfstudio_models" ]; then
-    LOAD_DIR="$OUTPUTDIR/nerfstudio_models"
+    CHECKPOINT_SRC="$OUTPUTDIR/nerfstudio_models"
 fi
 
-if [ -d "$OUTPUTDIR" ]; then
-    LAST_RUN=$(ls -td "$OUTPUTDIR"/*/nerfstudio_models 2>/dev/null | head -n 1)
-    if [ ! -z "$LAST_RUN" ]; then
-        LOAD_DIR="$LAST_RUN"
+if [ -z "$CHECKPOINT_SRC" ]; then
+    LAST_RUN=$(ls -td "$OUTPUTDIR"/*/nerfstudio_models 2>/dev/null | head -n 1 || true)
+    if [ -n "$LAST_RUN" ]; then
+        CHECKPOINT_SRC="$LAST_RUN"
     fi
 fi
 
-if [ ! -z "$LOAD_DIR" ]; then
-    echo "♻️ CHECKPOINT FOUND → RESUMING TRAINING"
-    echo "📦 LOAD_DIR: $LOAD_DIR"
+# 👉 IMPORTANT FIX: copy checkpoint into current run context
+if [ -n "$CHECKPOINT_SRC" ]; then
+    RUN_CKPT_DIR="$OUTPUTDIR/nerfstudio_models"
+
+    echo "♻️ CHECKPOINT FOUND → COPYING TO CURRENT RUN"
+    echo "📦 FROM: $CHECKPOINT_SRC"
+    echo "📦 TO  : $RUN_CKPT_DIR"
+
+    mkdir -p "$RUN_CKPT_DIR"
+    rsync -a "$CHECKPOINT_SRC/" "$RUN_CKPT_DIR/"
+
+    LOAD_DIR="$RUN_CKPT_DIR"
 else
     echo "🆕 NO CHECKPOINT FOUND → TRAINING FROM SCRATCH"
 fi
+
 
 
 # ======================
@@ -182,8 +193,7 @@ fi
 
 
 # ======================
-# ADD ROBUST LOGGING + SILENT FAILURE DETECTION
-# Place BEFORE "RUN TRAINING"
+# LOGGING
 # ======================
 
 LOG_DIR="$OUTPUTDIR/logs"
