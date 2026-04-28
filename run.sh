@@ -586,6 +586,22 @@ if [[ ! -f "$PLY_FILE" ]]; then
     exit 1
 fi
 
+FINAL_PLY="$EXPORT_DIR/${BASENAME}.ply"
+
+echo "📦 Normalizing output PLY:"
+echo "   FROM: $PLY_FILE"
+echo "   TO  : $FINAL_PLY"
+
+cp "$PLY_FILE" "$FINAL_PLY"
+
+if [[ ! -f "$FINAL_PLY" ]]; then
+    echo "❌ Failed to create final PLY: $FINAL_PLY"
+    exit 1
+fi
+
+echo "✅ Final PLY ready: $FINAL_PLY"
+
+
 
 # ======================
 # RUN ALL LEVELS
