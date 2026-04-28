@@ -320,13 +320,24 @@ case "$INPUT_MODE" in
       exit 1
     fi
 
-    find "$IMAGES" -maxdepth 1 -type f \
-      \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) \
-      -exec cp {} "$IMAGE_DIR"/ \;
+    SOURCE_COUNT=$(find "$IMAGES" -maxdepth 1 -type f \
+      \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) | wc -l)
 
-    if [ -z "$(ls -A "$IMAGE_DIR" 2>/dev/null)" ]; then
+    TARGET_COUNT=$(find "$IMAGE_DIR" -maxdepth 1 -type f \
+      \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) | wc -l)
+
+    if [ "$SOURCE_COUNT" -eq 0 ]; then
       echo "❌ No images found in: $IMAGES"
       exit 1
+    fi
+
+    if [ "$TARGET_COUNT" -eq "$SOURCE_COUNT" ]; then
+      echo "⏩ All images already imported in $IMAGE_DIR, skipping copy"
+    else
+      echo "📥 Copying $SOURCE_COUNT images to $IMAGE_DIR"
+      find "$IMAGES" -maxdepth 1 -type f \
+        \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) \
+        -exec cp {} "$IMAGE_DIR"/ \;
     fi
     ;;
 
@@ -360,8 +371,14 @@ case "$INPUT_MODE" in
       exit 1
     fi
 
-    echo "🖼️ Preparing images → $IMAGE_DIR"
-    bash scripts/prepare_images.sh "$IMAGES" "$IMAGE_DIR"
+    if [ "$SKIP_FRAME_EXTRACTION" = true ]; then
+      echo "⏩ Skipping image preparation (config)"
+    elif [ -d "$IMAGE_DIR" ] && [ "$(ls -A "$IMAGE_DIR" 2>/dev/null)" ]; then
+      echo "⏩ Skipping image preparation"
+    else
+      echo "🖼️ Preparing images → $IMAGE_DIR"
+      bash scripts/prepare_images.sh "$IMAGES" "$IMAGE_DIR"
+    fi
     ;;
 
   *)
