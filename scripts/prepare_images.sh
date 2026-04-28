@@ -26,8 +26,14 @@ fi
 # ======================
 # PREPARE OUTPUT
 # ======================
+
+echo "🧹 Preparing output directory: $OUT_DIR"
+
+if [ -d "$OUT_DIR" ]; then
+  rm -rf "$OUT_DIR"
+fi
+
 mkdir -p "$OUT_DIR"
-rm -f "$OUT_DIR"/frame_*.png
 
 echo "🖼️ Preparing images from: $SRC_DIR"
 echo "📁 Output: $OUT_DIR"
@@ -50,7 +56,7 @@ while IFS= read -r FILE; do
   COUNT=$((COUNT + 1))
 
 done < <(find "$SRC_DIR" -maxdepth 1 -type f \
-  \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) \
+  \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.tif" -o -iname "*.tiff" \) \
   | sort)
 
 # ======================
