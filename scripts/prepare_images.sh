@@ -70,3 +70,22 @@ if [ "$TOTAL" -eq 0 ]; then
 fi
 
 echo "✅ Prepared $TOTAL images"
+
+# ======================
+# FINAL CLEANUP (STRICT)
+# ======================
+
+echo "🧼 Removing non-frame files from output directory..."
+
+find "$OUT_DIR" -type f ! -name "frame_*.png" -delete
+
+# safety check
+EXTRA_FILES=$(find "$OUT_DIR" -type f ! -name "frame_*.png" | wc -l | tr -d ' ')
+
+if [ "$EXTRA_FILES" -ne 0 ]; then
+  echo "❌ Cleanup failed: some non-frame files remain"
+  find "$OUT_DIR" -type f ! -name "frame_*.png"
+  exit 1
+fi
+
+echo "✅ Output directory clean (only frame_*.png present)"
