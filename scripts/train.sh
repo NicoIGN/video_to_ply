@@ -117,8 +117,8 @@ COMMON_ARGS=(
   --experiment-name "$EXPERIMENT_NAME"
   --machine.device-type "$MACHINE_DEVICE_TYPE"
   --max-num-iterations "$MAX_ITER"
-  --steps-per-save 250
-  --steps-per-eval-all-images 250
+  --steps-per-save 500
+  --steps-per-eval-all-images 500
   --save-only-latest-checkpoint True
   --vis "$TRAIN_VIS_MODE"
   --logging.local-writer.enable True
@@ -134,12 +134,12 @@ if [[ "$DEVICE" == "gpu" ]]; then
 
   DEVICE_ARGS=(
     --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
+    --pipeline.datamanager.train-num-rays-per-batch "$TRAIN_RAYS_PER_BATCH"
   )
 
 elif [[ "$DEVICE" == "cpu" ]]; then
 
   DEVICE_ARGS=(
-    --pipeline.datamanager.train-num-rays-per-batch "$TRAIN_RAYS_PER_BATCH"
     --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
     --pipeline.model.implementation "$MODEL_IMPLEMENTATION"
     --pipeline.model.num-nerf-samples-per-ray "$NUM_NERF_SAMPLES_PER_RAY"
