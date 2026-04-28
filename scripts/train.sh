@@ -154,12 +154,34 @@ fi
 
 
 # ======================
+# ADD ROBUST LOGGING + SILENT FAILURE DETECTION
+# Place BEFORE "RUN TRAINING"
+# ======================
+
+LOG_DIR="$OUTPUTDIR/logs"
+mkdir -p "$LOG_DIR"
+
+TRAIN_LOG="$LOG_DIR/ns_train.log"
+HEARTBEAT_LOG="$LOG_DIR/ns_train_heartbeat.log"
+
+echo "📝 Full training log: $TRAIN_LOG"
+echo "💓 Heartbeat log: $HEARTBEAT_LOG"
+
+(
+  while true; do
+    sleep 60
+    echo "$(date '+%F %T') ns-train still active" >> "$HEARTBEAT_LOG"
+  done
+) &
+HEARTBEAT_PID=$!
+
+
+# ======================
 # RUN TRAINING
 # ======================
 
 export LOGLEVEL=DEBUG
 export TORCH_SHOW_CPP_STACKTRACES=1
-#export PYTHONVERBOSE=1
 
 set +e
 
@@ -170,17 +192,23 @@ if [ ! -z "$LOAD_DIR" ]; then
     "${DEVICE_ARGS[@]}" \
     --load-dir "$LOAD_DIR" \
     nerfstudio-data \
-    --data "$DATA"
+    --data "$DATA" \
+    > >(tee -a "$TRAIN_LOG") \
+    2> >(tee -a "$TRAIN_LOG" >&2)
 else
   ns-train \
     "$MODEL" \
     "${COMMON_ARGS[@]}" \
     "${DEVICE_ARGS[@]}" \
     nerfstudio-data \
-    --data "$DATA"
+    --data "$DATA" \
+    > >(tee -a "$TRAIN_LOG") \
+    2> >(tee -a "$TRAIN_LOG" >&2)
 fi
 
 STATUS=$?
+
+kill $HEARTBEAT_PID 2>/dev/null || true
 
 set -e
 
@@ -190,7 +218,19 @@ set -e
 # ======================
 if [[ "$STATUS" -ne 0 ]]; then
   echo "❌ ns-train crashed (exit code: $STATUS)"
+  tail -50 "$TRAIN_LOG"
   exit "$STATUS"
+fi
+
+
+# ======================
+# EXTRA SILENT STOP DETECTION
+# ======================
+LAST_LOG_LINE=$(tail -n 20 "$TRAIN_LOG")
+
+if ! echo "$LAST_LOG_LINE" | grep -q "Training Finished"; then
+  echo "⚠️ ns-train may have stopped unexpectedly before proper completion"
+  tail -50 "$TRAIN_LOG"
 fi
 
 
