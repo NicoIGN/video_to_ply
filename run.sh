@@ -19,8 +19,12 @@ SKIP_COLMAP=false
 SKIP_TRAINING=false
 SKIP_EXPORT=false
 
-source config/config.sh
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+
+source $SCRIPT_DIR/config/config.sh
+
+cd $SCRIPT_DIR
 # ======================
 # INPUT MODE
 # ======================
@@ -515,7 +519,8 @@ if [[ -f "$CLEANED_PLY" ]]; then
     rm -f "$CLEANED_PLY"
 fi
 
-python3 "scripts/clean_gaussian_ply.py" \
+cd
+python3 "$SCRIPT_DIR/scripts/clean_gaussian_ply.py" \
     --nb-neighbors 60 \
     --std-ratio 3.0 \
     --dbscan-eps 0.10 \

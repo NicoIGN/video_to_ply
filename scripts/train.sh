@@ -47,6 +47,10 @@ export MACHINE_DEVICE_TYPE
 export MAX_JOBS
 export CMAKE_BUILD_PARALLEL_LEVEL=$MAX_JOBS
 
+#desactive le parallelisme CUDA
+# export CUDA_LAUNCH_BLOCKING=1
+
+
 # ======================
 # CUDA ARCH AUTO-DETECTION
 # ======================

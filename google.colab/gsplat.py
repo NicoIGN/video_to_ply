@@ -19,33 +19,69 @@ Original file is located at
 # 
 # export FPS=25
 # #export PROFILE="gpu/quality"
-# export PROFILE="gpu/fast"
+# export PROFILE="gpu/balanced"
 # #export PROFILE="cpu/fast"
 # EOF
 
 !cat /content/config.sh
+
+from google.colab import drive
+drive.mount('/content/drive')
 
 !wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 !chmod +x Miniconda3-latest-Linux-x86_64.sh
 !bash Miniconda3-latest-Linux-x86_64.sh -b -p /usr/local/miniconda
 !/usr/local/miniconda/bin/conda init bash
 
-from google.colab import drive
-drive.mount('/content/drive')
+# Commented out IPython magic to ensure Python compatibility.
+# %%bash
+# set -e
+# source /content/config.sh
+# 
+# mkdir -p "$ROOTDIR"
+# 
+# if [ -n "$VIDEOSOURCE" ]; then
+#   SRC_VIDEO="/content/drive/MyDrive/$VIDEOSOURCE"
+# 
+#   if [ ! -f "$SRC_VIDEO" ]; then
+#     echo "❌ Video not found: $SRC_VIDEO"
+#   else
+#     echo "🎬 Copying video: $SRC_VIDEO"
+#     cp -f "$SRC_VIDEO" "$ROOTDIR/video.mp4"
+#   fi
+# fi
+# 
+# if [ -n "$IMAGESET" ]; then
+#   SRC_IMAGES="/content/drive/MyDrive/$IMAGESET"
+#   DST_IMAGES="$ROOTDIR/images"
+# 
+#   if [ ! -d "$SRC_IMAGES" ]; then
+#     echo "❌ Image dataset not found: $SRC_IMAGES"
+#   else
+#     echo "🖼️ Preparing image dataset: $SRC_IMAGES"
+# 
+#     mkdir -p "$DST_IMAGES"
+# 
+#     COUNT=$(find "$SRC_IMAGES" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) | wc -l | tr -d ' ')
+#     if [ "$COUNT" -lt 2 ]; then
+#       echo "❌ Not enough images ($COUNT)"
+#       exit 1
+#     fi
+# 
+#     rm -f "$DST_IMAGES"/frame_*.png 2>/dev/null || true
+# 
+#     i=1
+#     for img in $(find "$SRC_IMAGES" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) | sort); do
+#       printf -v idx "%05d" "$i"
+#       cp "$img" "$DST_IMAGES/frame_${idx}.png"
+#       i=$((i+1))
+#     done
+# 
+#     echo "✅ Dataset ready in $DST_IMAGES"
+#   fi
+# fi
 
-!source /content/config.sh && \
-mkdir -p "$ROOTDIR" && \
-if [ -n "$VIDEOSOURCE" ]; then \
-  cp "/content/drive/MyDrive/$VIDEOSOURCE" "$ROOTDIR/video.mp4"; \
-fi && \
-if [ -n "$IMAGESET" ]; then \
-  mkdir -p "$(dirname "/content/$IMAGESET")" && \
-  cp -r "/content/drive/MyDrive/$IMAGESET" "/content/$IMAGESET"; \
-fi && \
-ls -R "$ROOTDIR" && \
-if [ -n "$IMAGESET" ]; then \
-  ls -R "/content/$IMAGESET"; \
-fi
+rm -rf /content/images
 
 # Commented out IPython magic to ensure Python compatibility.
 !git clone https://github.com/NicoIGN/video_to_ply.git
@@ -67,8 +103,6 @@ fi
 # conda env create -n gsplat -f environment/conda_colab.yml
 #
 
-!rm -rf /content/work/ori/
-
 !source /usr/local/miniconda/etc/profile.d/conda.sh && \
 source /content/config.sh && \
 echo INPUT_MODE=$INPUT_MODE && \
@@ -76,7 +110,7 @@ cd /content/video_to_ply/ && \
 conda activate gsplat && \
 INPUT_ARG="" && \
 if [ "$INPUT_MODE" = "images" ] && [ -n "$IMAGESET" ]; then \
-  INPUT_ARG="--images /content/$IMAGESET"; \
+  INPUT_ARG="--images $ROOTDIR/images"; \
 elif [ "$INPUT_MODE" = "video" ] && [ -n "$VIDEOSOURCE" ]; then \
   INPUT_ARG="--video $ROOTDIR/video.mp4 --fps $FPS"; \
 fi && \
@@ -84,12 +118,12 @@ bash run.sh $INPUT_ARG --root "$ROOTDIR" --skip-conda --profile "$PROFILE" --no-
 
 !source /usr/local/miniconda/etc/profile.d/conda.sh && \
 source /content/config.sh && \
-echo "skipping all steps except exporting step" && \
+echo "skipping all except exporting step" && \
 cd /content/video_to_ply/ && \
 conda activate gsplat && \
 INPUT_ARG="" && \
 if [ "$INPUT_MODE" = "images" ] && [ -n "$IMAGESET" ]; then \
-  INPUT_ARG="--images /content/$IMAGESET"; \
+  INPUT_ARG="--images $ROOTDIR/images"; \
 elif [ "$INPUT_MODE" = "video" ] && [ -n "$VIDEOSOURCE" ]; then \
   INPUT_ARG="--video $ROOTDIR/video.mp4 --fps $FPS"; \
 fi && \
