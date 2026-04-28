@@ -65,7 +65,8 @@ EOF
 # ======================
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --video) VIDEO="$2"; shift 2 ;;
+    --video) VIDEO="$2"; INPUT_MODE="video"; shift 2 ;;
+    --images) IMAGES="$2"; INPUT_MODE="images"; shift 2 ;;
     --fps) FPS="$2"; shift 2 ;;
     --profile) PROFILE="$2"; shift 2 ;;
     --root) ROOT_DIR="$2"; shift 2 ;;
@@ -84,18 +85,52 @@ while [[ $# -gt 0 ]]; do
     *) echo "❌ Unknown param: $1"; show_help; exit 1 ;;
   esac
 done
+
+
 # ======================
 # VALIDATION
 # ======================
-if [ -z "$VIDEO" ]; then
-  echo "❌ --video is required"
-  exit 1
-fi
+case "$INPUT_MODE" in
+  video)
+    if [ -z "$VIDEO" ]; then
+      echo "❌ --video is required"
+      exit 1
+    fi
 
-if [ ! -f "$VIDEO" ]; then
-  echo "❌ video not found"
-  exit 1
-fi
+    if [ ! -f "$VIDEO" ]; then
+      echo "❌ Video not found: $VIDEO"
+      exit 1
+    fi
+    ;;
+
+  images)
+    if [ -z "$IMAGES" ]; then
+      echo "❌ --images is required"
+      exit 1
+    fi
+
+    if [ ! -d "$IMAGES" ]; then
+      echo "❌ Images directory not found: $IMAGES"
+      exit 1
+    fi
+
+    IMAGE_COUNT=$(find "$IMAGES" -maxdepth 1 -type f \
+      \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) \
+      | wc -l | tr -d ' ')
+
+    if [ "$IMAGE_COUNT" -lt 2 ]; then
+      echo "❌ At least 2 images are required"
+      echo "   Found: $IMAGE_COUNT"
+      exit 1
+    fi
+    ;;
+
+  *)
+    echo "❌ Invalid INPUT_MODE: $INPUT_MODE"
+    exit 1
+    ;;
+esac
+
 
 
 if [ -z "$PROFILE" ]; then
