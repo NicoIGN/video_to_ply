@@ -51,7 +51,7 @@ Required:
 
 Options:
   --root                 Root output directory (default: runs/default)
-  --num_frames           Number of frames to extract (video mode only)
+  --num-frames           Number of frames to extract (video mode only)
   --skip-conda           Skip conda environment setup
   --profile              fast | balanced | quality | best
   --name                 base name of the outputfile
@@ -72,7 +72,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --video) VIDEO="$2"; INPUT_MODE="video"; shift 2 ;;
     --images) IMAGES="$2"; INPUT_MODE="images"; shift 2 ;;
-    --num_frames) NUM_FRAMES="$2"; shift 2 ;;
+    --num-frames) NUM_FRAMES="$2"; shift 2 ;;
     --profile) PROFILE="$2"; shift 2 ;;
     --name) BASENAME="$2"; shift 2 ;;
     --root) ROOT_DIR="$2"; shift 2 ;;
