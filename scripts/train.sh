@@ -114,27 +114,34 @@ echo "────────────────────────�
 
 
 # ======================
-# CHECKPOINT AUTO-RESUME (FIXED + COPY)
+# CHECKPOINT AUTO-RESUME
 # ======================
 LOAD_DIR=""
 CHECKPOINT_SRC=""
 
-if [ -d "$OUTPUTDIR/nerfstudio_models" ]; then
-    CHECKPOINT_SRC="$OUTPUTDIR/nerfstudio_models"
-fi
+BASE_MODEL_DIR="$OUTPUTDIR/$MODEL"
 
-if [ -z "$CHECKPOINT_SRC" ]; then
-    LAST_RUN=$(ls -td "$OUTPUTDIR"/*/nerfstudio_models 2>/dev/null | head -n 1 || true)
+if [ -d "$BASE_MODEL_DIR" ]; then
+    LAST_RUN=$(ls -td "$BASE_MODEL_DIR"/*/nerfstudio_models 2>/dev/null | head -n 1 || true)
     if [ -n "$LAST_RUN" ]; then
         CHECKPOINT_SRC="$LAST_RUN"
     fi
 fi
 
-# 👉 IMPORTANT FIX: copy checkpoint into current run context
+# fallback legacy
+if [ -z "$CHECKPOINT_SRC" ] && [ -d "$OUTPUTDIR/nerfstudio_models" ]; then
+    CHECKPOINT_SRC="$OUTPUTDIR/nerfstudio_models"
+fi
+
+
+# ======================
+# COPY CHECKPOINT INTO CURRENT RUN
+# ======================
 if [ -n "$CHECKPOINT_SRC" ]; then
+
     RUN_CKPT_DIR="$OUTPUTDIR/nerfstudio_models"
 
-    echo "♻️ CHECKPOINT FOUND → COPYING TO CURRENT RUN"
+    echo "♻️ CHECKPOINT FOUND"
     echo "📦 FROM: $CHECKPOINT_SRC"
     echo "📦 TO  : $RUN_CKPT_DIR"
 
@@ -142,10 +149,10 @@ if [ -n "$CHECKPOINT_SRC" ]; then
     rsync -a "$CHECKPOINT_SRC/" "$RUN_CKPT_DIR/"
 
     LOAD_DIR="$RUN_CKPT_DIR"
+
 else
     echo "🆕 NO CHECKPOINT FOUND → TRAINING FROM SCRATCH"
 fi
-
 
 
 # ======================
