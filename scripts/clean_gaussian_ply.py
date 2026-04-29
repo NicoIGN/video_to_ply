@@ -28,7 +28,7 @@ def parse_args():
     # global aggressivity control
     p.add_argument("--clean-level", type=float, default=1.0)
 
-    # 🔥 NEW PARAMETER (IMPORTANT)
+    # edge filtering
     p.add_argument("--edge-percentile", type=float, default=20.0)
 
     p.add_argument("--recenter", action="store_true")
@@ -46,12 +46,12 @@ def main():
     vertex = ply["vertex"].data
 
     xyz = np.vstack([vertex["x"], vertex["y"], vertex["z"]]).T
-    n = len(xyz)
+    n = xyz.shape[0]
 
     print(f"📊 Points: {n:,}")
 
     # =========================
-    # CENTER FILTER
+    # CENTER FILTER (vectorized stable)
     # =========================
     center = np.median(xyz, axis=0)
     dist_center = np.linalg.norm(xyz - center, axis=1)
@@ -60,39 +60,40 @@ def main():
     mask = dist_center < center_thresh
 
     xyz_f = xyz[mask]
-    idx_map = np.where(mask)[0]
+    idx_map = np.flatnonzero(mask)
 
     print(f"📊 After center filter: {len(xyz_f):,}")
 
     # =========================
-    # SOR FILTER (OPTIMIZED)
+    # SOR FILTER (memory optimized)
     # =========================
-    # 🔥 subsample for KNN (RAM FIX)
-    step = max(1, len(xyz_f) // 50000)  # cap memory
-    subset = xyz_f[::step]
+    if len(xyz_f) > 1000:
 
-    nn = NearestNeighbors(n_neighbors=args.nb_neighbors).fit(subset)
-    dists, _ = nn.kneighbors(xyz_f)
+        step = max(1, len(xyz_f) // 50000)
+        subset = xyz_f[::step]
 
-    mean_dist = dists.mean(axis=1)
+        nn = NearestNeighbors(
+            n_neighbors=min(args.nb_neighbors, len(subset))
+        ).fit(subset)
 
-    sor_thresh = np.percentile(
-        mean_dist,
-        80 + (10 / args.clean_level)
-    )
+        dists, _ = nn.kneighbors(xyz_f)
 
-    mask_sor = mean_dist < sor_thresh
+        mean_dist = dists.mean(axis=1)
 
-    xyz_f = xyz_f[mask_sor]
-    idx_map = idx_map[mask_sor]
-    mean_dist = mean_dist[mask_sor]
+        sor_thresh = np.percentile(mean_dist, args.sor_percentile)
+
+        mask_sor = mean_dist < sor_thresh
+
+        xyz_f = xyz_f[mask_sor]
+        idx_map = idx_map[mask_sor]
+        mean_dist = mean_dist[mask_sor]
 
     print(f"📊 After SOR: {len(xyz_f):,}")
 
     # =========================
-    # EDGE FILTER (UNCHANGED LOGIC)
+    # EDGE FILTER (stable normalization)
     # =========================
-    global_center = np.mean(xyz_f, axis=0)
+    global_center = xyz_f.mean(axis=0)
     dist_global = np.linalg.norm(xyz_f - global_center, axis=1)
 
     density = 1.0 / (mean_dist + 1e-8)
@@ -107,18 +108,20 @@ def main():
     print(f"📊 After EDGE removal: {len(xyz_f):,}")
 
     # =========================
-    # VOXEL CLEANING (DBSCAN REPLACEMENT)
+    # VOXEL CLEANING (faster + deterministic)
     # =========================
-    print("🧱 Voxel clustering (DBSCAN replacement)...")
+    print("🧱 Voxel cleanup...")
 
-    voxel_size = np.median(mean_dist) * (2.0 / args.clean_level)
+    if len(xyz_f) > 0:
+        voxel_size = np.median(mean_dist) * (2.0 / args.clean_level)
+        inv_voxel = 1.0 / (voxel_size + 1e-8)
 
-    coords = np.floor(xyz_f / (voxel_size + 1e-8)).astype(np.int32)
+        coords = np.floor(xyz_f * inv_voxel).astype(np.int32)
 
-    _, unique_idx = np.unique(coords, axis=0, return_index=True)
+        _, unique_idx = np.unique(coords, axis=0, return_index=True)
 
-    xyz_f = xyz_f[unique_idx]
-    idx_map = idx_map[unique_idx]
+        xyz_f = xyz_f[unique_idx]
+        idx_map = idx_map[unique_idx]
 
     print(f"📊 After voxel cleanup: {len(xyz_f):,}")
 
@@ -137,8 +140,7 @@ def main():
     # MODE
     # =========================
     if args.recenter:
-        center = xyz_new.mean(axis=0)
-        xyz_new -= center
+        xyz_new -= xyz_new.mean(axis=0)
         print("📍 Recenter applied")
 
     elif args.supersplat:
@@ -158,8 +160,7 @@ def main():
     new_vertex["y"] = xyz_new[:, 1]
     new_vertex["z"] = xyz_new[:, 2]
 
-    el = PlyElement.describe(new_vertex, "vertex")
-    PlyData([el], text=False).write(str(args.output))
+    PlyData([PlyElement.describe(new_vertex, "vertex")], text=False).write(str(args.output))
 
     print(f"✅ Saved: {args.output}")
 
