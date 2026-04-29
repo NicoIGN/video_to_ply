@@ -82,8 +82,8 @@ ns-process-data images \
   --data "$DATA_DIR" \
   --output-dir "$OUTPUT_DIR" \
   --camera-type "$CAMERA_TYPE" \
-  --matching-method sequential \
-  --num-downscales 1 \
+  --matching-method "$MATCHING_METHOD" \
+  --num-downscales $NUM_DOWNSCALES \
   > "$LOG_FILE" 2>&1
 
 STATUS=$?

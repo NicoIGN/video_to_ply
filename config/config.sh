@@ -91,8 +91,8 @@ fi
 ############################
 
 SFMT_TOOL="colmap"
-MATCHING_METHOD="sequential"
-NUM_DOWNSCALES=1
+MATCHING_METHOD="exhaustive" # sequential | exhaustive
+NUM_DOWNSCALES=0 # 0 or 1
 SKIP_IMAGE_PROCESSING=true
 
 WITH_NERFSTUDIO="true"
