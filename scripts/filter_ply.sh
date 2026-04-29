@@ -17,7 +17,6 @@ set -euo pipefail
 : "${PLY_FILE:?PLY_FILE is required}"
 : "${EXPORT_DIR:?EXPORT_DIR is required}"
 : "${BASENAME:?BASENAME is required}"
-: "${SCRIPT_DIR:?SCRIPT_DIR is required}"
 
 if [[ ! -f "$PLY_FILE" ]]; then
     echo "❌ PLY file not found: $PLY_FILE"
