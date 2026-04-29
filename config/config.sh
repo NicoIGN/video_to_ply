@@ -90,11 +90,13 @@ fi
 # COLMAP / PREPROCESS
 ############################
 
-SFMT_TOOL="colmap"
-MATCHING_METHOD="exhaustive" # sequential | exhaustive
-NUM_DOWNSCALES=0 # 0 or 1
+SFMT_TOOL="colmap" #colmap / hloc / any
+MATCHING_METHOD="exhaustive" # sequential | vocab_tree | exhaustive
+NUM_DOWNSCALES=0 # 0 or 1 or 2 or 3
 SKIP_IMAGE_PROCESSING=true
 
+FEATURE_TYPE="" # sift / superpoint / disk / etc.
+MATCHER_TYPE="" # NN / superglue / lightglue / etc.
 WITH_NERFSTUDIO="true"
 
 ############################

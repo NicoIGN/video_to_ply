@@ -43,9 +43,12 @@ CAMERA_TYPE="perspective"
 rm -f "$LOG_FILE"
 
 echo "────────────────────────────────────"
-echo "📁 INPUT   : $DATA_DIR"
-echo "📁 OUTPUT  : $OUTPUT_DIR"
-echo "⚙️ DEVICE  : $DEVICE"
+echo "📁 INPUT            : $DATA_DIR"
+echo "📁 OUTPUT           : $OUTPUT_DIR"
+echo "⚙️ DEVICE           : $DEVICE"
+echo "📷 CAMERA TYPE      : $CAMERA_TYPE"
+echo "🔀 MATCHING METHOD  : $MATCHING_METHOD"
+echo "📉 NUM DOWNSCALES   : $NUM_DOWNSCALES"
 echo "────────────────────────────────────"
 
 # ======================
