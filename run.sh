@@ -6,6 +6,7 @@ set -e
 # DEFAULTS
 # ======================
 NUM_FRAMES=100
+FPS=4
 DEVICE="cpu"
 ROOT_DIR="runs/default"
 SKIP_CONDA=false
@@ -73,6 +74,7 @@ while [[ $# -gt 0 ]]; do
     --video) VIDEO="$2"; INPUT_MODE="video"; shift 2 ;;
     --images) IMAGES="$2"; INPUT_MODE="images"; shift 2 ;;
     --num-frames) NUM_FRAMES="$2"; shift 2 ;;
+    --fps) FPS="$2"; shift 2 ;;
     --profile) PROFILE="$2"; shift 2 ;;
     --name) BASENAME="$2"; shift 2 ;;
     --root) ROOT_DIR="$2"; shift 2 ;;
@@ -366,14 +368,24 @@ case "$INPUT_MODE" in
   video)
     if [ "$SKIP_FRAME_EXTRACTION" = true ]; then
       echo "⏩ Skipping frame extraction (config)"
+
     elif [ -d "$IMAGE_DIR" ] && [ "$(ls -A "$IMAGE_DIR" 2>/dev/null)" ]; then
       echo "⏩ Skipping frame extraction"
+
     else
-      echo "🎬 Extracting $NUM_FRAMES frames → $IMAGE_DIR"
-      NUM_IMAGES="$NUM_FRAMES" \
-      IMAGE_DIR="$IMAGE_DIR" \
-      VIDEO="$VIDEO" \
-      bash scripts/extract_frames.sh
+      if [[ -n "${FPS:-}" ]]; then
+        echo "🎬 Extracting frames at ${FPS} FPS → $IMAGE_DIR"
+        FPS="$FPS" \
+        IMAGE_DIR="$IMAGE_DIR" \
+        VIDEO="$VIDEO" \
+        bash scripts/extract_frames.sh
+      else
+        echo "🎬 Extracting $NUM_FRAMES sharp frames → $IMAGE_DIR"
+        NUM_FRAMES="$NUM_FRAMES" \
+        IMAGE_DIR="$IMAGE_DIR" \
+        VIDEO="$VIDEO" \
+        bash scripts/extract_frames.sh
+      fi
     fi
     ;;
 
