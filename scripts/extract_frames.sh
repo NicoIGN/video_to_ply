@@ -21,10 +21,6 @@ fi
 IMAGE_DIR="${IMAGE_DIR:-dataset/images}"
 IMAGE_WIDTH="${IMAGE_WIDTH:-1280}"
 
-# Exactly one of FPS or NUM_FRAMES must be set
-FPS="${FPS:-}"
-NUM_FRAMES="${NUM_FRAMES:-}"
-
 # ======================
 # VALIDATION
 # ======================
@@ -34,7 +30,7 @@ if [[ ! -f "$VIDEO" ]]; then
 fi
 
 if [[ -n "$FPS" && -n "$NUM_FRAMES" ]]; then
-    echo "❌ Please define either FPS or NUM_FRAMES, but not both"
+    echo "❌ Please define either FPS ($FPS) or NUM_FRAMES ($NUM_FRAMES), but not both"
     exit 1
 fi
 
