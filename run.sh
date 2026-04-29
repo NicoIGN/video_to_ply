@@ -33,6 +33,9 @@ INPUT_MODE="video"
 VIDEO=""
 IMAGES=""
 
+unset FPS
+unset NUM_FRAMES
+
 # ======================
 # HELP
 # ======================
