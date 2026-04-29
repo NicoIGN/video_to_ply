@@ -485,6 +485,8 @@ fi
 # ----------------------
 # 4. EXPORT
 # ----------------------
+
+echo "export!!!"
 if [[ "$SKIP_EXPORT" == "true" ]]; then
   echo "⏩ Skipping export (config)"
 
