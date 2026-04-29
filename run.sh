@@ -495,6 +495,7 @@ elif PLY_FOUND=$(find "$OUTPUT_DIR" -type f -name "*.ply" | head -n 1); then
   fi
 
 else
+echo "Exporting model in $EXPORT_DIR..."
   case "$MODEL" in
     *nerfacto*)
       echo "📦 Exporting Nerfacto point cloud (.ply)..."
