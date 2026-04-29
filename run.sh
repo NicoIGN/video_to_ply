@@ -375,8 +375,6 @@ case "$INPUT_MODE" in
     elif [ -d "$IMAGE_DIR" ] && [ "$(ls -A "$IMAGE_DIR" 2>/dev/null)" ]; then
       echo "⏩ Skipping frame extraction"
     else
-          echo "FPS: $FPS"
-      echo "NUM_FRAMES: $NUM_FRAMES"
       if [[ -n "${FPS:-}" ]]; then
         echo "🎬 Extracting frames at ${FPS} FPS → $IMAGE_DIR"
         FPS="$FPS" \
