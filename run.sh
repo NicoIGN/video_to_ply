@@ -5,8 +5,8 @@ set -e
 # ======================
 # DEFAULTS
 # ======================
-NUM_FRAMES=100
-FPS=4
+#NUM_FRAMES=100
+#FPS=4
 DEVICE="cpu"
 ROOT_DIR="runs/default"
 SKIP_CONDA=false
