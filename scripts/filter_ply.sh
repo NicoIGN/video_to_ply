@@ -2,17 +2,8 @@
 set -euo pipefail
 
 # ============================================================
-# Gaussian Splat PLY Cleaner
-#
-# Required environment variables:
-#   PLY_FILE
-#   EXPORT_DIR
-#   BASENAME
+# Gaussian Splat PLY Cleaner (UPDATED PIPELINE)
 # ============================================================
-
-# ======================
-# VALIDATION
-# ======================
 
 : "${PLY_FILE:?PLY_FILE is required}"
 : "${EXPORT_DIR:?EXPORT_DIR is required}"
@@ -25,10 +16,6 @@ fi
 
 mkdir -p "$EXPORT_DIR"
 
-# ======================
-# NORMALIZE INPUT
-# ======================
-
 FINAL_PLY="$EXPORT_DIR/${BASENAME}.ply"
 
 echo "📦 Normalizing output PLY"
@@ -37,72 +24,48 @@ echo "   TO  : $FINAL_PLY"
 
 cp -f "$PLY_FILE" "$FINAL_PLY"
 
-if [[ ! -f "$FINAL_PLY" ]]; then
-    echo "❌ Failed to create: $FINAL_PLY"
-    exit 1
-fi
-
 PLY_FILE="$FINAL_PLY"
 
-echo "✅ Final PLY ready: $PLY_FILE"
+echo "✅ Input ready: $PLY_FILE"
 echo ""
 
 # ======================
-# CLEANING LEVELS
+# CLEANING LEVELS (SIMPLIFIED MODEL)
 # ======================
 
 LEVELS=(
     minimal
+    balanced
     strong
-    destructive
+    aggressive
 )
 
 declare -A NB_NEIGHBORS=(
-    [minimal]=24
-    [balanced]=32
-    [strong]=40
-    [aggressive]=48
-    [destructive]=64
-)
-
-declare -A SOR_PERCENTILE=(
-    [minimal]=88
-    [balanced]=85
-    [strong]=82
-    [aggressive]=80
-    [destructive]=75
-)
-
-declare -A EDGE_PERCENTILE=(
-    [minimal]=35
-    [balanced]=25
+    [minimal]=12
+    [balanced]=16
     [strong]=20
-    [aggressive]=15
-    [destructive]=10
+    [aggressive]=24
 )
 
-declare -A DBSCAN_MIN=(
-    [minimal]=20
-    [balanced]=30
-    [strong]=40
-    [aggressive]=50
-    [destructive]=80
+declare -A OUTLIER_RATIO=(
+    [minimal]=4.0
+    [balanced]=3.0
+    [strong]=2.5
+    [aggressive]=2.0
 )
 
 declare -A CENTER_PERC=(
-    [minimal]=97
-    [balanced]=95
-    [strong]=92
-    [aggressive]=90
-    [destructive]=85
+    [minimal]=99
+    [balanced]=98
+    [strong]=97
+    [aggressive]=95
 )
 
 # ======================
 # RUN CLEANING
 # ======================
 
-echo "🧹 Input PLY: $PLY_FILE"
-echo ""
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 for LEVEL in "${LEVELS[@]}"; do
     echo "🚀 =============================="
@@ -113,23 +76,14 @@ for LEVEL in "${LEVELS[@]}"; do
     rm -f "$CLEANED_PLY"
 
     echo "⚙️ Parameters"
-    echo "   nb-neighbors      : ${NB_NEIGHBORS[$LEVEL]}"
-    echo "   sor-percentile    : ${SOR_PERCENTILE[$LEVEL]}"
-    echo "   edge-percentile   : ${EDGE_PERCENTILE[$LEVEL]}"
-    echo "   dbscan-min        : ${DBSCAN_MIN[$LEVEL]}"
-    echo "   center-percentile : ${CENTER_PERC[$LEVEL]}"
-
-
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
+    echo "   nb-neighbors   : ${NB_NEIGHBORS[$LEVEL]}"
+    echo "   outlier-ratio  : ${OUTLIER_RATIO[$LEVEL]}"
+    echo "   center-percent : ${CENTER_PERC[$LEVEL]}"
 
     python3 "$SCRIPT_DIR/clean_gaussian_ply.py" \
         --nb-neighbors "${NB_NEIGHBORS[$LEVEL]}" \
-        --sor-percentile "${SOR_PERCENTILE[$LEVEL]}" \
-        --edge-percentile "${EDGE_PERCENTILE[$LEVEL]}" \
-        --dbscan-min-points "${DBSCAN_MIN[$LEVEL]}" \
+        --outlier-ratio "${OUTLIER_RATIO[$LEVEL]}" \
         --center-percentile "${CENTER_PERC[$LEVEL]}" \
-        --recenter \
         "$PLY_FILE" \
         "$CLEANED_PLY"
 

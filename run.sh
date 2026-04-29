@@ -533,10 +533,10 @@ fi
 # ======================
 echo "🧹 Cleaning Gaussian Splat..."
 
-PLY_FILE="$(find "$EXPORT_DIR" -type f -name '*.ply' ! -name '*_minimal.ply' ! -name '*_strong.ply' ! -name '*_destructive.ply' | head -n 1)"
+PLY_FILE="$(find "$EXPORT_DIR" -type f -name "${BASENAME}.ply" -o -name "${BASENAME}_*.ply" | head -n 1)"
 
 if [[ -z "$PLY_FILE" ]]; then
-    echo "❌ No source PLY found in $EXPORT_DIR"
+    echo "❌ No valid PLY found in $EXPORT_DIR for basename: $BASENAME"
     exit 1
 fi
 

@@ -16,21 +16,19 @@ def parse_args():
     p.add_argument("input", type=Path)
     p.add_argument("output", type=Path)
 
-    p.add_argument("--nb-neighbors", type=int, default=32)
+    # core density control
+    p.add_argument("--nb-neighbors", type=int, default=16)
 
-    # SOR control
-    p.add_argument("--sor-percentile", type=float, default=85.0)
+    # outlier rejection (soft)
+    p.add_argument("--outlier-ratio", type=float, default=3.0)
 
-    p.add_argument("--dbscan-min-points", type=int, default=50)
+    # spatial trimming (very light)
+    p.add_argument("--center-percentile", type=float, default=98.0)
 
-    p.add_argument("--center-percentile", type=float, default=95.0)
-
-    # global aggressivity control
+    # optional aggressivity
     p.add_argument("--clean-level", type=float, default=1.0)
 
-    # edge filtering
-    p.add_argument("--edge-percentile", type=float, default=20.0)
-
+    # modes
     p.add_argument("--recenter", action="store_true")
     p.add_argument("--supersplat", action="store_true")
 
@@ -46,84 +44,49 @@ def main():
     vertex = ply["vertex"].data
 
     xyz = np.vstack([vertex["x"], vertex["y"], vertex["z"]]).T
-    n = xyz.shape[0]
+    n = len(xyz)
 
-    print(f"📊 Points: {n:,}")
+    print(f"📊 Input points: {n:,}")
 
     # =========================
-    # CENTER FILTER (vectorized stable)
+    # 1. GLOBAL CENTER TRIM (VERY SAFE)
     # =========================
     center = np.median(xyz, axis=0)
     dist_center = np.linalg.norm(xyz - center, axis=1)
 
-    center_thresh = np.percentile(dist_center, args.center_percentile)
-    mask = dist_center < center_thresh
+    thresh_center = np.percentile(dist_center, args.center_percentile)
+    mask = dist_center < thresh_center
 
     xyz_f = xyz[mask]
-    idx_map = np.flatnonzero(mask)
+    idx_map = np.where(mask)[0]
 
-    print(f"📊 After center filter: {len(xyz_f):,}")
+    print(f"📊 After center trim: {len(xyz_f):,}")
 
     # =========================
-    # SOR FILTER (memory optimized)
+    # 2. LOCAL DENSITY FILTER (CORE SPLAT FILTER)
     # =========================
-    if len(xyz_f) > 1000:
+    if len(xyz_f) > args.nb_neighbors:
 
-        step = max(1, len(xyz_f) // 50000)
-        subset = xyz_f[::step]
-
-        nn = NearestNeighbors(
-            n_neighbors=min(args.nb_neighbors, len(subset))
-        ).fit(subset)
+        nn = NearestNeighbors(n_neighbors=args.nb_neighbors)
+        nn.fit(xyz_f)
 
         dists, _ = nn.kneighbors(xyz_f)
-
         mean_dist = dists.mean(axis=1)
 
-        sor_thresh = np.percentile(mean_dist, args.sor_percentile)
+        # robust threshold (NOT percentile stacking)
+        thr = mean_dist.mean() + args.outlier_ratio * mean_dist.std()
 
-        mask_sor = mean_dist < sor_thresh
+        mask_density = mean_dist < thr
 
-        xyz_f = xyz_f[mask_sor]
-        idx_map = idx_map[mask_sor]
-        mean_dist = mean_dist[mask_sor]
+        xyz_f = xyz_f[mask_density]
+        idx_map = idx_map[mask_density]
 
-    print(f"📊 After SOR: {len(xyz_f):,}")
-
-    # =========================
-    # EDGE FILTER (stable normalization)
-    # =========================
-    global_center = xyz_f.mean(axis=0)
-    dist_global = np.linalg.norm(xyz_f - global_center, axis=1)
-
-    density = 1.0 / (mean_dist + 1e-8)
-    score = density / (dist_global + 1e-8)
-
-    edge_thresh = np.percentile(score, args.edge_percentile)
-    mask_edge = score > edge_thresh
-
-    xyz_f = xyz_f[mask_edge]
-    idx_map = idx_map[mask_edge]
-
-    print(f"📊 After EDGE removal: {len(xyz_f):,}")
+    print(f"📊 After density filter: {len(xyz_f):,}")
 
     # =========================
-    # VOXEL CLEANING (faster + deterministic)
+    # 3. NO DBSCAN (INTENTIONALLY REMOVED)
     # =========================
-    print("🧱 Voxel cleanup...")
-
-    if len(xyz_f) > 0:
-        voxel_size = np.median(mean_dist) * (2.0 / args.clean_level)
-        inv_voxel = 1.0 / (voxel_size + 1e-8)
-
-        coords = np.floor(xyz_f * inv_voxel).astype(np.int32)
-
-        _, unique_idx = np.unique(coords, axis=0, return_index=True)
-
-        xyz_f = xyz_f[unique_idx]
-        idx_map = idx_map[unique_idx]
-
-    print(f"📊 After voxel cleanup: {len(xyz_f):,}")
+    # reason: destroys Gaussian continuity structure
 
     # =========================
     # REBUILD
@@ -140,10 +103,11 @@ def main():
     # MODE
     # =========================
     if args.recenter:
+        print("📍 Recenter only")
         xyz_new -= xyz_new.mean(axis=0)
-        print("📍 Recenter applied")
 
     elif args.supersplat:
+        print("🚀 Supersplat mode")
         center = xyz_new.mean(axis=0)
         xyz_new -= center
 
@@ -151,7 +115,7 @@ def main():
         if scale > 0:
             xyz_new /= scale
 
-        print(f"📏 Normalized scale: {scale:.6f}")
+        print(f"📏 scale: {scale:.6f}")
 
     # =========================
     # SAVE
