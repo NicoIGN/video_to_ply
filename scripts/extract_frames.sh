@@ -2,12 +2,6 @@
 set -euo pipefail
 
 # ======================
-# LOAD CONFIG (CRITICAL)
-# ======================
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/../config/config.sh"
-
-# ======================
 # REQUIRED VARIABLES
 # ======================
 if [[ -z "${VIDEO:-}" ]]; then
