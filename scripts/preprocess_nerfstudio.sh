@@ -38,7 +38,6 @@ fi
 mkdir -p "$OUTPUT_DIR"
 
 LOG_FILE="/tmp/ns_process.log"
-CAMERA_TYPE="perspective"
 
 rm -f "$LOG_FILE"
 
@@ -87,6 +86,7 @@ ns-process-data images \
   --camera-type "$CAMERA_TYPE" \
   --matching-method "$MATCHING_METHOD" \
   --num-downscales $NUM_DOWNSCALES \
+  --use-single-camera-mode \
   > "$LOG_FILE" 2>&1
 
 STATUS=$?
