@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # ======================
 # CHECKS
 # ======================
@@ -98,7 +100,7 @@ echo "🧹 Cleaning Gaussian Splat..."
 
 CLEANED_PLY="${PLY_FILE%.ply}_cleaned.ply"
 
-python3 "$ROOT_DIR/scripts/clean_gaussian_ply.py" \
+python3 "$SCRIPT_DIR/scripts/clean_gaussian_ply.py" \
     "$PLY_FILE" \
     "$CLEANED_PLY" \
     --nb-neighbors 32 \
