@@ -16,23 +16,45 @@ if [[ -z "${VIDEO:-}" ]]; then
 fi
 
 # ======================
-# DEFAULTS
+# CONFIGURATION
 # ======================
-NUM_FRAMES="${NUM_FRAMES:-150}"
 IMAGE_DIR="${IMAGE_DIR:-dataset/images}"
 IMAGE_WIDTH="${IMAGE_WIDTH:-1280}"
 
+# Exactly one of FPS or NUM_FRAMES must be set
+FPS="${FPS:-}"
+NUM_FRAMES="${NUM_FRAMES:-}"
+
 # ======================
-# CHECKS
+# VALIDATION
 # ======================
 if [[ ! -f "$VIDEO" ]]; then
     echo "❌ Video not found: $VIDEO"
     exit 1
 fi
 
-if ! [[ "$NUM_FRAMES" =~ ^[0-9]+$ ]] || [[ "$NUM_FRAMES" -le 0 ]]; then
-    echo "❌ NUM_FRAMES must be a positive integer"
+if [[ -n "$FPS" && -n "$NUM_FRAMES" ]]; then
+    echo "❌ Please define either FPS or NUM_FRAMES, but not both"
     exit 1
+fi
+
+if [[ -z "$FPS" && -z "$NUM_FRAMES" ]]; then
+    echo "❌ Please define either FPS or NUM_FRAMES"
+    exit 1
+fi
+
+if [[ -n "$FPS" ]]; then
+    if ! [[ "$FPS" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+        echo "❌ FPS must be a positive number"
+        exit 1
+    fi
+fi
+
+if [[ -n "$NUM_FRAMES" ]]; then
+    if ! [[ "$NUM_FRAMES" =~ ^[0-9]+$ ]] || [[ "$NUM_FRAMES" -le 0 ]]; then
+        echo "❌ NUM_FRAMES must be a positive integer"
+        exit 1
+    fi
 fi
 
 # ======================
@@ -41,51 +63,63 @@ fi
 mkdir -p "$IMAGE_DIR"
 rm -f "$IMAGE_DIR"/frame_*.png
 
-echo "🎬 Video:        $VIDEO"
-echo "🖼️  Frames:       $NUM_FRAMES"
-echo "📏 Width:         $IMAGE_WIDTH px"
-echo "📁 Output:        $IMAGE_DIR"
+echo "🎬 Video:   $VIDEO"
+echo "📏 Width:   ${IMAGE_WIDTH}px"
+echo "📁 Output:  $IMAGE_DIR"
 
 # ======================
-# GET VIDEO DURATION
+# EXTRACTION MODE: FPS
 # ======================
-DURATION=$(ffprobe -v error \
-    -show_entries format=duration \
-    -of default=noprint_wrappers=1:nokey=1 \
-    "$VIDEO")
+if [[ -n "$FPS" ]]; then
+    echo "⚙️ Mode:    Fixed FPS"
+    echo "🎞️ FPS:     $FPS"
 
-if [[ -z "$DURATION" ]]; then
-    echo "❌ Failed to read video duration"
-    exit 1
-fi
-
-echo "⏱️  Duration:      ${DURATION}s"
+    ffmpeg -hide_banner -loglevel error -stats \
+        -i "$VIDEO" \
+        -vf "fps=$FPS,scale=${IMAGE_WIDTH}:-1" \
+        "$IMAGE_DIR/frame_%05d.png"
 
 # ======================
-# COMPUTE INTERVAL
+# EXTRACTION MODE: SHARP FRAMES
 # ======================
-INTERVAL=$(python3 - <<EOF
+else
+    echo "⚙️ Mode:    Sharp frame selection"
+    echo "🖼️ Frames:  $NUM_FRAMES"
+
+    DURATION=$(ffprobe -v error \
+        -show_entries format=duration \
+        -of default=noprint_wrappers=1:nokey=1 \
+        "$VIDEO")
+
+    if [[ -z "$DURATION" ]]; then
+        echo "❌ Failed to read video duration"
+        exit 1
+    fi
+
+    INTERVAL=$(python3 - <<EOF
 duration = float("$DURATION")
 count = int("$NUM_FRAMES")
 print(duration / count)
 EOF
 )
 
-echo "📐 Interval:      ${INTERVAL}s"
+    echo "⏱️ Duration: ${DURATION}s"
+    echo "📐 Interval: ${INTERVAL}s"
+
+    ffmpeg -hide_banner -loglevel error -stats \
+        -i "$VIDEO" \
+        -vf "fps=1/${INTERVAL},thumbnail=15,scale=${IMAGE_WIDTH}:-1" \
+        -frames:v "$NUM_FRAMES" \
+        "$IMAGE_DIR/frame_%05d.png"
+fi
 
 # ======================
-# EXTRACT SHARP FRAMES
+# SUMMARY
 # ======================
-ffmpeg -hide_banner -loglevel error -stats \
-    -i "$VIDEO" \
-    -vf "fps=1/${INTERVAL},thumbnail=15,scale=${IMAGE_WIDTH}:-1" \
-    -frames:v "$NUM_FRAMES" \
-    "$IMAGE_DIR/frame_%05d.png"
-
 EXTRACTED=$(find "$IMAGE_DIR" -maxdepth 1 -name 'frame_*.png' | wc -l | tr -d ' ')
 
 echo "✅ Extracted $EXTRACTED frames"
 
-if [[ "$EXTRACTED" -ne "$NUM_FRAMES" ]]; then
+if [[ -n "$NUM_FRAMES" && "$EXTRACTED" -ne "$NUM_FRAMES" ]]; then
     echo "⚠️ Requested $NUM_FRAMES frames, got $EXTRACTED"
 fi
