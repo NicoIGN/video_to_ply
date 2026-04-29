@@ -488,8 +488,11 @@ fi
 if [[ "$SKIP_EXPORT" == "true" ]]; then
   echo "⏩ Skipping export (config)"
 
-elif find "$TRAIN_DIR" -type f -name "*.ply" | grep -q .; then
-  echo "⏩ Skipping export (PLY already exists)"
+elif PLY_FOUND=$(find "$TRAIN_DIR" -type f -name "*.ply" | head -n 1); then
+  if [[ -n "$PLY_FOUND" ]]; then
+    echo "📦 Existing PLY found: $PLY_FOUND"
+    echo "⏩ Skipping export (PLY already exists)"
+  fi
 
 else
   case "$MODEL" in
