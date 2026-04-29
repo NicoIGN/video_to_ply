@@ -540,18 +540,17 @@ FILES_TO_DELETE=($(find "$EXPORT_DIR" -type f -name "${BASENAME}_*.ply" | sort))
 
 if [[ ${#FILES_TO_DELETE[@]} -eq 0 ]]; then
     echo "⚠️ No filtered files to remove in $EXPORT_DIR for basename: $BASENAME"
-    exit 0
+else
+
+    echo "📦 Found ${#FILES_TO_DELETE[@]} file(s) to delete"
+
+    for FILE in "${FILES_TO_DELETE[@]}"; do
+        echo "🗑️ Deleting: $(basename "$FILE")"
+        rm -f "$FILE"
+    done
+
+    echo "✅ Cleanup complete"
 fi
-
-echo "📦 Found ${#FILES_TO_DELETE[@]} file(s) to delete"
-
-for FILE in "${FILES_TO_DELETE[@]}"; do
-    echo "🗑️ Deleting: $(basename "$FILE")"
-    rm -f "$FILE"
-done
-
-echo "✅ Cleanup complete"
-
 
 echo "📦 Source PLY: $PLY_FILE"
 
