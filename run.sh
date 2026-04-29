@@ -508,141 +508,21 @@ echo EXPORT_NUM_POINTS: $EXPORT_NUM_POINTS
   fi
 fi
 
-
 # ======================
-# 5. CLEAN PLY (ALL LEVELS)
+# 5. CLEAN PLY
 # ======================
-echo "🧹 Cleaning Gaussian Splat (ALL LEVELS)..."
+echo "🧹 Cleaning Gaussian Splat..."
 
-PLY_FILE="$(find "$EXPORT_DIR" -type f -name '*.ply' ! -name '*_cleaned*.ply' | head -n 1)"
+PLY_FILE="$(find "$EXPORT_DIR" -type f -name '*.ply' ! -name '*_minimal.ply' ! -name '*_strong.ply' ! -name '*_destructive.ply' | head -n 1)"
 
 if [[ -z "$PLY_FILE" ]]; then
-    echo "❌ No PLY file found in $EXPORT_DIR"
+    echo "❌ No source PLY found in $EXPORT_DIR"
     exit 1
 fi
 
-echo "📦 Input PLY: $PLY_FILE"
+echo "📦 Source PLY: $PLY_FILE"
 
-# ======================
-# LEVEL CONFIGS
-# ======================
-
-#LEVELS=("minimal" "balanced" "strong" "aggressive" "destructive")
-LEVELS=("minimal" "strong" "destructive")
-
-declare -A NB_NEIGHBORS
-declare -A SOR_PERCENTILE
-declare -A EDGE_PERCENTILE
-declare -A DBSCAN_MIN
-declare -A CENTER_PERC
-
-# minimal (safe, conserve presque tout)
-NB_NEIGHBORS[minimal]=24
-SOR_PERCENTILE[minimal]=88
-EDGE_PERCENTILE[minimal]=35
-DBSCAN_MIN[minimal]=20
-CENTER_PERC[minimal]=97
-
-# balanced
-NB_NEIGHBORS[balanced]=32
-SOR_PERCENTILE[balanced]=85
-EDGE_PERCENTILE[balanced]=25
-DBSCAN_MIN[balanced]=30
-CENTER_PERC[balanced]=95
-
-# strong
-NB_NEIGHBORS[strong]=40
-SOR_PERCENTILE[strong]=82
-EDGE_PERCENTILE[strong]=20
-DBSCAN_MIN[strong]=40
-CENTER_PERC[strong]=92
-
-# aggressive (good default for messy scenes)
-NB_NEIGHBORS[aggressive]=48
-SOR_PERCENTILE[aggressive]=80
-EDGE_PERCENTILE[aggressive]=15
-DBSCAN_MIN[aggressive]=50
-CENTER_PERC[aggressive]=90
-
-# destructive (hard cleanup, removes background aggressively)
-NB_NEIGHBORS[destructive]=64
-SOR_PERCENTILE[destructive]=75
-EDGE_PERCENTILE[destructive]=10
-DBSCAN_MIN[destructive]=80
-CENTER_PERC[destructive]=85
-
-
-# ======================
-# CHECK INPUT
-# ======================
-
-if [[ -z "$PLY_FILE" ]]; then
-    echo "❌ PLY_FILE is empty"
-    exit 1
-fi
-
-if [[ ! -f "$PLY_FILE" ]]; then
-    echo "❌ PLY file not found: $PLY_FILE"
-    exit 1
-fi
-
-FINAL_PLY="$EXPORT_DIR/${BASENAME}.ply"
-
-echo "📦 Normalizing output PLY:"
-echo "   FROM: $PLY_FILE"
-echo "   TO  : $FINAL_PLY"
-
-cp "$PLY_FILE" "$FINAL_PLY"
-
-if [[ ! -f "$FINAL_PLY" ]]; then
-    echo "❌ Failed to create final PLY: $FINAL_PLY"
-    exit 1
-fi
-
-echo "✅ Final PLY ready: $FINAL_PLY"
-
-
-
-# ======================
-# RUN ALL LEVELS
-# ======================
-
-echo "🧹 Input PLY: $PLY_FILE"
-echo ""
-
-for LEVEL in "${LEVELS[@]}"; do
-
-    echo "🚀 =============================="
-    echo "🚀 CLEAN LEVEL: $LEVEL"
-    echo "🚀 =============================="
-
-    CLEANED_PLY="$EXPORT_DIR/${BASENAME}_${LEVEL}.ply"
-    
-    [[ -f "$CLEANED_PLY" ]] && rm -f "$CLEANED_PLY"
-
-    echo "⚙️ Params:"
-    echo "   nb-neighbors      : ${NB_NEIGHBORS[$LEVEL]}"
-    echo "   sor-percentile    : ${SOR_PERCENTILE[$LEVEL]}"
-    echo "   edge-percentile   : ${EDGE_PERCENTILE[$LEVEL]}"
-    echo "   dbscan-min        : ${DBSCAN_MIN[$LEVEL]}"
-    echo "   center-percentile : ${CENTER_PERC[$LEVEL]}"
-
-    python3 "$SCRIPT_DIR/scripts/clean_gaussian_ply.py" \
-        --nb-neighbors "${NB_NEIGHBORS[$LEVEL]}" \
-        --sor-percentile "${SOR_PERCENTILE[$LEVEL]}" \
-        --edge-percentile "${EDGE_PERCENTILE[$LEVEL]}" \
-        --dbscan-min-points "${DBSCAN_MIN[$LEVEL]}" \
-        --center-percentile "${CENTER_PERC[$LEVEL]}" \
-        --recenter \
-        "$PLY_FILE" \
-        "$CLEANED_PLY"
-
-    if [[ ! -f "$CLEANED_PLY" ]]; then
-        echo "❌ FAILED LEVEL: $LEVEL"
-        exit 1
-    fi
-
-    echo "✅ DONE → $CLEANED_PLY"
-    echo ""
-
-done
+PLY_FILE="$PLY_FILE" \
+EXPORT_DIR="$EXPORT_DIR" \
+BASENAME="$BASENAME" \
+bash "$SCRIPT_DIR/scripts/filter_ply.sh"

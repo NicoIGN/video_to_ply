@@ -2,7 +2,7 @@
 set -e
 
 # ======================
-# LOAD CONFIG
+# LOAD CONFIG (CRITICAL)
 # ======================
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../config/config.sh"
@@ -46,10 +46,6 @@ export MODEL_IMPLEMENTATION
 export MACHINE_DEVICE_TYPE
 export MAX_JOBS
 export CMAKE_BUILD_PARALLEL_LEVEL=$MAX_JOBS
-
-#desactive le parallelisme CUDA
-# export CUDA_LAUNCH_BLOCKING=1
-
 
 # ======================
 # CUDA ARCH AUTO-DETECTION
@@ -114,133 +110,27 @@ echo "────────────────────────�
 
 
 # ======================
-# CHECKPOINT AUTO-RESUME (DEBUG + FIXED)
+# CHECKPOINT AUTO-RESUME
 # ======================
-
 LOAD_DIR=""
-CHECKPOINT_SRC=""
 
-MODEL_ROOT="$OUTPUTDIR/model3d/splatfacto"
-
-echo "🔍 CHECKPOINT DEBUG"
-echo "📁 OUTPUTDIR     : $OUTPUTDIR"
-echo "📁 MODEL_ROOT    : $MODEL_ROOT"
-
-# ----------------------
-# 1. list all runs
-# ----------------------
-if [ -d "$MODEL_ROOT" ]; then
-    echo "📂 RUNS FOUND IN MODEL ROOT:"
-    ls -1 "$MODEL_ROOT" || true
-else
-    echo "❌ MODEL_ROOT DOES NOT EXIST: $MODEL_ROOT"
+if [ -d "$OUTPUTDIR/nerfstudio_models" ]; then
+    LOAD_DIR="$OUTPUTDIR/nerfstudio_models"
 fi
 
-# ----------------------
-# 2. find latest run folder
-# ----------------------
-LAST_RUN=$(ls -td "$MODEL_ROOT"/* 2>/dev/null | head -n 1 || true)
-
-echo "🧪 LAST_RUN DETECTED: $LAST_RUN"
-
-
-# ======================
-# CHECKPOINT SEARCH SWITCH
-# ======================
-SEARCH_CHECKPOINT=${SEARCH_CHECKPOINT:-false}
-echo "🧭 SEARCH_CHECKPOINT = $SEARCH_CHECKPOINT"
-
-# ======================
-# CHECKPOINT AUTO-RESUME (DEBUG + SWITCHABLE)
-# ======================
-
-LOAD_DIR=""
-CHECKPOINT_SRC=""
-
-MODEL_ROOT="$OUTPUTDIR/model3d/splatfacto"
-
-echo "🔍 CHECKPOINT DEBUG"
-echo "📁 OUTPUTDIR     : $OUTPUTDIR"
-echo "📁 MODEL_ROOT    : $MODEL_ROOT"
-
-# ======================
-# SWITCH OFF → SKIP EVERYTHING
-# ======================
-if [[ "$SEARCH_CHECKPOINT" != "true" ]]; then
-    echo "⏭️ SEARCH_CHECKPOINT disabled → skipping checkpoint search"
-    echo "🆕 TRAINING FROM SCRATCH"
-    LOAD_DIR=""
-else
-
-    # ----------------------
-    # 1. list all runs
-    # ----------------------
-    if [ -d "$MODEL_ROOT" ]; then
-        echo "📂 RUNS FOUND IN MODEL ROOT:"
-        ls -1 "$MODEL_ROOT" || true
-    else
-        echo "❌ MODEL_ROOT DOES NOT EXIST: $MODEL_ROOT"
-    fi
-
-    # ----------------------
-    # 2. find latest run folder
-    # ----------------------
-    LAST_RUN=$(ls -td "$MODEL_ROOT"/* 2>/dev/null | head -n 1 || true)
-
-    echo "🧪 LAST_RUN DETECTED: $LAST_RUN"
-
-    # ----------------------
-    # 3. search inside last run
-    # ----------------------
-    if [ -n "$LAST_RUN" ]; then
-        echo "🔍 SEARCHING CHECKPOINTS IN: $LAST_RUN"
-
-        find "$LAST_RUN" -type f -name "*.ckpt" -print || true
-
-        CHECKPOINT_DIR=$(find "$LAST_RUN" -type d -name "nerfstudio_models" 2>/dev/null | head -n 1 || true)
-
-        echo "📦 CHECKPOINT_DIR FOUND: $CHECKPOINT_DIR"
-
-        if [ -d "$CHECKPOINT_DIR" ]; then
-            CHECKPOINT_SRC="$CHECKPOINT_DIR"
-        fi
-    fi
-
-    # ----------------------
-    # 4. fallback scan global
-    # ----------------------
-    if [ -z "$CHECKPOINT_SRC" ]; then
-        echo "🔁 FALLBACK: scanning all runs..."
-
-        CHECKPOINT_SRC=$(find "$MODEL_ROOT" -type d -path "*/nerfstudio_models" 2>/dev/null \
-            | sort -r | head -n 1 || true)
-
-        echo "📦 FALLBACK CHECKPOINT_SRC: $CHECKPOINT_SRC"
-    fi
-
-    # ----------------------
-    # 5. final decision
-    # ----------------------
-    if [ -n "$CHECKPOINT_SRC" ] && [ -d "$CHECKPOINT_SRC" ]; then
-
-        RUN_CKPT_DIR="$OUTPUTDIR/nerfstudio_models"
-
-        echo "♻️ CHECKPOINT FOUND → COPYING"
-        echo "FROM: $CHECKPOINT_SRC"
-        echo "TO  : $RUN_CKPT_DIR"
-
-        mkdir -p "$RUN_CKPT_DIR"
-
-        rsync -av "$CHECKPOINT_SRC/" "$RUN_CKPT_DIR/"
-
-        LOAD_DIR="$RUN_CKPT_DIR"
-
-    else
-        echo "🆕 NO CHECKPOINT FOUND → TRAINING FROM SCRATCH"
+if [ -d "$OUTPUTDIR" ]; then
+    LAST_RUN=$(ls -td "$OUTPUTDIR"/*/nerfstudio_models 2>/dev/null | head -n 1)
+    if [ ! -z "$LAST_RUN" ]; then
+        LOAD_DIR="$LAST_RUN"
     fi
 fi
 
-echo "🚀 FINAL LOAD_DIR = $LOAD_DIR"
+if [ ! -z "$LOAD_DIR" ]; then
+    echo "♻️ CHECKPOINT FOUND → RESUMING TRAINING"
+    echo "📦 LOAD_DIR: $LOAD_DIR"
+else
+    echo "🆕 NO CHECKPOINT FOUND → TRAINING FROM SCRATCH"
+fi
 
 
 # ======================
@@ -288,7 +178,8 @@ fi
 
 
 # ======================
-# LOGGING
+# ADD ROBUST LOGGING + SILENT FAILURE DETECTION
+# Place BEFORE "RUN TRAINING"
 # ======================
 
 LOG_DIR="$OUTPUTDIR/logs"
