@@ -495,9 +495,9 @@ else
   case "$MODEL" in
     *nerfacto*)
       echo "📦 Exporting Nerfacto point cloud (.ply)..."
-echo EXPORT_NUM_POINTS: $EXPORT_NUM_POINTS
+
       OUTPUT_DIR="$TRAIN_DIR/$EXPERIMENT_NAME" \
-      EXPORT_DIR="$EXPORT_DIR" \
+      EXPORT_DIR="$TRAIN_DIR" \
       NUM_POINTS="$EXPORT_NUM_POINTS" \
       NORMAL_METHOD="$NORMAL_METHOD" \
       REMOVE_OUTLIERS="$REMOVE_OUTLIERS" \
@@ -508,7 +508,7 @@ echo EXPORT_NUM_POINTS: $EXPORT_NUM_POINTS
       echo "📦 Exporting Gaussian Splat (.ply)..."
 
       OUTPUT_DIR="$TRAIN_DIR/$EXPERIMENT_NAME" \
-      EXPORT_DIR="$EXPORT_DIR" \
+      EXPORT_DIR="$TRAIN_DIR" \
       bash scripts/export_splat_to_ply.sh
       ;;
 
@@ -518,7 +518,7 @@ echo EXPORT_NUM_POINTS: $EXPORT_NUM_POINTS
       ;;
   esac
 
-  PLY_FILE="$(find "$EXPORT_DIR" -type f -name '*.ply' | head -n 1)"
+  PLY_FILE="$(find "$TRAIN_DIR" -type f -name '*.ply' | head -n 1)"
 
   if [[ -f "$PLY_FILE" ]]; then
     echo "✅ PLY export successful: $PLY_FILE"
@@ -531,14 +531,24 @@ fi
 # ======================
 # 5. CLEAN PLY
 # ======================
-echo "🧹 Cleaning Gaussian Splat..."
+echo "🧹 Removing filtered Gaussian Splat files..."
 
-PLY_FILE="$(find "$EXPORT_DIR" -type f -name "${BASENAME}.ply" -o -name "${BASENAME}_*.ply" | head -n 1)"
+FILES_TO_DELETE=($(find "$EXPORT_DIR" -type f -name "${BASENAME}_*.ply" | sort))
 
-if [[ -z "$PLY_FILE" ]]; then
-    echo "❌ No valid PLY found in $EXPORT_DIR for basename: $BASENAME"
-    exit 1
+if [[ ${#FILES_TO_DELETE[@]} -eq 0 ]]; then
+    echo "⚠️ No filtered files to remove in $EXPORT_DIR for basename: $BASENAME"
+    exit 0
 fi
+
+echo "📦 Found ${#FILES_TO_DELETE[@]} file(s) to delete"
+
+for FILE in "${FILES_TO_DELETE[@]}"; do
+    echo "🗑️ Deleting: $(basename "$FILE")"
+    rm -f "$FILE"
+done
+
+echo "✅ Cleanup complete"
+
 
 echo "📦 Source PLY: $PLY_FILE"
 
