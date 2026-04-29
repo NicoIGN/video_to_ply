@@ -107,7 +107,7 @@ EOF
 
     ffmpeg -hide_banner -loglevel error -stats \
         -i "$VIDEO" \
-        -vf "fps=1/${INTERVAL},thumbnail=15,scale=${IMAGE_WIDTH}:-1" \
+        -vf "fps=1/${INTERVAL},thumbnail=4,scale=${IMAGE_WIDTH}:-1" \
         -frames:v "$NUM_FRAMES" \
         "$IMAGE_DIR/frame_%05d.png"
 fi
