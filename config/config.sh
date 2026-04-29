@@ -119,15 +119,67 @@ fi
 # COLMAP / PREPROCESS
 ############################
 
-SFMT_TOOL="colmap" #colmap / hloc / any
-MATCHING_METHOD="vocab_tree" # sequential | vocab_tree | exhaustive
-NUM_DOWNSCALES=1 # 0 or 1 or 2 or 3
-SKIP_IMAGE_PROCESSING=true
-CAMERA_TYPE="perspective"
+SFMT_TOOL="colmap"
+# colmap | hloc | any
+# → hloc = meilleur pour scènes difficiles / moins d’artefacts
 
-FEATURE_TYPE="" # sift / superpoint / disk / etc.
-MATCHER_TYPE="" # NN / superglue / lightglue / etc.
-WITH_NERFSTUDIO="true"
+MATCHING_METHOD="vocab_tree"
+# sequential | vocab_tree | exhaustive
+# → exhaustive = plus précis mais lent
+# → vocab_tree = bon compromis
+# → sequential = vidéo uniquement
+
+NUM_DOWNSCALES=1
+# 0 | 1 | 2 | 3
+# → + haut = moins de détails mais plus stable
+
+SKIP_IMAGE_PROCESSING=true
+# true | false
+# → évite resize/copie images si déjà préparées
+
+CAMERA_TYPE="perspective"
+# perspective | pinhole | fisheye | equirectangular
+# → mauvais choix = déformations COLMAP
+
+############################
+# FEATURE / MATCHING (COLMAP / HLOC)
+############################
+
+FEATURE_TYPE="disk"
+# sift | superpoint | superpoint_aachen | disk | r2d2 | any
+# → superpoint/disk = meilleur pour scènes complexes
+
+MATCHER_TYPE="disk+lightglue"
+# NN | NN-mutual | superglue | superglue-fast | lightglue | disk+lightglue | any
+# → superglue/lightglue = réduction artefacts + meilleurs matches
+
+############################
+# CAMERA / STRUCTURE OPTIONS
+############################
+
+USE_SFM_DEPTH=false
+# true | false
+# → depth SfM utile pour densification mais plus lourd
+
+REFINE_INTRINSICS=true
+# true | false
+# → améliore calibration caméra (bundle adjustment)
+
+USE_SINGLE_CAMERA_MODE=true
+# true | false
+# → true si une seule caméra (sinon artefacts possibles)
+
+############################
+# CROPPING / FILTERING INPUT
+############################
+
+PERCENT_RADIUS_CROP=0.9
+# 0.0 → 1.0
+# → supprime bords image (réduit clusters parasites COLMAP)
+
+CROP_FACTOR=""
+# top bottom left right (0-1)
+# → crop manuel zones instables
 
 ############################
 # IMAGE PREPROCESSING

@@ -25,7 +25,6 @@ dependencies:
 
   # 🧊 geometry / SfM stack
   - colmap=3.8  # au dela, incomaptibilité avec nerfstudio
-  - pycolmap>=0.6
   - cgal
   - faiss-cpu
   - plyfile
@@ -39,7 +38,7 @@ dependencies:
 
   - pip:
       # 🔥 ML stack stable
-      - torch==2.5.1
+      - torch==2.2
       - torchvision
       - torchaudio
 

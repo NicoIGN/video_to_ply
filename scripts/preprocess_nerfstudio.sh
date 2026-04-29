@@ -10,9 +10,9 @@ source "$SCRIPT_DIR/../config/config.sh"
 # ======================
 # INPUTS
 # ======================
-DATA_DIR=${1:-dataset/images}
-OUTPUT_DIR=${2:-dataset/ori}
-DEVICE=${DEVICE:-cpu}
+: "${DATA_DIR:?❌ DATA_DIR env var is required}"
+: "${OUTPUT_DIR:?❌ OUTPUT_DIR env var is required}"
+: "${DEVICE:?❌ DEVICE env var is required (cpu|gpu)}"
 
 SKIP_NS=false
 
@@ -85,8 +85,14 @@ ns-process-data images \
   --output-dir "$OUTPUT_DIR" \
   --camera-type "$CAMERA_TYPE" \
   --matching-method "$MATCHING_METHOD" \
+  --feature-type "$FEATURE_TYPE" \
+  --matcher-type "$MATCHER_TYPE" \
   --num-downscales $NUM_DOWNSCALES \
+  --crop-factor $CROP_FACTOR \
+  --percent-radius-crop $PERCENT_RADIUS_CROP \
+  --refine-intrinsics \
   --use-single-camera-mode \
+  --sfm-tool "$SFMT_TOOL" \
   > "$LOG_FILE" 2>&1
 
 STATUS=$?

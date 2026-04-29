@@ -423,26 +423,23 @@ elif [ -f "$ORI_DIR/transforms.json" ]; then
 else
     echo ""
     echo ""
-  if [ "$WITH_COLMAP" = true ]; then
-      echo "🧭 Running COLMAP..."
-      bash scripts/preprocess_colmap.sh "$IMAGE_DIR" "$ORI_DIR"
-  elif [ "$WITH_NERFSTUDIO" = true ]; then
-      echo "🧭 Running COLMAP through NerfStudio..."
-      bash scripts/preprocess_nerfstudio.sh "$IMAGE_DIR" "$ORI_DIR"
-  else
-    echo "❌ CONFIGURATION ERROR"
-    echo "   → Neither WITH_NERFSTUDIO nor WITH_COLMAP is enabled"
-    echo ""
-    echo "📌 Required fix:"
-    echo "   - set WITH_NERFSTUDIO=true  OR"
-    echo "   - set WITH_COLMAP=true"
-    echo ""
-    echo "🧠 Current state:"
-    echo "   WITH_NERFSTUDIO=$WITH_NERFSTUDIO"
-    echo "   WITH_COLMAP=$WITH_COLMAP"
-    echo ""
-    exit 1
-  fi
+    echo "🧭 Running COLMAP through NerfStudio..."
+
+    DATA_DIR="$IMAGE_DIR" \
+    OUTPUT_DIR="$ORI_DIR" \
+    DEVICE="$DEVICE" \
+    CAMERA_TYPE="$CAMERA_TYPE" \
+    MATCHING_METHOD="$MATCHING_METHOD" \
+    NUM_DOWNSCALES="$NUM_DOWNSCALES" \
+    SFMT_TOOL="$SFMT_TOOL" \
+    FEATURE_TYPE="$FEATURE_TYPE" \
+    MATCHER_TYPE="$MATCHER_TYPE" \
+    PERCENT_RADIUS_CROP="$PERCENT_RADIUS_CROP" \
+    CAMERA_RES_SCALE_FACTOR="$CAMERA_RES_SCALE_FACTOR" \
+    USE_SINGLE_CAMERA_MODE="$USE_SINGLE_CAMERA_MODE" \
+    REFINE_INTRINSICS="$REFINE_INTRINSICS" \
+    CROP_FACTOR="$CROP_FACTOR" \
+    bash scripts/preprocess_nerfstudio.sh
 fi
 
 # ----------------------
