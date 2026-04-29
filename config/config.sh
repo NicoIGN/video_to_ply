@@ -145,13 +145,14 @@ CAMERA_TYPE="perspective"
 # FEATURE / MATCHING (COLMAP / HLOC)
 ############################
 
-FEATURE_TYPE="disk"
+FEATURE_TYPE="sift"
 # sift | superpoint | superpoint_aachen | disk | r2d2 | any
 # → superpoint/disk = meilleur pour scènes complexes
+# disk pas compatible colmap
 
-MATCHER_TYPE="disk+lightglue"
+MATCHER_TYPE="NN-mutual"
 # NN | NN-mutual | superglue | superglue-fast | lightglue | disk+lightglue | any
-# → superglue/lightglue = réduction artefacts + meilleurs matches
+# → superglue/lightglue = réduction artefacts + meilleurs matches -> incompatible colmap, utiliser hloc
 
 ############################
 # CAMERA / STRUCTURE OPTIONS
