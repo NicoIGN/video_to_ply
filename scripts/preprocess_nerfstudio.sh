@@ -87,21 +87,27 @@ else
   GPU_FLAG=""
 fi
 
-ns-process-data images \
-  $GPU_FLAG \
-  --data "$DATA_DIR" \
-  --output-dir "$OUTPUT_DIR" \
-  --camera-type "$CAMERA_TYPE" \
-  --matching-method "$MATCHING_METHOD" \
-  --feature-type "$FEATURE_TYPE" \
-  --matcher-type "$MATCHER_TYPE" \
-  --num-downscales $NUM_DOWNSCALES \
-  --crop-factor $CROP_FACTOR \
-  --percent-radius-crop $PERCENT_RADIUS_CROP \
-  --refine-intrinsics \
-  --use-single-camera-mode \
-  --sfm-tool "$SFMT_TOOL" \
-  > "$LOG_FILE" 2>&1
+ARGS=()
+
+ARGS+=($GPU_FLAG)
+ARGS+=(--data "$DATA_DIR")
+ARGS+=(--output-dir "$OUTPUT_DIR")
+ARGS+=(--camera-type "$CAMERA_TYPE")
+ARGS+=(--matching-method "$MATCHING_METHOD")
+ARGS+=(--feature-type "$FEATURE_TYPE")
+ARGS+=(--matcher-type "$MATCHER_TYPE")
+ARGS+=(--num-downscales "$NUM_DOWNSCALES")
+ARGS+=(--percent-radius-crop "$PERCENT_RADIUS_CROP")
+ARGS+=(--refine-intrinsics)
+ARGS+=(--use-single-camera-mode)
+ARGS+=(--sfm-tool "$SFMT_TOOL")
+
+# SAFE crop-factor handling
+if [[ -n "$CROP_FACTOR" ]]; then
+  ARGS+=(--crop-factor $CROP_FACTOR)
+fi
+
+ns-process-data images "${ARGS[@]}" > "$LOG_FILE" 2>&1
 
 STATUS=$?
 set -e

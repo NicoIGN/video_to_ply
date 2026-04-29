@@ -177,7 +177,7 @@ PERCENT_RADIUS_CROP=0.9
 # 0.0 → 1.0
 # → supprime bords image (réduit clusters parasites COLMAP)
 
-CROP_FACTOR=""
+CROP_FACTOR="0.02 0.05 0.02 0.02"
 # top bottom left right (0-1)
 # → crop manuel zones instables
 
