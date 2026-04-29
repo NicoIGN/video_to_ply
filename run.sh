@@ -486,52 +486,58 @@ fi
 # 4. EXPORT
 # ----------------------
 
-echo "export!!!"
 if [[ "$SKIP_EXPORT" == "true" ]]; then
   echo "⏩ Skipping export (config)"
+  exit 0
+fi
 
-elif PLY_FOUND=$(find "$OUTPUT_DIR" -type f -name "*.ply" | head -n 1); then
-  if [[ -n "$PLY_FOUND" ]]; then
-    echo "📦 Existing PLY found: $PLY_FOUND"
-    echo "⏩ Skipping export (PLY already exists)"
-  fi
 
+PLY_FOUND=$(find "$OUTPUT_DIR" -type f -name "*.ply" | head -n 1)
+
+if [[ -n "$PLY_FOUND" ]]; then
+  echo "📦 Existing PLY found: $PLY_FOUND"
+  echo "⏩ Skipping export (PLY already exists)"
 else
-echo "Exporting model in $EXPORT_DIR..."
-  case "$MODEL" in
-    *nerfacto*)
-      echo "📦 Exporting Nerfacto point cloud (.ply)..."
+    echo "🚀 Exporting model in $EXPORT_DIR..."
 
-      OUTPUT_DIR="$TRAIN_DIR/$EXPERIMENT_NAME" \
-      EXPORT_DIR="$OUTPUT_DIR" \
-      NUM_POINTS="$EXPORT_NUM_POINTS" \
-      NORMAL_METHOD="$NORMAL_METHOD" \
-      REMOVE_OUTLIERS="$REMOVE_OUTLIERS" \
-      bash scripts/export_nerf_to_ply.sh
-      ;;
+    case "$MODEL" in
+      *nerfacto*)
+        echo "📦 Exporting Nerfacto point cloud (.ply)..."
 
-    *splatfacto*)
-      echo "📦 Exporting Gaussian Splat (.ply)..."
+        OUTPUT_DIR="$TRAIN_DIR/$EXPERIMENT_NAME" \
+        EXPORT_DIR="$OUTPUT_DIR" \
+        NUM_POINTS="$EXPORT_NUM_POINTS" \
+        NORMAL_METHOD="$NORMAL_METHOD" \
+        REMOVE_OUTLIERS="$REMOVE_OUTLIERS" \
+        bash scripts/export_nerf_to_ply.sh
+        ;;
 
-      OUTPUT_DIR="$TRAIN_DIR/$EXPERIMENT_NAME" \
-      EXPORT_DIR="$OUTPUT_DIR" \
-      bash scripts/export_splat_to_ply.sh
-      ;;
+      *splatfacto*)
+        echo "📦 Exporting Gaussian Splat (.ply)..."
 
-    *)
-      echo "⚠️ Unsupported model for export: $MODEL"
+        OUTPUT_DIR="$TRAIN_DIR/$EXPERIMENT_NAME" \
+        EXPORT_DIR="$OUTPUT_DIR" \
+        bash scripts/export_splat_to_ply.sh
+        ;;
+
+      *)
+        echo "⚠️ Unsupported model for export: $MODEL"
+        exit 1
+        ;;
+    esac
+
+    # ======================
+    # VALIDATION
+    # ======================
+    PLY_FILE=$(find "$OUTPUT_DIR" -type f -name "*.ply" | head -n 1)
+
+    if [[ -f "$PLY_FILE" ]]; then
+      echo "✅ PLY export successful: $PLY_FILE"
+    else
+      echo "❌ PLY export failed"
       exit 1
-      ;;
-  esac
+    fi
 
-  PLY_FILE="$(find "$TRAIN_DIR" -type f -name '*.ply' | head -n 1)"
-
-  if [[ -f "$PLY_FILE" ]]; then
-    echo "✅ PLY export successful: $PLY_FILE"
-  else
-    echo "❌ PLY export failed"
-    exit 1
-  fi
 fi
 
 # ======================
