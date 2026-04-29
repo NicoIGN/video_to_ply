@@ -488,7 +488,7 @@ fi
 if [[ "$SKIP_EXPORT" == "true" ]]; then
   echo "⏩ Skipping export (config)"
 
-elif find "$EXPORT_DIR" -type f -name "*.ply" | grep -q .; then
+elif find "$TRAIN_DIR" -type f -name "*.ply" | grep -q .; then
   echo "⏩ Skipping export (PLY already exists)"
 
 else
