@@ -89,19 +89,24 @@ echo "🔁 MAX ITERATIONS           : $MAX_ITER"
 echo "🔁 MAX JOBS                 : $MAX_JOBS"
 echo "📊 VIS MODE                 : $TRAIN_VIS_MODE"
 
-
 echo "────────────────────────────────────────────"
 echo "🧠 DATA PIPELINE"
-echo "  - train rays/batch       : $TRAIN_RAYS_PER_BATCH"
-echo "  - camera res scale       : $CAMERA_RES_SCALE_FACTOR"
-
+echo "  - train rays per batch    : $TRAIN_RAYS_PER_BATCH"
+echo "  - camera resolution scale : $CAMERA_RES_SCALE_FACTOR"
 
 echo "────────────────────────────────────────────"
 echo "🧠 MODEL CONFIG"
-echo "  - nerf samples/ray       : $NUM_NERF_SAMPLES_PER_RAY"
-echo "  - proposal samples/ray   : $NUM_PROPOSAL_SAMPLES_PER_RAY"
-echo "  - max resolution         : $MAX_RES"
-echo "  - implementation         : $MODEL_IMPLEMENTATION"
+echo "  - NeRF samples per ray    : $NUM_NERF_SAMPLES_PER_RAY"
+echo "  - proposal samples/ray    : $NUM_PROPOSAL_SAMPLES_PER_RAY"
+echo "  - max resolution          : $MAX_RES"
+echo "  - implementation          : $MODEL_IMPLEMENTATION"
+
+echo "────────────────────────────────────────────"
+echo "✨ GAUSSIAN SPLATTING"
+echo "  - densify grad threshold  : $DENSIFY_GRAD_THRESH"
+echo "  - cull alpha threshold    : $CULL_ALPHA_THRESH"
+echo "  - cull screen size        : $CULL_SCREEN_SIZE"
+echo "  - split screen size       : $SPLIT_SCREEN_SIZE"
 
 
 echo "────────────────────────────────────────────"
@@ -158,6 +163,10 @@ if [[ "$DEVICE" == "gpu" ]]; then
 
   DEVICE_ARGS=(
     --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
+    --pipeline.model.densify-grad-thresh $DENSIFY_GRAD_THRESH
+    --pipeline.model.cull-alpha-thresh $CULL_ALPHA_THRESH
+    --pipeline.model.cull-screen-size $CULL_SCREEN_SIZE
+    --pipeline.model.split-screen-size $SPLIT_SCREEN_SIZE
   )
 
 elif [[ "$DEVICE" == "cpu" ]]; then

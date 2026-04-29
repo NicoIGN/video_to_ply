@@ -10,6 +10,35 @@ SKIP_EXPORT=false
 
 NO_PROXY=true
 
+
+############################
+# CONDA
+############################
+
+CONDA_ENV_FILE="environment/conda_colab.yml"
+CONDA_ENV_NAME="gsplat"
+
+
+############################
+# PROXY
+############################
+
+if [ "$NO_PROXY" != true ]; then
+  export HTTP_PROXY="http://proxy.ign.fr:3128"
+  export HTTPS_PROXY="http://proxy.ign.fr:3128"
+  export http_proxy="$HTTP_PROXY"
+  export https_proxy="$HTTPS_PROXY"
+
+  echo "🌐 Proxy enabled (3)"
+else
+  echo "🚫 Proxy disabled (NO_PROXY=true)"
+  unset HTTP_PROXY
+  unset HTTPS_PROXY
+  unset http_proxy
+  unset https_proxy
+fi
+
+
 ############################
 # PIPELINE EXECUTION ENV
 ############################
@@ -130,9 +159,10 @@ fi
 # ↑ plus grand = plus stable mais plus lent
 if [ -z "${TRAIN_RAYS_PER_BATCH+x}" ]; then
     # TRAIN_RAYS_PER_BATCH=1024
-    #TRAIN_RAYS_PER_BATCH=512
+    # TRAIN_RAYS_PER_BATCH=512
     TRAIN_RAYS_PER_BATCH=256
 fi
+
 
 ############################
 # SAMPLING (RECONSTRUCTION 3D)
@@ -150,10 +180,42 @@ fi
 # 2e nombre : raffinement des zones sélectionnées
 # → améliore qualité et efficacité du rendu
 if [ -z "${NUM_PROPOSAL_SAMPLES_PER_RAY+x}" ]; then
-    #NUM_PROPOSAL_SAMPLES_PER_RAY="160 64"
+    # NUM_PROPOSAL_SAMPLES_PER_RAY="160 64"
     NUM_PROPOSAL_SAMPLES_PER_RAY="64 32"
 fi
 
+
+############################
+# GAUSSIAN SPLATTING (DENSIFICATION & PRUNING)
+############################
+
+# Seuil de gradient pour la densification des gaussiennes
+# → contrôle quand de nouvelles gaussiennes sont ajoutées
+# ↑ plus bas = plus de détails, mais plus de bruit et mémoire
+if [ -z "${DENSIFY_GRAD_THRESH+x}" ]; then
+  DENSIFY_GRAD_THRESH=0.0004
+fi
+
+# Seuil alpha pour supprimer les gaussiennes faibles
+# → enlève les éléments peu visibles / inutiles
+# ↑ plus haut = scène plus propre mais perte de détails fins
+if [ -z "${CULL_ALPHA_THRESH+x}" ]; then
+  CULL_ALPHA_THRESH=0.05
+fi
+
+# Taille écran pour culling (élimination des petites contributions)
+# → supprime les splats trop petits à l’écran
+# ↑ plus grand = plus agressif, moins de détails éloignés
+if [ -z "${CULL_SCREEN_SIZE+x}" ]; then
+  CULL_SCREEN_SIZE=0.3
+fi
+
+# Taille écran pour split (division des gaussiennes)
+# → contrôle quand une gaussienne est divisée en plusieurs
+# ↑ plus bas = plus de précision locale, mais plus de splats
+if [ -z "${SPLIT_SCREEN_SIZE+x}" ]; then
+  SPLIT_SCREEN_SIZE=0.02
+fi
 ############################
 # IMAGE / DATA RESOLUTION
 ############################
@@ -203,30 +265,3 @@ fi
 
 NORMAL_METHOD="open3d"
 REMOVE_OUTLIERS=True
-
-############################
-# CONDA
-############################
-
-CONDA_ENV_FILE="environment/conda_colab.yml"
-CONDA_ENV_NAME="gsplat"
-
-
-############################
-# PROXY
-############################
-
-if [ "$NO_PROXY" != true ]; then
-  export HTTP_PROXY="http://proxy.ign.fr:3128"
-  export HTTPS_PROXY="http://proxy.ign.fr:3128"
-  export http_proxy="$HTTP_PROXY"
-  export https_proxy="$HTTPS_PROXY"
-
-  echo "🌐 Proxy enabled (3)"
-else
-  echo "🚫 Proxy disabled (NO_PROXY=true)"
-  unset HTTP_PROXY
-  unset HTTPS_PROXY
-  unset http_proxy
-  unset https_proxy
-fi

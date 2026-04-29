@@ -8,6 +8,7 @@ DEVICE="gpu"
 MODEL="splatfacto"
 MODEL_IMPLEMENTATION="tcnn"
 TRAIN_VIS_MODE="tensorboard"
+
 ########################################
 # IMAGE / PREPROCESSING
 ########################################
@@ -16,6 +17,7 @@ CAMERA_RES_SCALE_FACTOR=0.25
 MAX_RES=256
 NUM_DOWNSCALES=2
 SKIP_IMAGE_PROCESSING=true
+MAX_JOBS=2
 
 ########################################
 # TRAINING
@@ -27,6 +29,12 @@ TRAIN_RAYS_PER_BATCH=128
 NUM_NERF_SAMPLES_PER_RAY=16
 NUM_PROPOSAL_SAMPLES_PER_RAY="32 16"
 
+DENSIFY_GRAD_THRESH=0.0004
+CULL_ALPHA_THRESH=0.05
+CULL_SCREEN_SIZE=0.3
+SPLIT_SCREEN_SIZE=0.02
+
+
 ########################################
 # EXPORT FAST
 ########################################
@@ -34,4 +42,3 @@ NUM_PROPOSAL_SAMPLES_PER_RAY="32 16"
 EXPORT_NUM_POINTS=200000
 EXPORT_DOWNSAMPLE=2
 
-MAX_JOBS=2
