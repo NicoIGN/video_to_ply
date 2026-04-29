@@ -8,7 +8,6 @@ import traceback
 import numpy as np
 from plyfile import PlyData, PlyElement
 from sklearn.neighbors import NearestNeighbors
-from sklearn.cluster import DBSCAN
 
 
 def parse_args():
@@ -31,9 +30,6 @@ def parse_args():
 
     # 🔥 NEW PARAMETER (IMPORTANT)
     p.add_argument("--edge-percentile", type=float, default=20.0)
-    # 10 = very aggressive
-    # 20 = balanced
-    # 35 = conservative
 
     p.add_argument("--recenter", action="store_true")
     p.add_argument("--supersplat", action="store_true")
@@ -50,7 +46,9 @@ def main():
     vertex = ply["vertex"].data
 
     xyz = np.vstack([vertex["x"], vertex["y"], vertex["z"]]).T
-    print(f"📊 Points: {len(xyz):,}")
+    n = len(xyz)
+
+    print(f"📊 Points: {n:,}")
 
     # =========================
     # CENTER FILTER
@@ -58,8 +56,8 @@ def main():
     center = np.median(xyz, axis=0)
     dist_center = np.linalg.norm(xyz - center, axis=1)
 
-    threshold = np.percentile(dist_center, args.center_percentile)
-    mask = dist_center < threshold
+    center_thresh = np.percentile(dist_center, args.center_percentile)
+    mask = dist_center < center_thresh
 
     xyz_f = xyz[mask]
     idx_map = np.where(mask)[0]
@@ -67,9 +65,13 @@ def main():
     print(f"📊 After center filter: {len(xyz_f):,}")
 
     # =========================
-    # SOR FILTER
+    # SOR FILTER (OPTIMIZED)
     # =========================
-    nn = NearestNeighbors(n_neighbors=args.nb_neighbors).fit(xyz_f)
+    # 🔥 subsample for KNN (RAM FIX)
+    step = max(1, len(xyz_f) // 50000)  # cap memory
+    subset = xyz_f[::step]
+
+    nn = NearestNeighbors(n_neighbors=args.nb_neighbors).fit(subset)
     dists, _ = nn.kneighbors(xyz_f)
 
     mean_dist = dists.mean(axis=1)
@@ -80,25 +82,23 @@ def main():
     )
 
     mask_sor = mean_dist < sor_thresh
+
     xyz_f = xyz_f[mask_sor]
     idx_map = idx_map[mask_sor]
+    mean_dist = mean_dist[mask_sor]
 
     print(f"📊 After SOR: {len(xyz_f):,}")
 
     # =========================
-    # EDGE REMOVAL (IMPROVED + PARAMETERIZED)
+    # EDGE FILTER (UNCHANGED LOGIC)
     # =========================
-
     global_center = np.mean(xyz_f, axis=0)
     dist_global = np.linalg.norm(xyz_f - global_center, axis=1)
 
-    density = 1.0 / (mean_dist[mask_sor] + 1e-8)
-
+    density = 1.0 / (mean_dist + 1e-8)
     score = density / (dist_global + 1e-8)
 
-    # 🔥 now fully controllable
     edge_thresh = np.percentile(score, args.edge_percentile)
-
     mask_edge = score > edge_thresh
 
     xyz_f = xyz_f[mask_edge]
@@ -107,33 +107,25 @@ def main():
     print(f"📊 After EDGE removal: {len(xyz_f):,}")
 
     # =========================
-    # DBSCAN (scale-free)
+    # VOXEL CLEANING (DBSCAN REPLACEMENT)
     # =========================
-    print("🔗 DBSCAN clustering...")
+    print("🧱 Voxel clustering (DBSCAN replacement)...")
 
-    local_scale = np.median(mean_dist)
-    eps = local_scale * (2.0 / args.clean_level)
+    voxel_size = np.median(mean_dist) * (2.0 / args.clean_level)
 
-    labels = DBSCAN(
-        eps=eps,
-        min_samples=args.dbscan_min_points
-    ).fit_predict(xyz_f)
+    coords = np.floor(xyz_f / (voxel_size + 1e-8)).astype(np.int32)
 
-    valid = labels >= 0
+    _, unique_idx = np.unique(coords, axis=0, return_index=True)
 
-    if valid.sum() == 0:
-        print("⚠️ No clusters → fallback")
-        final_idx = idx_map
-    else:
-        largest = np.bincount(labels[valid]).argmax()
-        final_idx = idx_map[labels == largest]
+    xyz_f = xyz_f[unique_idx]
+    idx_map = idx_map[unique_idx]
 
-    print(f"📊 Final points: {len(final_idx):,}")
+    print(f"📊 After voxel cleanup: {len(xyz_f):,}")
 
     # =========================
     # REBUILD
     # =========================
-    new_vertex = vertex[final_idx]
+    new_vertex = vertex[idx_map]
 
     xyz_new = np.vstack([
         new_vertex["x"],
@@ -147,7 +139,7 @@ def main():
     if args.recenter:
         center = xyz_new.mean(axis=0)
         xyz_new -= center
-        print(f"📍 Recenter applied")
+        print("📍 Recenter applied")
 
     elif args.supersplat:
         center = xyz_new.mean(axis=0)
