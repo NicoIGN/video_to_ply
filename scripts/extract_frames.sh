@@ -23,13 +23,9 @@ if [[ ! -f "$VIDEO" ]]; then
     exit 1
 fi
 
-echo "FPS1: $FPS"
-echo "NUM_FRAMES1: $NUM_FRAMES"
 FPS="${FPS:-}"
 NUM_FRAMES="${NUM_FRAMES:-}"
 
-echo "FPS2: $FPS"
-echo "NUM_FRAMES2: $NUM_FRAMES"
 
 if [[ -n "$FPS" && -n "$NUM_FRAMES" ]]; then
     echo "❌ Please define either FPS ($FPS) or NUM_FRAMES ($NUM_FRAMES), but not both"
