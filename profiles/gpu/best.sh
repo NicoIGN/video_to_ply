@@ -24,20 +24,30 @@ MAX_JOBS=2
 ########################################
 
 MAX_ITER=12000
-TRAIN_RAYS_PER_BATCH=1024
+TRAIN_RAYS_PER_BATCH=768
 
 NUM_NERF_SAMPLES_PER_RAY=96
-NUM_PROPOSAL_SAMPLES_PER_RAY="256 128"
+NUM_PROPOSAL_SAMPLES_PER_RAY="192 96"
 
-DENSIFY_GRAD_THRESH=0.0004
-CULL_ALPHA_THRESH=0.05
-CULL_SCREEN_SIZE=0.3
-SPLIT_SCREEN_SIZE=0.02
+########################################
+# GAUSSIAN SPLATTING
+########################################
 
+# légèrement plus stable à haute densité
+DENSIFY_GRAD_THRESH=0.00035
+
+# meilleure conservation des micro-détails sans bruit excessif
+CULL_ALPHA_THRESH=0.045
+
+# évite accumulation de splats trop larges en haute résolution
+CULL_SCREEN_SIZE=0.28
+
+# split un peu plus agressif pour mieux capter les détails fins
+SPLIT_SCREEN_SIZE=0.018
 
 ########################################
 # EXPORT QUALITY
 ########################################
 
-EXPORT_NUM_POINTS=5000000
+EXPORT_NUM_POINTS=6000000
 EXPORT_DOWNSAMPLE=1

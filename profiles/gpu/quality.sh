@@ -29,30 +29,25 @@ TRAIN_RAYS_PER_BATCH=512
 NUM_NERF_SAMPLES_PER_RAY=64
 NUM_PROPOSAL_SAMPLES_PER_RAY="128 64"
 
-# Gaussian densification threshold
-# Lower = more detail, more VRAM, slower training
-# Default: 0.0008
-DENSIFY_GRAD_THRESH=0.0004
+########################################
+# GAUSSIAN SPLATTING
+########################################
 
-# Alpha culling threshold
-# Lower = preserves faint/small gaussians longer
-# Default: 0.1
-CULL_ALPHA_THRESH=0.05
+# densification (plus stable en high-res training)
+DENSIFY_GRAD_THRESH=0.0003
 
-# Large splat culling threshold
-# Higher = removes oversized gaussians more aggressively
-# Default: 0.15
-CULL_SCREEN_SIZE=0.3
+# keep fine structures longer (better thin geometry / edges)
+CULL_ALPHA_THRESH=0.04
 
-# Large splat split threshold
-# Lower = splits oversized gaussians earlier
-# Default: 0.05
-SPLIT_SCREEN_SIZE=0.02
+# slightly more aggressive pruning of oversized splats
+CULL_SCREEN_SIZE=0.25
+
+# earlier splitting for higher geometric precision
+SPLIT_SCREEN_SIZE=0.015
 
 ########################################
 # EXPORT QUALITY
 ########################################
 
-EXPORT_NUM_POINTS=2000000
+EXPORT_NUM_POINTS=2500000
 EXPORT_DOWNSAMPLE=1
-
