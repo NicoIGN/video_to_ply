@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ============================================================
-# Gaussian Splat PLY Cleaner (UPDATED PIPELINE)
+# Gaussian Splat PLY Cleaner (SCALE-INVARIANT PIPELINE)
 # ============================================================
 
 : "${PLY_FILE:?PLY_FILE is required}"
@@ -23,14 +23,13 @@ echo "   FROM: $PLY_FILE"
 echo "   TO  : $FINAL_PLY"
 
 cp -f "$PLY_FILE" "$FINAL_PLY"
-
 PLY_FILE="$FINAL_PLY"
 
 echo "✅ Input ready: $PLY_FILE"
 echo ""
 
 # ======================
-# CLEANING LEVELS (SIMPLIFIED MODEL)
+# CLEANING LEVELS
 # ======================
 
 LEVELS=(
@@ -40,25 +39,45 @@ LEVELS=(
     aggressive
 )
 
-declare -A NB_NEIGHBORS=(
-    [minimal]=12
-    [balanced]=16
-    [strong]=20
-    [aggressive]=24
+# KNN complexity
+declare -A K=(
+    [minimal]=16
+    [balanced]=24
+    [strong]=32
+    [aggressive]=48
 )
 
-declare -A OUTLIER_RATIO=(
-    [minimal]=4.0
-    [balanced]=3.0
-    [strong]=2.5
-    [aggressive]=2.0
+# STRUCTURE FILTER
+declare -A KEEP_PCT=(
+    [minimal]=10
+    [balanced]=25
+    [strong]=40
+    [aggressive]=60
 )
 
-declare -A CENTER_PERC=(
-    [minimal]=99
-    [balanced]=98
-    [strong]=97
-    [aggressive]=95
+# ISOLATION FILTER
+declare -A RADIUS_MULT=(
+    [minimal]=2.2
+    [balanced]=1.8
+    [strong]=1.5
+    [aggressive]=1.2
+)
+
+declare -A MIN_NEIGHBORS=(
+    [minimal]=5
+    [balanced]=7
+    [strong]=10
+    [aggressive]=12
+)
+
+# SPLAT SIZE FILTER
+# Relative to local median scale.
+# 0 = disabled.
+declare -A MAX_RELATIVE_SCALE=(
+    [minimal]=0
+    [balanced]=8.0
+    [strong]=6.0
+    [aggressive]=4.0
 )
 
 # ======================
@@ -68,6 +87,7 @@ declare -A CENTER_PERC=(
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 for LEVEL in "${LEVELS[@]}"; do
+    echo ""
     echo "🚀 =============================="
     echo "🚀 CLEAN LEVEL: $LEVEL"
     echo "🚀 =============================="
@@ -76,16 +96,20 @@ for LEVEL in "${LEVELS[@]}"; do
     rm -f "$CLEANED_PLY"
 
     echo "⚙️ Parameters"
-    echo "   nb-neighbors   : ${NB_NEIGHBORS[$LEVEL]}"
-    echo "   outlier-ratio  : ${OUTLIER_RATIO[$LEVEL]}"
-    echo "   center-percent : ${CENTER_PERC[$LEVEL]}"
+    echo "   k                  : ${K[$LEVEL]}"
+    echo "   keep-percentile    : ${KEEP_PCT[$LEVEL]}"
+    echo "   radius-mult        : ${RADIUS_MULT[$LEVEL]}"
+    echo "   min-neighbors      : ${MIN_NEIGHBORS[$LEVEL]}"
+    echo "   max-relative-scale : ${MAX_RELATIVE_SCALE[$LEVEL]}"
 
     python3 "$SCRIPT_DIR/clean_gaussian_ply.py" \
-        --nb-neighbors "${NB_NEIGHBORS[$LEVEL]}" \
-        --outlier-ratio "${OUTLIER_RATIO[$LEVEL]}" \
-        --center-percentile "${CENTER_PERC[$LEVEL]}" \
         "$PLY_FILE" \
-        "$CLEANED_PLY"
+        "$CLEANED_PLY" \
+        --k "${K[$LEVEL]}" \
+        --keep-percentile "${KEEP_PCT[$LEVEL]}" \
+        --radius-mult "${RADIUS_MULT[$LEVEL]}" \
+        --min-neighbors "${MIN_NEIGHBORS[$LEVEL]}" \
+        --max-relative-scale "${MAX_RELATIVE_SCALE[$LEVEL]}"
 
     if [[ ! -f "$CLEANED_PLY" ]]; then
         echo "❌ FAILED: $LEVEL"
@@ -93,7 +117,7 @@ for LEVEL in "${LEVELS[@]}"; do
     fi
 
     echo "✅ DONE → $CLEANED_PLY"
-    echo ""
 done
 
+echo ""
 echo "🎉 All cleaning levels completed successfully."

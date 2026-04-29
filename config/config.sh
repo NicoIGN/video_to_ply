@@ -120,7 +120,7 @@ fi
 ############################
 
 SFMT_TOOL="colmap" #colmap / hloc / any
-MATCHING_METHOD="exhaustive" # sequential | vocab_tree | exhaustive
+MATCHING_METHOD="vocab_tree" # sequential | vocab_tree | exhaustive
 NUM_DOWNSCALES=1 # 0 or 1 or 2 or 3
 SKIP_IMAGE_PROCESSING=true
 CAMERA_TYPE="perspective"
