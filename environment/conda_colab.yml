@@ -55,4 +55,3 @@ dependencies:
 
       # utils
       - tqdm
-      - opencv-python
