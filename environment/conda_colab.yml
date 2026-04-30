@@ -1,8 +1,6 @@
 name: gsplat
 
 channels:
-  - pytorch
-  - nvidia
   - conda-forge
 
 dependencies:
@@ -21,10 +19,10 @@ dependencies:
   # ======================
   # PYTORCH STACK (IMPORTANT FIX)
   # ======================
-  - pytorch=2.5.1
-  - torchvision=0.20.1
-  - torchaudio=2.5.1
-  - pytorch-cuda=12.1
+ # - pytorch=2.5.1
+ # - torchvision=0.20.1
+ # - torchaudio=2.5.1
+ # - pytorch-cuda=12.1
 
   # ======================
   # NUMPY / SCIENTIFIC
@@ -55,9 +53,8 @@ dependencies:
   - faiss-cpu
   - plyfile
 
-  # HLOC (IMPORTANT: pip ONLY)
-  - pip
   - pip:
+    #hloc
       - git+https://github.com/cvg/Hierarchical-Localization.git
 
   # ======================
