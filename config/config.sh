@@ -119,8 +119,7 @@ fi
 # COLMAP / PREPROCESS
 ############################
 
-SFMT_TOOL="hloc"
-# colmap | hloc | any
+SFMT_TOOL="colmap" # colmap | hloc | any
 # → hloc = meilleur pour scènes difficiles / moins d’artefacts
 
 MATCHING_METHOD="exhaustive"
