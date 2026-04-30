@@ -28,6 +28,7 @@ dependencies:
 
   # 🧊 geometry / SfM stack
   - colmap=3.8  # au dela, incomaptibilité avec nerfstudio
+  - fpsample=0.3.3
   - hloc
   - cgal
   - faiss-cpu
