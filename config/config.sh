@@ -150,7 +150,7 @@ FEATURE_TYPE="superpoint"
 # → superpoint/disk = meilleur pour scènes complexes
 # disk pas compatible colmap
 
-MATCHER_TYPE="superglue"
+MATCHER_TYPE="any"
 # NN | NN-mutual | superglue | superglue-fast | lightglue | disk+lightglue | any
 # → superglue/lightglue = réduction artefacts + meilleurs matches -> incompatible colmap, utiliser hloc
 
