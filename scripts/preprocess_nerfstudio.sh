@@ -2,12 +2,6 @@
 set -e
 
 # ======================
-# LOAD CONFIG
-# ======================
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-#source "$SCRIPT_DIR/../config/config.sh"
-
-# ======================
 # INPUTS
 # ======================
 : "${DATA_DIR:?❌ DATA_DIR env var is required}"
@@ -16,9 +10,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 SKIP_NS=false
 
-# ======================
-# FLAGS
-# ======================
 for arg in "$@"; do
   case "$arg" in
     --skip-ns)
@@ -37,17 +28,39 @@ fi
 
 mkdir -p "$OUTPUT_DIR"
 
-LOG_FILE="/tmp/ns_process.log"
+# ======================
+# LOG SETUP (NEW)
+# ======================
+LOG_DIR="$OUTPUT_DIR/logs"
+mkdir -p "$LOG_DIR"
 
-rm -f "$LOG_FILE"
+PROCESS_LOG="$LOG_DIR/ns_process.log"
+HEARTBEAT_LOG="$LOG_DIR/ns_process_heartbeat.log"
 
+rm -f "$PROCESS_LOG" "$HEARTBEAT_LOG"
+
+echo "📝 Process log: $PROCESS_LOG"
+echo "💓 Heartbeat log: $HEARTBEAT_LOG"
+
+# heartbeat (détection freeze)
+(
+  while true; do
+    sleep 60
+    echo "$(date '+%F %T') ns-process-data still running" >> "$HEARTBEAT_LOG"
+  done
+) &
+HEARTBEAT_PID=$!
+
+# ======================
+# SUMMARY
+# ======================
 echo "────────────────────────────────────"
 echo "📁 INPUT                 : $DATA_DIR"
 echo "📁 OUTPUT                : $OUTPUT_DIR"
 echo "⚙️ DEVICE                : $DEVICE"
 echo "📷 CAMERA TYPE           : $CAMERA_TYPE"
 echo "🔀 MATCHING METHOD       : $MATCHING_METHOD"
-echo "🧠 SFMT TOOL             : $SFMT_TOOL"
+echo "🧠 SFM TOOL             : $SFMT_TOOL"
 echo "🧬 FEATURE TYPE          : $FEATURE_TYPE"
 echo "🔗 MATCHER TYPE          : $MATCHER_TYPE"
 echo "📉 NUM DOWNSCALES        : $NUM_DOWNSCALES"
@@ -59,9 +72,10 @@ echo "🔧 REFINE INTRINSICS     : $REFINE_INTRINSICS"
 echo "────────────────────────────────────"
 
 # ======================
-# ENV
+# ENV DEBUG (NEW)
 # ======================
-
+export LOGLEVEL=DEBUG
+export COLMAP_LOG_LEVEL=2
 
 if [[ "$DEVICE" == "cpu" ]]; then
   echo "🧠 CPU MODE"
@@ -70,8 +84,6 @@ if [[ "$DEVICE" == "cpu" ]]; then
   export MPLBACKEND=Agg
   export CUDA_VISIBLE_DEVICES=""
   export OMP_NUM_THREADS=1
-  export MKL_NUM_THREADS=1
-  export NUMEXPR_NUM_THREADS=1
 fi
 
 # ======================
@@ -88,7 +100,6 @@ else
 fi
 
 ARGS=()
-
 ARGS+=($GPU_FLAG)
 ARGS+=(--data "$DATA_DIR")
 ARGS+=(--output-dir "$OUTPUT_DIR")
@@ -102,34 +113,51 @@ ARGS+=(--refine-intrinsics)
 ARGS+=(--use-single-camera-mode)
 ARGS+=(--sfm-tool "$SFMT_TOOL")
 
-# SAFE crop-factor handling
 if [[ -n "$CROP_FACTOR" ]]; then
   ARGS+=(--crop-factor $CROP_FACTOR)
 fi
 
-ns-process-data images "${ARGS[@]}" > "$LOG_FILE" 2>&1
+# ======================
+# EXEC WITH FULL STREAM LOGGING (NEW)
+# ======================
+ns-process-data images "${ARGS[@]}" \
+  > >(tee -a "$PROCESS_LOG") \
+  2> >(tee -a "$PROCESS_LOG" >&2)
 
 STATUS=$?
+
+kill $HEARTBEAT_PID 2>/dev/null || true
+
 set -e
 
 # ======================
-# LOG CHECK
+# FAILURE HANDLING
 # ======================
 if [ "$STATUS" -ne 0 ]; then
-  echo "❌ PIPELINE FAILED"
-  tail -n 80 "$LOG_FILE"
-  exit 1
+  echo "❌ PIPELINE FAILED (exit code: $STATUS)"
+  tail -n 80 "$PROCESS_LOG"
+  exit "$STATUS"
 fi
-
-TRANSFORMS="$OUTPUT_DIR/transforms.json"
 
 # ======================
 # VALIDATION
 # ======================
+TRANSFORMS="$OUTPUT_DIR/transforms.json"
+
 if [ ! -f "$TRANSFORMS" ]; then
   echo "💀 SUCCESS BUT NO transforms.json"
-  tail -n 80 "$LOG_FILE"
+  tail -n 80 "$PROCESS_LOG"
   exit 1
+fi
+
+# ======================
+# SILENT FAILURE DETECTION (NEW)
+# ======================
+LAST_LOG=$(tail -n 30 "$PROCESS_LOG")
+
+if ! echo "$LAST_LOG" | grep -q -E "Finished|Done|Writing"; then
+  echo "⚠️ Possible silent failure detected"
+  tail -n 80 "$PROCESS_LOG"
 fi
 
 echo "✅ ns-process-data SUCCESS"
