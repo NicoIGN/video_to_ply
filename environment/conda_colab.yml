@@ -33,7 +33,6 @@ dependencies:
   - ffmpeg
   - imageio
   - imageio-ffmpeg
-  - opencv
 
   # Geometry / SfM
   - colmap=3.8
