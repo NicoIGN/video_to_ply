@@ -24,7 +24,7 @@ Original file is located at
 # export GIT_BRANCH="dev"
 # export BASENAME="exterieur"
 # 
-# export PROFILE="gpu/quality"
+# export PROFILE="gpu/fast"
 # #export PROFILE="gpu/balanced"
 # #export PROFILE="cpu/fast"
 # EOF
@@ -108,13 +108,14 @@ bash Miniconda3-latest-Linux-x86_64.sh -b -p /usr/local/miniconda  && \
 # source /content/config.sh
 # git stash save && git checkout $GIT_BRANCH && git pull
 
-!RUN=0; \
+!RUN=1; \
 [ "$RUN" -eq 0 ] && echo "skipping this stage" || \
 ( source /usr/local/miniforge/etc/profile.d/conda.sh && mamba env remove -y -n gsplat )
 
 !source /usr/local/miniforge/etc/profile.d/conda.sh && \
-mamba env list | grep -q "gsplat" && \
-mamba env update -n gsplat -f environment/conda_colab.yml --prune -y || \
+mamba env list | grep -q gsplat && \
+cd /content/video_to_ply/ && \
+mamba run -n gsplat mamba env update -n gsplat -f environment/conda_colab.yml --prune -y || \
 mamba env create -n gsplat -f environment/conda_colab.yml -y
 
 # Commented out IPython magic to ensure Python compatibility.
@@ -133,9 +134,6 @@ mamba env create -n gsplat -f environment/conda_colab.yml -y
 # fi
 
 !source /usr/local/miniforge/etc/profile.d/conda.sh && \
-mamba run -n gsplat python -c "from SuperGluePretrainedNetwork.models import superpoint; print('SuperGluePretrainedNetwork OK')"
-
-!source /usr/local/miniforge/etc/profile.d/conda.sh && \
 source /content/config.sh && unset NUM_FRAMES && \
 echo INPUT_MODE=$INPUT_MODE && \
 cd /content/video_to_ply/ && \
@@ -146,6 +144,13 @@ elif [ "$INPUT_MODE" = "video" ] && [ -n "$VIDEOSOURCE" ]; then \
   INPUT_ARG="--video $ROOTDIR/video.mp4 --fps $FPS --name $BASENAME"; \
 fi && \
 mamba run -n gsplat bash run.sh $INPUT_ARG --root "$ROOTDIR" --skip-conda --profile "$PROFILE" --no-proxy
+
+# Commented out IPython magic to ensure Python compatibility.
+# %%bash
+# source /usr/local/miniforge/etc/profile.d/conda.sh && \
+# source /content/config.sh
+# mamba run -n gsplat  python -c "import torch; print(torch.version.cuda)"
+# mamba run -n gsplat  python -c "import torch; import torchvision; print(torch.__version__, torchvision.__version__)"
 
 !RUN=0; \
 [ "$RUN" -eq 0 ] && echo "skipping this stage" || \
