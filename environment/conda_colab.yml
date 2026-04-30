@@ -31,7 +31,7 @@ dependencies:
   - ffmpeg
   - imageio
   - imageio-ffmpeg
-  - opencv-python
+  - opencv
 
   # ======================
   # GEOMETRY / SfM CORE
