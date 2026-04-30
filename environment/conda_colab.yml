@@ -35,6 +35,7 @@ dependencies:
   # GEOMETRY / SfM CORE
   # ======================
   - colmap=3.8
+  - hloc
   - cgal
   - faiss-cpu
   - plyfile
@@ -63,9 +64,6 @@ dependencies:
       # Nerfstudio + GSPLAT
       - nerfstudio==1.1.5
       - gsplat==1.4.0
-
-      # 🔍 HLOC (IMPORTANT)
-      - hloc
 
       # utils
       - opencv-python
