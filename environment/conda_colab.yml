@@ -45,7 +45,7 @@ dependencies:
   - libiconv
   
   #gpu
-  - pytorch==2.5.1
+  - pytorch
   - torchvision
   - torchaudio
 
