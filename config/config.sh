@@ -119,7 +119,7 @@ fi
 # COLMAP / PREPROCESS
 ############################
 
-SFMT_TOOL="colmap"
+SFMT_TOOL="hloc"
 # colmap | hloc | any
 # → hloc = meilleur pour scènes difficiles / moins d’artefacts
 
@@ -145,12 +145,12 @@ CAMERA_TYPE="perspective"
 # FEATURE / MATCHING (COLMAP / HLOC)
 ############################
 
-FEATURE_TYPE="any"
+FEATURE_TYPE="superpoint"
 # sift | superpoint | superpoint_aachen | disk | r2d2 | any
 # → superpoint/disk = meilleur pour scènes complexes
 # disk pas compatible colmap
 
-MATCHER_TYPE="any"
+MATCHER_TYPE="superglue"
 # NN | NN-mutual | superglue | superglue-fast | lightglue | disk+lightglue | any
 # → superglue/lightglue = réduction artefacts + meilleurs matches -> incompatible colmap, utiliser hloc
 
@@ -187,8 +187,8 @@ CROP_FACTOR="0.02 0.05 0.02 0.02"
 ############################
 
 if [ -z "${CAMERA_RES_SCALE_FACTOR+x}" ]; then
-    #CAMERA_RES_SCALE_FACTOR=1.0
-    CAMERA_RES_SCALE_FACTOR=0.75  # 0.5 = FAST MODE (~4x speedup)
+    CAMERA_RES_SCALE_FACTOR=1.0
+    #CAMERA_RES_SCALE_FACTOR=0.75  # 0.5 = FAST MODE (~4x speedup)
 fi
 
 ############################
