@@ -1,6 +1,8 @@
 name: gsplat
 
 channels:
+  - pytorch
+  - nvidia
   - conda-forge
 
 dependencies:
@@ -17,17 +19,18 @@ dependencies:
   - ninja
 
   # ======================
-  # PYTORCH STACK (IMPORTANT FIX)
+  # PYTORCH STACK
+  # Stable with Nerfstudio 1.1.5 + gsplat 1.4.0
   # ======================
- # - pytorch=2.5.1
- # - torchvision=0.20.1
- # - torchaudio=2.5.1
- # - pytorch-cuda=12.1
+  - pytorch=2.3.1
+  - torchvision=0.18.1
+  - torchaudio=2.3.1
+  - pytorch-cuda=12.1
 
   # ======================
   # NUMPY / SCIENTIFIC
   # ======================
-  - numpy
+  - numpy<2
   - scipy
   - fpsample
 
@@ -53,10 +56,6 @@ dependencies:
   - faiss-cpu
   - plyfile
 
-  - pip:
-    #hloc
-      - git+https://github.com/cvg/Hierarchical-Localization.git
-
   # ======================
   # SYSTEM / GRAPHICS
   # ======================
@@ -64,3 +63,6 @@ dependencies:
   - qt-main
   - libxcb
   - libiconv
+
+  - pip:
+      - git+https://github.com/cvg/Hierarchical-Localization.git
