@@ -8,6 +8,7 @@ dependencies:
   - rclone
   - tree
   - bash
+  - tqdm
 
   # 🔧 build tools
   - cmake
@@ -42,18 +43,12 @@ dependencies:
 
   # system utils
   - libiconv
+  
+  #gpu
+  - pytorch==2.5.1
+  - torchvision
+  - torchaudio
 
-  # ======================
-  # PIP SECTION
-  # ======================
-  - pip:
-      # 🔥 ML stack (GPU auto sur Colab)
-      - torch==2.5.1
-      - torchvision
-      - torchaudio
+  # nerfstudio
+  - nerfstudio==1.1.5
 
-      # nerfstudio
-      - nerfstudio==1.1.5
-
-      # utils
-      - tqdm
