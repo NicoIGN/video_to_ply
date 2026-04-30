@@ -122,13 +122,13 @@ fi
 SFMT_TOOL="colmap" # colmap | hloc | any
 # → hloc = meilleur pour scènes difficiles / moins d’artefacts
 
-MATCHING_METHOD="exhaustive"
+MATCHING_METHOD="sequential"
 # sequential | vocab_tree | exhaustive
 # → exhaustive = plus précis mais lent
 # → vocab_tree = bon compromis
 # → sequential = vidéo uniquement
 
-NUM_DOWNSCALES=1
+NUM_DOWNSCALES=2
 # 0 | 1 | 2 | 3
 # → + haut = moins de détails mais plus stable
 
@@ -173,7 +173,7 @@ USE_SINGLE_CAMERA_MODE=true
 # CROPPING / FILTERING INPUT
 ############################
 
-PERCENT_RADIUS_CROP=0.9
+PERCENT_RADIUS_CROP=0.95
 # 0.0 → 1.0
 # → supprime bords image (réduit clusters parasites COLMAP)
 
@@ -186,7 +186,7 @@ CROP_FACTOR="0.02 0.05 0.02 0.02"
 ############################
 
 if [ -z "${CAMERA_RES_SCALE_FACTOR+x}" ]; then
-    CAMERA_RES_SCALE_FACTOR=1.0
+    CAMERA_RES_SCALE_FACTOR=0.5
     #CAMERA_RES_SCALE_FACTOR=0.75  # 0.5 = FAST MODE (~4x speedup)
 fi
 

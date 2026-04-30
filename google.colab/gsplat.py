@@ -12,17 +12,17 @@ Original file is located at
 # cat << 'EOF' > /content/config.sh
 # #!/bin/bash
 # 
-# export ROOTDIR="/content/sofa_hloc"
-# export VIDEOSOURCE="gsplat/input/IMG_4794.MOV"
+# export ROOTDIR="/content/exterieur"
+# export VIDEOSOURCE="gsplat/input/IMG_4797.MOV"
 # export IMAGESET="gsplat/input/perfume/video"
 # export INPUT_MODE="video"
 # 
 # #export NUM_FRAMES=150
-# export FPS=4
+# export FPS=3
 # 
 # #branche dev
 # export GIT_BRANCH="dev"
-# export BASENAME="sofa"
+# export BASENAME="exterieur"
 # 
 # export PROFILE="gpu/quality"
 # #export PROFILE="gpu/balanced"
@@ -117,22 +117,20 @@ mamba env list | grep -q "gsplat" && \
 mamba env update -n gsplat -f environment/conda_colab.yml --prune -y || \
 mamba env create -n gsplat -f environment/conda_colab.yml -y
 
-# Install SuperGluePretrainedNetwork into the gsplat environment
-source /usr/local/miniforge/etc/profile.d/conda.sh
-
-SITE_PACKAGES=$(mamba run -n gsplat python -c \
-"import site; print(site.getsitepackages()[0])")
-
-TARGET="$SITE_PACKAGES/SuperGluePretrainedNetwork"
-
-if [ ! -d "$TARGET" ]; then
-    git clone \
-        --depth 1 \
-        https://github.com/magicleap/SuperGluePretrainedNetwork.git \
-        "$TARGET"
-else
-    echo "SuperGluePretrainedNetwork already installed."
-fi
+# Commented out IPython magic to ensure Python compatibility.
+# %%bash
+# source /usr/local/miniforge/etc/profile.d/conda.sh
+# 
+# SITE_PACKAGES=$(mamba run -n gsplat python -c "import site; print(site.getsitepackages()[0])")
+# TARGET="$SITE_PACKAGES/SuperGluePretrainedNetwork"
+# 
+# if [ ! -d "$TARGET" ]; then
+#     git clone --depth 1 \
+#         https://github.com/magicleap/SuperGluePretrainedNetwork.git \
+#         "$TARGET"
+# else
+#     echo "SuperGluePretrainedNetwork already installed."
+# fi
 
 !source /usr/local/miniforge/etc/profile.d/conda.sh && \
 mamba run -n gsplat python -c "from SuperGluePretrainedNetwork.models import superpoint; print('SuperGluePretrainedNetwork OK')"
