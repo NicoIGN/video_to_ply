@@ -22,7 +22,8 @@ dependencies:
   - scipy
   - eigen
   - suitesparse
-
+  - fpsample
+ 
   # ======================
   # IO / MEDIA
   # ======================
