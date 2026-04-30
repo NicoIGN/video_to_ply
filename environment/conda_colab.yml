@@ -8,61 +8,44 @@ channels:
 dependencies:
   - python=3.10
   - pip
+
+  # Utilities
   - rclone
   - tree
   - tqdm
 
-  # ======================
-  # BUILD TOOLS
-  # ======================
+  # Build tools
   - cmake
   - ninja
 
-  # ======================
-  # PYTORCH STACK
-  # Stable with Nerfstudio 1.1.5 + gsplat 1.4.0
-  # ======================
+  # PyTorch + CUDA
   - pytorch=2.3.1
   - torchvision=0.18.1
   - torchaudio=2.3.1
   - pytorch-cuda=12.1
 
-  # ======================
-  # NUMPY / SCIENTIFIC
-  # ======================
-  - numpy<2
+  # Scientific stack
+  - "numpy<2"
   - scipy
-  - fpsample
 
-  # ======================
-  # NERF / GSPLAT
-  # ======================
-  - nerfstudio=1.1.5
-  - gsplat=1.4.0
-
-  # ======================
-  # IO / MEDIA
-  # ======================
+  # IO / Media
   - openimageio
   - ffmpeg
   - imageio
   - imageio-ffmpeg
   - opencv
 
-  # ======================
-  # GEOMETRY / SfM CORE
-  # ======================
+  # Geometry / SfM
   - colmap=3.8
   - faiss-cpu
   - plyfile
 
-  # ======================
-  # SYSTEM / GRAPHICS
-  # ======================
+  # Graphics
   - glew
   - qt-main
-  - libxcb
-  - libiconv
 
   - pip:
+      - nerfstudio==1.1.5
+      - gsplat==1.4.0
+      - fpsample
       - git+https://github.com/cvg/Hierarchical-Localization.git
