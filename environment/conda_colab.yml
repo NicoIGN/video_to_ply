@@ -23,7 +23,8 @@ dependencies:
   - eigen
   - suitesparse
   - fpsample
- 
+  - nerfstudio==1.1.5
+  
   # ======================
   # IO / MEDIA
   # ======================
@@ -64,6 +65,6 @@ dependencies:
       - torchaudio
 
       # Nerfstudio + GSPLAT
-      - nerfstudio==1.1.5
+      #- nerfstudio==1.1.5
       - gsplat==1.4.0
       
