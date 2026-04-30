@@ -493,49 +493,50 @@ PLY_FOUND=$(find "$OUTPUT_DIR" -type f -name "*.ply" | head -n 1)
 
 if [[ -n "$PLY_FOUND" ]]; then
   echo "📦 Existing PLY found: $PLY_FOUND"
-  echo "⏩ Skipping export (PLY already exists)"
-else
-    echo "🚀 Exporting model in $EXPORT_DIR..."
-
-    case "$MODEL" in
-      *nerfacto*)
-        echo "📦 Exporting Nerfacto point cloud (.ply)..."
-
-        OUTPUT_DIR="$TRAIN_DIR/$EXPERIMENT_NAME" \
-        EXPORT_DIR="$OUTPUT_DIR" \
-        NUM_POINTS="$EXPORT_NUM_POINTS" \
-        NORMAL_METHOD="$NORMAL_METHOD" \
-        REMOVE_OUTLIERS="$REMOVE_OUTLIERS" \
-        bash scripts/export_nerf_to_ply.sh
-        ;;
-
-      *splatfacto*)
-        echo "📦 Exporting Gaussian Splat (.ply)..."
-
-        OUTPUT_DIR="$TRAIN_DIR/$EXPERIMENT_NAME" \
-        EXPORT_DIR="$OUTPUT_DIR" \
-        bash scripts/export_splat_to_ply.sh
-        ;;
-
-      *)
-        echo "⚠️ Unsupported model for export: $MODEL"
-        exit 1
-        ;;
-    esac
-
-    # ======================
-    # VALIDATION
-    # ======================
-    PLY_FILE=$(find "$OUTPUT_DIR" -type f -name "*.ply" | head -n 1)
-
-    if [[ -f "$PLY_FILE" ]]; then
-      echo "✅ PLY export successful: $PLY_FILE"
-    else
-      echo "❌ PLY export failed"
-      exit 1
-    fi
-
+  # echo "⏩ Skipping export (PLY already exists)"
+  cp $PLY_FOUND ${PLY_FOUND}.bkp
 fi
+
+  echo "🚀 Exporting model in $EXPORT_DIR..."
+
+  case "$MODEL" in
+    *nerfacto*)
+      echo "📦 Exporting Nerfacto point cloud (.ply)..."
+
+      OUTPUT_DIR="$TRAIN_DIR/$EXPERIMENT_NAME" \
+      EXPORT_DIR="$OUTPUT_DIR" \
+      NUM_POINTS="$EXPORT_NUM_POINTS" \
+      NORMAL_METHOD="$NORMAL_METHOD" \
+      REMOVE_OUTLIERS="$REMOVE_OUTLIERS" \
+      bash scripts/export_nerf_to_ply.sh
+      ;;
+
+    *splatfacto*)
+      echo "📦 Exporting Gaussian Splat (.ply)..."
+
+      OUTPUT_DIR="$TRAIN_DIR/$EXPERIMENT_NAME" \
+      EXPORT_DIR="$OUTPUT_DIR" \
+      bash scripts/export_splat_to_ply.sh
+      ;;
+
+    *)
+      echo "⚠️ Unsupported model for export: $MODEL"
+      exit 1
+      ;;
+  esac
+
+  # ======================
+  # VALIDATION
+  # ======================
+  PLY_FILE=$(find "$OUTPUT_DIR" -type f -name "*.ply" | head -n 1)
+
+  if [[ -f "$PLY_FILE" ]]; then
+    echo "✅ PLY export successful: $PLY_FILE"
+  else
+    echo "❌ PLY export failed"
+    exit 1
+  fi
+
 
 # ======================
 # 5. CLEAN PLY
