@@ -1,5 +1,8 @@
 name: gsplat
+
 channels:
+  - pytorch
+  - nvidia
   - conda-forge
 
 dependencies:
@@ -8,7 +11,7 @@ dependencies:
   - rclone
   - tree
   - tqdm
-  
+
   # ======================
   # BUILD TOOLS
   # ======================
@@ -16,15 +19,25 @@ dependencies:
   - ninja
 
   # ======================
+  # PYTORCH STACK (IMPORTANT FIX)
+  # ======================
+  - pytorch=2.5.1
+  - torchvision=0.20.1
+  - torchaudio=2.5.1
+  - pytorch-cuda=12.1
+
+  # ======================
   # NUMPY / SCIENTIFIC
   # ======================
   - numpy
   - scipy
-  - eigen
-  - suitesparse
   - fpsample
-  - nerfstudio==1.1.5
-  - gsplat==1.4.0
+
+  # ======================
+  # NERF / GSPLAT
+  # ======================
+  - nerfstudio=1.1.5
+  - gsplat=1.4.0
 
   # ======================
   # IO / MEDIA
@@ -39,29 +52,18 @@ dependencies:
   # GEOMETRY / SfM CORE
   # ======================
   - colmap=3.8
-  - hloc
-  - cgal
   - faiss-cpu
   - plyfile
 
+  # HLOC (IMPORTANT: pip ONLY)
+  - pip
+  - pip:
+      - git+https://github.com/cvg/Hierarchical-Localization.git
+
   # ======================
-  # GRAPHICS (COLMAP QT FIX)
+  # SYSTEM / GRAPHICS
   # ======================
   - glew
   - qt-main
   - libxcb
-
-  # ======================
-  # SYSTEM
-  # ======================
   - libiconv
-
-  # ======================
-  # PIP SECTION
-  # ======================
-  - pip:
-      # 🔥 PyTorch stack (doit rester pip pour éviter conflits CUDA)
-      - torch==2.5.1
-      - torchvision
-      - torchaudio
-      - git+https://github.com/cvg/Hierarchical-Localization.git
