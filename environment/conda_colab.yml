@@ -12,6 +12,7 @@ dependencies:
   # 🔧 build tools
   - cmake
   - ninja
+  - compilers
 
   # 🧮 math / core
   - numpy
