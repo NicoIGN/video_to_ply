@@ -7,48 +7,65 @@ dependencies:
   - pip
   - rclone
   - tree
-  - bash
   - tqdm
-
-  # 🔧 build tools
+  
+  # ======================
+  # BUILD TOOLS
+  # ======================
   - cmake
   - ninja
-  - compilers
 
-  # 🧮 math / core
+  # ======================
+  # NUMPY / SCIENTIFIC
+  # ======================
   - numpy
   - scipy
   - eigen
   - suitesparse
 
-  # 🖼️ vision / IO
+  # ======================
+  # IO / MEDIA
+  # ======================
   - openimageio
   - ffmpeg
   - imageio
   - imageio-ffmpeg
 
-  # 🧊 geometry / SfM stack
-  - colmap=3.8  # au dela, incomaptibilité avec nerfstudio
-  - fpsample=0.3.3
-  - hloc
+  # ======================
+  # GEOMETRY / SfM CORE
+  # ======================
+  - colmap=3.8
   - cgal
   - faiss-cpu
   - plyfile
-#  - pycolmap>=0.6
 
-
-  # 🖥️ UI (souvent inutile mais requis par colmap)
+  # ======================
+  # GRAPHICS (COLMAP QT FIX)
+  # ======================
   - glew
-  - qt
+  - qt-main
+  - libxcb
 
-  # system utils
+  # ======================
+  # SYSTEM
+  # ======================
   - libiconv
-  
-  #gpu
-  - pytorch
-  - torchvision
-  - torchaudio
 
-  # nerfstudio
-  - nerfstudio==1.1.5
+  # ======================
+  # PIP SECTION
+  # ======================
+  - pip:
+      # 🔥 PyTorch stack (doit rester pip pour éviter conflits CUDA)
+      - torch==2.5.1
+      - torchvision
+      - torchaudio
 
+      # Nerfstudio + GSPLAT
+      - nerfstudio==1.1.5
+      - gsplat==1.4.0
+
+      # 🔍 HLOC (IMPORTANT)
+      - hloc
+
+      # utils
+      - opencv-python
