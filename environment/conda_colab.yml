@@ -64,3 +64,4 @@ dependencies:
       - torch==2.5.1
       - torchvision
       - torchaudio
+      - git+https://github.com/cvg/Hierarchical-Localization.git
