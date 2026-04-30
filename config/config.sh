@@ -123,7 +123,7 @@ SFMT_TOOL="hloc"
 # colmap | hloc | any
 # → hloc = meilleur pour scènes difficiles / moins d’artefacts
 
-MATCHING_METHOD="vocab_tree"
+MATCHING_METHOD="exhaustive"
 # sequential | vocab_tree | exhaustive
 # → exhaustive = plus précis mais lent
 # → vocab_tree = bon compromis
@@ -145,7 +145,7 @@ CAMERA_TYPE="perspective"
 # FEATURE / MATCHING (COLMAP / HLOC)
 ############################
 
-FEATURE_TYPE="superpoint"
+FEATURE_TYPE="any"
 # sift | superpoint | superpoint_aachen | disk | r2d2 | any
 # → superpoint/disk = meilleur pour scènes complexes
 # disk pas compatible colmap
