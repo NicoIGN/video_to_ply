@@ -52,6 +52,13 @@ dependencies:
 
       # nerfstudio
       - nerfstudio==1.1.5
+      
+            # HLOC (clé pour COLMAP + SuperPoint)
+      - hloc @ git+https://github.com/cvg/Hierarchical-Localization.git
+
+      # SuperGlue dependency (CRITICAL pour ton crash)
+      - SuperGluePretrainedNetwork @ git+https://github.com/magicleap/SuperGluePretrainedNetwork.git
+
 
       # utils
       - tqdm
