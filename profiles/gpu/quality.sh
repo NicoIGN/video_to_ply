@@ -34,7 +34,7 @@ NUM_PROPOSAL_SAMPLES_PER_RAY="128 64"
 ########################################
 
 # densification (plus stable en high-res training)
-DENSIFY_GRAD_THRESH=0.0001
+DENSIFY_GRAD_THRESH=0.00005
 
 # keep fine structures longer (better thin geometry / edges)
 CULL_ALPHA_THRESH=0.05
@@ -43,7 +43,7 @@ CULL_ALPHA_THRESH=0.05
 CULL_SCREEN_SIZE=0.25
 
 # earlier splitting for higher geometric precision
-SPLIT_SCREEN_SIZE=0.02
+SPLIT_SCREEN_SIZE=0.015
 
 ########################################
 # EXPORT QUALITY

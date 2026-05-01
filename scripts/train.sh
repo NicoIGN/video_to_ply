@@ -28,7 +28,7 @@ fi
 TRAIN_VIS_MODE=${TRAIN_VIS_MODE:-tensorboard}
 STEPS_PER_SAVE=${STEPS_PER_SAVE:-2000}
 STEPS_PER_EVAL_ALL_IMAGES=${STEPS_PER_EVAL_ALL_IMAGES:-500}
-REFINE_UNTIL_ITER=${REFINE_UNTIL_ITER:-2500}
+REFINE_EVERY=${REFINE_EVERY:-500}
 
 export MACHINE_DEVICE_TYPE=""
 
@@ -122,7 +122,6 @@ echo "────────────────────────�
 echo "🔥 STARTING TRAINING..."
 echo "────────────────────────────────────────────"
 
-
 # ======================
 # CHECKPOINT AUTO-RESUME
 # ======================
@@ -132,43 +131,52 @@ echo "────────────────────────�
 
 LOAD_DIR=""
 
-echo "📁 OUTPUTDIR: $OUTPUTDIR"
+echo "📁 OUTPUTDIR      : $OUTPUTDIR"
+echo "🧪 MODEL          : $MODEL"
+echo "🧪 EXPERIMENT     : $EXPERIMENT_NAME"
 
-if [[ -d "$OUTPUTDIR/nerfstudio_models" ]]; then
-    LOAD_DIR="$OUTPUTDIR/nerfstudio_models"
-    echo "✅ Direct checkpoint directory found:"
+BASE_DIR="$OUTPUTDIR/$MODEL/$EXPERIMENT_NAME"
+
+echo "📂 BASE_DIR       : $BASE_DIR"
+
+# 1. Cas direct (dernier run exact)
+if [[ -d "$BASE_DIR/nerfstudio_models" ]]; then
+    LOAD_DIR="$BASE_DIR/nerfstudio_models"
+    echo "✅ Direct checkpoint found:"
     echo "   $LOAD_DIR"
 else
-    echo "ℹ️ No direct checkpoint directory at:"
-    echo "   $OUTPUTDIR/nerfstudio_models"
+    echo "ℹ️ No direct checkpoint at:"
+    echo "   $BASE_DIR/nerfstudio_models"
 fi
 
-if [[ -d "$OUTPUTDIR" ]]; then
-    echo "🔎 Searching for latest timestamped run..."
+# 2. Cas multi-runs timestampés
+if [[ -d "$BASE_DIR" ]]; then
+    echo "🔎 Searching latest timestamped run..."
 
-    LAST_RUN=$(ls -td "$OUTPUTDIR"/*/nerfstudio_models 2>/dev/null | head -n 1)
+    LAST_RUN=$(ls -td "$BASE_DIR"/*/nerfstudio_models 2>/dev/null | head -n 1)
 
     if [[ -n "$LAST_RUN" ]]; then
         LOAD_DIR="$LAST_RUN"
         echo "✅ Latest checkpoint found:"
         echo "   $LOAD_DIR"
     else
-        echo "ℹ️ No timestamped checkpoint found."
+        echo "ℹ️ No timestamped checkpoint found in:"
+        echo "   $BASE_DIR"
     fi
 else
-    echo "⚠️ OUTPUTDIR does not exist yet."
+    echo "⚠️ BASE_DIR does not exist:"
+    echo "   $BASE_DIR"
 fi
 
+# 3. Résultat final
 if [[ -n "$LOAD_DIR" ]]; then
     echo "♻️ Resuming from checkpoint"
-    echo "📦 Using: $LOAD_DIR"
+    echo "📦 LOAD_DIR: $LOAD_DIR"
 else
     echo "🆕 No checkpoint found; starting from scratch"
 fi
 
 echo "────────────────────────────────────────────"
-
-
 
 # ======================
 # COMMON ARGS
@@ -215,7 +223,7 @@ if [[ "$DEVICE" == "gpu" ]]; then
     --pipeline.model.cull-alpha-thresh $CULL_ALPHA_THRESH
     --pipeline.model.cull-screen-size $CULL_SCREEN_SIZE
     --pipeline.model.split-screen-size $SPLIT_SCREEN_SIZE
-    --pipeline.model.refine-until-iter $REFINE_UNTIL_ITER
+    --pipeline.model.refine-every $REFINE_EVERY
   )
 
 elif [[ "$DEVICE" == "cpu" ]]; then
