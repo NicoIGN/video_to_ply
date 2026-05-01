@@ -26,6 +26,9 @@ fi
 # DEFAULT VIS MODE FALLBACK
 # ======================
 TRAIN_VIS_MODE=${TRAIN_VIS_MODE:-tensorboard}
+STEPS_PER_SAVE=${STEPS_PER_SAVE:-2000}
+STEPS_PER_EVAL_ALL_IMAGES=${STEPS_PER_EVAL_ALL_IMAGES:-500}
+
 
 export MACHINE_DEVICE_TYPE=""
 
@@ -49,6 +52,7 @@ export CMAKE_BUILD_PARALLEL_LEVEL=$MAX_JOBS
 export TORCH_DISABLE_ADDR2LINE=1
 export TORCHINDUCTOR_DISABLE=1
 export TORCH_COMPILE_DISABLE=1
+
 
 # ======================
 # CUDA ARCH AUTO-DETECTION
@@ -91,6 +95,8 @@ echo "⚙️ DEVICE                   : $DEVICE"
 echo "🔁 MAX ITERATIONS           : $MAX_ITER"
 echo "🔁 MAX JOBS                 : $MAX_JOBS"
 echo "📊 VIS MODE                 : $TRAIN_VIS_MODE"
+echo "💾 STEPS PER SAVE           : $STEPS_PER_SAVE"
+echo "🖼️ STEPS PER EVAL ALL IMG   : $STEPS_PER_EVAL_ALL_IMAGES"
 
 echo "────────────────────────────────────────────"
 echo "🧠 DATA PIPELINE"

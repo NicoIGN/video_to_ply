@@ -194,6 +194,9 @@ fi
 # TRAINING PARAMETERS (NERF CORE)
 ############################
 
+STEPS_PER_SAVE 2000
+STEPS_PER_EVAL_ALL_IMAGES 500
+
 # Nombre total d’itérations d’entraînement
 # → 1 itération = optimisation sur un batch de rayons
 # ↑ augmente la qualité mais augmente le temps de calcul
