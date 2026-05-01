@@ -94,6 +94,8 @@ declare -A MAX_RELATIVE_SCALE=(
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 for LEVEL in "${LEVELS[@]}"; do
+    [ "$LEVEL" != "minimal" ] && continue
+    
     echo ""
     echo "🚀 =============================="
     echo "🚀 CLEAN LEVEL: $LEVEL"
