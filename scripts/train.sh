@@ -97,6 +97,7 @@ echo "🔁 MAX JOBS                 : $MAX_JOBS"
 echo "📊 VIS MODE                 : $TRAIN_VIS_MODE"
 echo "💾 STEPS PER SAVE           : $STEPS_PER_SAVE"
 echo "🖼️ STEPS PER EVAL ALL IMG   : $STEPS_PER_EVAL_ALL_IMAGES"
+echo "🧪 REFINE EVERY             : $REFINE_EVERY"
 
 echo "────────────────────────────────────────────"
 echo "🧠 DATA PIPELINE"
