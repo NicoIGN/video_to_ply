@@ -19,7 +19,7 @@ SKIP_FRAME_EXTRACTION=false
 SKIP_COLMAP=false
 SKIP_TRAINING=false
 SKIP_EXPORT=false
-SKIP_FILTER=true
+SKIP_FILTER=false
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
