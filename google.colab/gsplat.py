@@ -145,6 +145,8 @@ elif [ "$INPUT_MODE" = "video" ] && [ -n "$VIDEOSOURCE" ]; then \
 fi && \
 mamba run -n gsplat bash run.sh $INPUT_ARG --root "$ROOTDIR" --skip-conda --skip-filter --profile "$PROFILE" --no-proxy
 
+!source /usr/local/miniforge/etc/profile.d/conda.sh && mamba run -n gsplat tree /content/exterieur/model3d
+
 !RUN=0; \
 [ "$RUN" -eq 0 ] && echo "skipping this stage" || \
 ( source /usr/local/miniforge/etc/profile.d/conda.sh && \
