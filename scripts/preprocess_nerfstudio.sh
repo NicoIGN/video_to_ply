@@ -150,6 +150,33 @@ if [ ! -f "$TRANSFORMS" ]; then
   exit 1
 fi
 
+
+# ======================
+# COLMAP COVERAGE CHECK (NEW)
+# ======================
+if [ -f "$PROCESS_LOG" ]; then
+  COLMAP_PERCENT=$(grep "COLMAP only found poses" "$PROCESS_LOG" \
+    | grep -oE '[0-9]+(\.[0-9]+)?' \
+    | tail -n 1)
+
+  if [ -n "$COLMAP_PERCENT" ]; then
+    echo "📊 COLMAP pose coverage: $COLMAP_PERCENT%"
+
+    # comparaison float-safe
+    LOW=$(echo "$COLMAP_PERCENT < 70" | bc -l)
+
+    if [ "$LOW" -eq 1 ]; then
+      echo "❌ STOP: COLMAP coverage too low (<70%)"
+      echo "📉 Failing pipeline to avoid bad reconstruction"
+
+      tail -n 80 "$PROCESS_LOG"
+      exit 1
+    fi
+  else
+    echo "⚠️ Could not detect COLMAP coverage percentage"
+  fi
+fi
+
 # ======================
 # SILENT FAILURE DETECTION (NEW)
 # ======================

@@ -122,7 +122,7 @@ fi
 SFMT_TOOL="colmap" # colmap | hloc | any
 # → hloc = meilleur pour scènes difficiles / moins d’artefacts
 
-MATCHING_METHOD="sequential"
+MATCHING_METHOD="vocab_tree"
 # sequential | vocab_tree | exhaustive
 # → exhaustive = plus précis mais lent
 # → vocab_tree = bon compromis
