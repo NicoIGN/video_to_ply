@@ -34,7 +34,7 @@ NUM_PROPOSAL_SAMPLES_PER_RAY="128 64"
 ########################################
 
 # densification (plus stable en high-res training)
-DENSIFY_GRAD_THRESH=0.00005
+DENSIFY_GRAD_THRESH=0.001
 
 # keep fine structures longer (better thin geometry / edges)
 CULL_ALPHA_THRESH=0.05
