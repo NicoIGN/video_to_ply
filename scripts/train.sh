@@ -28,7 +28,7 @@ fi
 TRAIN_VIS_MODE=${TRAIN_VIS_MODE:-tensorboard}
 STEPS_PER_SAVE=${STEPS_PER_SAVE:-2000}
 STEPS_PER_EVAL_ALL_IMAGES=${STEPS_PER_EVAL_ALL_IMAGES:-500}
-
+REFINE_UNTIL_ITER=${REFINE_UNTIL_ITER:-2500}
 
 export MACHINE_DEVICE_TYPE=""
 
@@ -126,37 +126,72 @@ echo "────────────────────────�
 # ======================
 # CHECKPOINT AUTO-RESUME
 # ======================
+echo "────────────────────────────────────────────"
+echo "🔍 CHECKPOINT AUTO-RESUME"
+echo "────────────────────────────────────────────"
+
 LOAD_DIR=""
 
-if [ -d "$OUTPUTDIR/nerfstudio_models" ]; then
+echo "📁 OUTPUTDIR: $OUTPUTDIR"
+
+if [[ -d "$OUTPUTDIR/nerfstudio_models" ]]; then
     LOAD_DIR="$OUTPUTDIR/nerfstudio_models"
-fi
-
-if [ -d "$OUTPUTDIR" ]; then
-    LAST_RUN=$(ls -td "$OUTPUTDIR"/*/nerfstudio_models 2>/dev/null | head -n 1)
-    if [ ! -z "$LAST_RUN" ]; then
-        LOAD_DIR="$LAST_RUN"
-    fi
-fi
-
-if [ ! -z "$LOAD_DIR" ]; then
-    echo "♻️ CHECKPOINT FOUND → RESUMING TRAINING"
-    echo "📦 LOAD_DIR: $LOAD_DIR"
+    echo "✅ Direct checkpoint directory found:"
+    echo "   $LOAD_DIR"
 else
-    echo "🆕 NO CHECKPOINT FOUND → TRAINING FROM SCRATCH"
+    echo "ℹ️ No direct checkpoint directory at:"
+    echo "   $OUTPUTDIR/nerfstudio_models"
 fi
+
+if [[ -d "$OUTPUTDIR" ]]; then
+    echo "🔎 Searching for latest timestamped run..."
+
+    LAST_RUN=$(ls -td "$OUTPUTDIR"/*/nerfstudio_models 2>/dev/null | head -n 1)
+
+    if [[ -n "$LAST_RUN" ]]; then
+        LOAD_DIR="$LAST_RUN"
+        echo "✅ Latest checkpoint found:"
+        echo "   $LOAD_DIR"
+    else
+        echo "ℹ️ No timestamped checkpoint found."
+    fi
+else
+    echo "⚠️ OUTPUTDIR does not exist yet."
+fi
+
+if [[ -n "$LOAD_DIR" ]]; then
+    echo "♻️ Resuming from checkpoint"
+    echo "📦 Using: $LOAD_DIR"
+else
+    echo "🆕 No checkpoint found; starting from scratch"
+fi
+
+echo "────────────────────────────────────────────"
+
 
 
 # ======================
 # COMMON ARGS
 # ======================
+
+if [[ -n "$LOAD_DIR" ]]; then
+    RUN_TIMESTAMP="$(basename "$(dirname "$LOAD_DIR")")"
+    echo "♻️ Resuming existing run"
+    echo "📦 LOAD_DIR      : $LOAD_DIR"
+    echo "🕒 TIMESTAMP     : $RUN_TIMESTAMP"
+else
+    RUN_TIMESTAMP="$(date +%Y-%m-%d_%H%M%S)"
+    echo "🆕 Starting new run"
+    echo "🕒 TIMESTAMP     : $RUN_TIMESTAMP"
+fi
+
 COMMON_ARGS=(
   --output-dir "$OUTPUTDIR"
   --experiment-name "$EXPERIMENT_NAME"
   --machine.device-type "$MACHINE_DEVICE_TYPE"
   --max-num-iterations "$MAX_ITER"
-  --steps-per-save 500
-  --steps-per-eval-all-images 500
+  --steps-per-save "$STEPS_PER_SAVE"
+  --steps-per-eval-all-images "$STEPS_PER_EVAL_ALL_IMAGES"
   --save-only-latest-checkpoint True
   --vis "$TRAIN_VIS_MODE"
   --logging.local-writer.enable True
@@ -164,7 +199,11 @@ COMMON_ARGS=(
   --viewer.quit-on-train-completion True
 )
 
-
+if [[ -n "$LOAD_DIR" ]]; then
+    COMMON_ARGS+=(
+      --load-dir "$LOAD_DIR"
+    )
+fi
 # ======================
 # DEVICE-SPECIFIC ARGS
 # ======================
@@ -176,6 +215,7 @@ if [[ "$DEVICE" == "gpu" ]]; then
     --pipeline.model.cull-alpha-thresh $CULL_ALPHA_THRESH
     --pipeline.model.cull-screen-size $CULL_SCREEN_SIZE
     --pipeline.model.split-screen-size $SPLIT_SCREEN_SIZE
+    --pipeline.model.refine-until-iter $REFINE_UNTIL_ITER
   )
 
 elif [[ "$DEVICE" == "cpu" ]]; then

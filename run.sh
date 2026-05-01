@@ -5,8 +5,6 @@ set -e
 # ======================
 # DEFAULTS
 # ======================
-#NUM_FRAMES=100
-#FPS=4
 DEVICE="cpu"
 ROOT_DIR="runs/default"
 SKIP_CONDA=false
@@ -465,6 +463,7 @@ else
     MODEL_IMPLEMENTATION="$MODEL_IMPLEMENTATION" \
     DEVICE="$DEVICE" \
     MAX_ITER="$MAX_ITER" \
+    REFINE_UNTIL_ITER="$REFINE_UNTIL_ITER" \
     MAX_JOBS="$MAX_JOBS" \
     STEPS_PER_SAVE="$STEPS_PER_SAVE" \
     STEPS_PER_EVAL_ALL_IMAGES="$STEPS_PER_EVAL_ALL_IMAGES" \
