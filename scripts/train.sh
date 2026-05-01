@@ -179,6 +179,9 @@ else
     echo "🆕 No checkpoint found; starting from scratch"
 fi
 
+#desactive le checkpoint (marche pas)
+LOAD_DIR=""
+
 echo "────────────────────────────────────────────"
 # ======================
 # COMMON ARGS
