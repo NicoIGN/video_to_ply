@@ -196,7 +196,7 @@ fi
 
 STEPS_PER_SAVE=2000
 STEPS_PER_EVAL_ALL_IMAGES=500
-REFINE_EVERY=1000
+REFINE_EVERY=100
 
 # Nombre total d’itérations d’entraînement
 # → 1 itération = optimisation sur un batch de rayons

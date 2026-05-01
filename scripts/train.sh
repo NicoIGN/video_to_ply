@@ -29,6 +29,7 @@ TRAIN_VIS_MODE=${TRAIN_VIS_MODE:-tensorboard}
 STEPS_PER_SAVE=${STEPS_PER_SAVE:-2000}
 STEPS_PER_EVAL_ALL_IMAGES=${STEPS_PER_EVAL_ALL_IMAGES:-500}
 REFINE_EVERY=${REFINE_EVERY:-500}
+STEPS_PER_LOG=${STEPS_PER_LOG:-100}
 
 export MACHINE_DEVICE_TYPE=""
 
@@ -204,7 +205,7 @@ COMMON_ARGS=(
   --save-only-latest-checkpoint True
   --vis "$TRAIN_VIS_MODE"
   --logging.local-writer.enable True
-  --logging.steps-per-log 50
+  --logging.steps-per-log "$STEPS_PER_LOG"
   --viewer.quit-on-train-completion True
 )
 
