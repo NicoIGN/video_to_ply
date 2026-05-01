@@ -8,6 +8,8 @@ set -euo pipefail
 : "${PLY_FILE:?PLY_FILE is required}"
 : "${EXPORT_DIR:?EXPORT_DIR is required}"
 : "${BASENAME:?BASENAME is required}"
+SKIP_FILTER="${SKIP_FILTER:-false}"
+
 
 if [[ ! -f "$PLY_FILE" ]]; then
     echo "❌ PLY file not found: $PLY_FILE"
@@ -24,6 +26,11 @@ echo "   TO  : $FINAL_PLY"
 
 cp -f "$PLY_FILE" "$FINAL_PLY"
 PLY_FILE="$FINAL_PLY"
+
+
+if [[ "$SKIP_FILTER" == "true" ]]; then
+  echo "⏩ Skipping filter (config)"
+fi
 
 echo "✅ Input ready: $PLY_FILE"
 echo ""

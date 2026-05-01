@@ -544,31 +544,29 @@ fi
 # 5. CLEAN PLY
 # ======================
 
-if [[ "$SKIP_FILTER" == "true" ]]; then
-  echo "⏩ Skipping filter (config)"
+echo "🧹 Removing filtered Gaussian Splat files..."
+
+FILES_TO_DELETE=($(find "$EXPORT_DIR" -type f -name "${BASENAME}_*.ply" | sort))
+
+if [[ ${#FILES_TO_DELETE[@]} -eq 0 ]]; then
+    echo "⚠️ No filtered files to remove in $EXPORT_DIR for basename: $BASENAME"
 else
-  echo "🧹 Removing filtered Gaussian Splat files..."
 
-  FILES_TO_DELETE=($(find "$EXPORT_DIR" -type f -name "${BASENAME}_*.ply" | sort))
+    echo "📦 Found ${#FILES_TO_DELETE[@]} file(s) to delete"
 
-  if [[ ${#FILES_TO_DELETE[@]} -eq 0 ]]; then
-      echo "⚠️ No filtered files to remove in $EXPORT_DIR for basename: $BASENAME"
-  else
+    for FILE in "${FILES_TO_DELETE[@]}"; do
+        echo "🗑️ Deleting: $(basename "$FILE")"
+        rm -f "$FILE"
+    done
 
-      echo "📦 Found ${#FILES_TO_DELETE[@]} file(s) to delete"
-
-      for FILE in "${FILES_TO_DELETE[@]}"; do
-          echo "🗑️ Deleting: $(basename "$FILE")"
-          rm -f "$FILE"
-      done
-
-      echo "✅ Cleanup complete"
-  fi
-
-  echo "📦 Source PLY: $PLY_FILE"
-
-  PLY_FILE="$PLY_FILE" \
-  EXPORT_DIR="$EXPORT_DIR" \
-  BASENAME="$BASENAME" \
-  bash "$SCRIPT_DIR/scripts/filter_ply.sh"
+    echo "✅ Cleanup complete"
 fi
+
+echo "📦 Source PLY: $PLY_FILE"
+
+PLY_FILE="$PLY_FILE" \
+EXPORT_DIR="$EXPORT_DIR" \
+BASENAME="$BASENAME" \
+SKIP_FILTER="$SKIP_FILTER" \
+bash "$SCRIPT_DIR/scripts/filter_ply.sh"
+
