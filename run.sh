@@ -19,6 +19,7 @@ SKIP_FRAME_EXTRACTION=false
 SKIP_COLMAP=false
 SKIP_TRAINING=false
 SKIP_EXPORT=false
+SKIP_FILTER=true
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -64,6 +65,7 @@ Options:
   --skip-colmap
   --skip-training
   --skip-export
+  --skip-filter
   --no-proxy
   --help
 EOF
@@ -91,6 +93,7 @@ while [[ $# -gt 0 ]]; do
     --skip-colmap) SKIP_COLMAP=true; shift ;;
     --skip-training) SKIP_TRAINING=true; shift ;;
     --skip-export) SKIP_EXPORT=true; shift ;;
+    --skip-filter) SKIP_FILTER=true; shift ;;
 
     --help) show_help; exit 0 ;;
     *) echo "❌ Unknown param: $1"; show_help; exit 1 ;;
@@ -485,83 +488,86 @@ fi
 
 if [[ "$SKIP_EXPORT" == "true" ]]; then
   echo "⏩ Skipping export (config)"
-  exit 0
-fi
+else
 
+  PLY_FOUND=$(find "$OUTPUT_DIR" -type f -name "*.ply" | head -n 1)
 
-PLY_FOUND=$(find "$OUTPUT_DIR" -type f -name "*.ply" | head -n 1)
-
-if [[ -n "$PLY_FOUND" ]]; then
-  echo "📦 Existing PLY found: $PLY_FOUND"
-  # echo "⏩ Skipping export (PLY already exists)"
-  cp $PLY_FOUND ${PLY_FOUND}.bkp
-fi
-
-  echo "🚀 Exporting model in $EXPORT_DIR..."
-
-  case "$MODEL" in
-    *nerfacto*)
-      echo "📦 Exporting Nerfacto point cloud (.ply)..."
-
-      OUTPUT_DIR="$TRAIN_DIR/$EXPERIMENT_NAME" \
-      EXPORT_DIR="$OUTPUT_DIR" \
-      NUM_POINTS="$EXPORT_NUM_POINTS" \
-      NORMAL_METHOD="$NORMAL_METHOD" \
-      REMOVE_OUTLIERS="$REMOVE_OUTLIERS" \
-      bash scripts/export_nerf_to_ply.sh
-      ;;
-
-    *splatfacto*)
-      echo "📦 Exporting Gaussian Splat (.ply)..."
-
-      OUTPUT_DIR="$TRAIN_DIR/$EXPERIMENT_NAME" \
-      EXPORT_DIR="$OUTPUT_DIR" \
-      bash scripts/export_splat_to_ply.sh
-      ;;
-
-    *)
-      echo "⚠️ Unsupported model for export: $MODEL"
-      exit 1
-      ;;
-  esac
-
-  # ======================
-  # VALIDATION
-  # ======================
-  PLY_FILE=$(find "$OUTPUT_DIR" -type f -name "*.ply" | head -n 1)
-
-  if [[ -f "$PLY_FILE" ]]; then
-    echo "✅ PLY export successful: $PLY_FILE"
-  else
-    echo "❌ PLY export failed"
-    exit 1
+  if [[ -n "$PLY_FOUND" ]]; then
+    echo "📦 Existing PLY found: $PLY_FOUND"
+    # echo "⏩ Skipping export (PLY already exists)"
+    cp $PLY_FOUND ${PLY_FOUND}.bkp
   fi
 
+    echo "🚀 Exporting model in $EXPORT_DIR..."
+
+    case "$MODEL" in
+      *nerfacto*)
+        echo "📦 Exporting Nerfacto point cloud (.ply)..."
+
+        OUTPUT_DIR="$TRAIN_DIR/$EXPERIMENT_NAME" \
+        EXPORT_DIR="$OUTPUT_DIR" \
+        NUM_POINTS="$EXPORT_NUM_POINTS" \
+        NORMAL_METHOD="$NORMAL_METHOD" \
+        REMOVE_OUTLIERS="$REMOVE_OUTLIERS" \
+        bash scripts/export_nerf_to_ply.sh
+        ;;
+
+      *splatfacto*)
+        echo "📦 Exporting Gaussian Splat (.ply)..."
+
+        OUTPUT_DIR="$TRAIN_DIR/$EXPERIMENT_NAME" \
+        EXPORT_DIR="$OUTPUT_DIR" \
+        bash scripts/export_splat_to_ply.sh
+        ;;
+
+      *)
+        echo "⚠️ Unsupported model for export: $MODEL"
+        exit 1
+        ;;
+    esac
+
+    # ======================
+    # VALIDATION
+    # ======================
+    PLY_FILE=$(find "$OUTPUT_DIR" -type f -name "*.ply" | head -n 1)
+
+    if [[ -f "$PLY_FILE" ]]; then
+      echo "✅ PLY export successful: $PLY_FILE"
+    else
+      echo "❌ PLY export failed"
+      exit 1
+    fi
+fi
 
 # ======================
 # 5. CLEAN PLY
 # ======================
-echo "🧹 Removing filtered Gaussian Splat files..."
 
-FILES_TO_DELETE=($(find "$EXPORT_DIR" -type f -name "${BASENAME}_*.ply" | sort))
-
-if [[ ${#FILES_TO_DELETE[@]} -eq 0 ]]; then
-    echo "⚠️ No filtered files to remove in $EXPORT_DIR for basename: $BASENAME"
+if [[ "$SKIP_FILTER" == "true" ]]; then
+  echo "⏩ Skipping filter (config)"
 else
+  echo "🧹 Removing filtered Gaussian Splat files..."
 
-    echo "📦 Found ${#FILES_TO_DELETE[@]} file(s) to delete"
+  FILES_TO_DELETE=($(find "$EXPORT_DIR" -type f -name "${BASENAME}_*.ply" | sort))
 
-    for FILE in "${FILES_TO_DELETE[@]}"; do
-        echo "🗑️ Deleting: $(basename "$FILE")"
-        rm -f "$FILE"
-    done
+  if [[ ${#FILES_TO_DELETE[@]} -eq 0 ]]; then
+      echo "⚠️ No filtered files to remove in $EXPORT_DIR for basename: $BASENAME"
+  else
 
-    echo "✅ Cleanup complete"
+      echo "📦 Found ${#FILES_TO_DELETE[@]} file(s) to delete"
+
+      for FILE in "${FILES_TO_DELETE[@]}"; do
+          echo "🗑️ Deleting: $(basename "$FILE")"
+          rm -f "$FILE"
+      done
+
+      echo "✅ Cleanup complete"
+  fi
+
+  echo "📦 Source PLY: $PLY_FILE"
+
+  PLY_FILE="$PLY_FILE" \
+  EXPORT_DIR="$EXPORT_DIR" \
+  BASENAME="$BASENAME" \
+  bash "$SCRIPT_DIR/scripts/filter_ply.sh"
 fi
-
-echo "📦 Source PLY: $PLY_FILE"
-
-PLY_FILE="$PLY_FILE" \
-EXPORT_DIR="$EXPORT_DIR" \
-BASENAME="$BASENAME" \
-bash "$SCRIPT_DIR/scripts/filter_ply.sh"
