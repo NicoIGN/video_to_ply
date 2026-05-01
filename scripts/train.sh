@@ -203,7 +203,7 @@ COMMON_ARGS=(
   --save-only-latest-checkpoint True
   --vis "$TRAIN_VIS_MODE"
   --logging.local-writer.enable True
-  --logging.steps-per-log 10
+  --logging.steps-per-log 50
   --viewer.quit-on-train-completion True
 )
 
