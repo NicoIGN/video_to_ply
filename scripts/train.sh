@@ -135,11 +135,12 @@ echo "📁 OUTPUTDIR      : $OUTPUTDIR"
 echo "🧪 MODEL          : $MODEL"
 echo "🧪 EXPERIMENT     : $EXPERIMENT_NAME"
 
-BASE_DIR="$OUTPUTDIR/$MODEL/$EXPERIMENT_NAME"
+# ✅ FIX ORDER (experiment puis model, pas l'inverse)
+BASE_DIR="$OUTPUTDIR/$EXPERIMENT_NAME/$MODEL"
 
 echo "📂 BASE_DIR       : $BASE_DIR"
 
-# 1. Cas direct (dernier run exact)
+# 1. check run direct
 if [[ -d "$BASE_DIR/nerfstudio_models" ]]; then
     LOAD_DIR="$BASE_DIR/nerfstudio_models"
     echo "✅ Direct checkpoint found:"
@@ -149,7 +150,7 @@ else
     echo "   $BASE_DIR/nerfstudio_models"
 fi
 
-# 2. Cas multi-runs timestampés
+# 2. search timestamped runs
 if [[ -d "$BASE_DIR" ]]; then
     echo "🔎 Searching latest timestamped run..."
 
@@ -168,7 +169,7 @@ else
     echo "   $BASE_DIR"
 fi
 
-# 3. Résultat final
+# 3. final decision
 if [[ -n "$LOAD_DIR" ]]; then
     echo "♻️ Resuming from checkpoint"
     echo "📦 LOAD_DIR: $LOAD_DIR"
@@ -177,7 +178,6 @@ else
 fi
 
 echo "────────────────────────────────────────────"
-
 # ======================
 # COMMON ARGS
 # ======================
