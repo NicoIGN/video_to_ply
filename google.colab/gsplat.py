@@ -24,7 +24,7 @@ Original file is located at
 # export GIT_BRANCH="dev"
 # export BASENAME="exterieur"
 # 
-# export PROFILE="gpu/fast"
+# export PROFILE="gpu/quality"
 # #export PROFILE="gpu/balanced"
 # #export PROFILE="cpu/fast"
 # EOF
@@ -108,7 +108,7 @@ bash Miniconda3-latest-Linux-x86_64.sh -b -p /usr/local/miniconda  && \
 # source /content/config.sh
 # git stash save && git checkout $GIT_BRANCH && git pull
 
-!RUN=1; \
+!RUN=0; \
 [ "$RUN" -eq 0 ] && echo "skipping this stage" || \
 ( source /usr/local/miniforge/etc/profile.d/conda.sh && mamba env remove -y -n gsplat )
 
@@ -143,14 +143,7 @@ if [ "$INPUT_MODE" = "images" ] && [ -n "$IMAGESET" ]; then \
 elif [ "$INPUT_MODE" = "video" ] && [ -n "$VIDEOSOURCE" ]; then \
   INPUT_ARG="--video $ROOTDIR/video.mp4 --fps $FPS --name $BASENAME"; \
 fi && \
-mamba run -n gsplat bash run.sh $INPUT_ARG --root "$ROOTDIR" --skip-conda --profile "$PROFILE" --no-proxy
-
-# Commented out IPython magic to ensure Python compatibility.
-# %%bash
-# source /usr/local/miniforge/etc/profile.d/conda.sh && \
-# source /content/config.sh
-# mamba run -n gsplat  python -c "import torch; print(torch.version.cuda)"
-# mamba run -n gsplat  python -c "import torch; import torchvision; print(torch.__version__, torchvision.__version__)"
+mamba run -n gsplat bash run.sh $INPUT_ARG --root "$ROOTDIR" --skip-conda --skip-filter --profile "$PROFILE" --no-proxy
 
 !RUN=0; \
 [ "$RUN" -eq 0 ] && echo "skipping this stage" || \
@@ -172,13 +165,6 @@ mamba run -n gsplat bash run.sh $INPUT_ARG --root "$ROOTDIR" --skip-conda --prof
     --skip-frame-extraction \
     --skip-colmap \
     --skip-training )
-
-# Commented out IPython magic to ensure Python compatibility.
-# %%bash
-# set -e
-# source /content/config.sh
-# cd $ROOTDIR/ori
-# zip -r $ROOTDIR/exports/colmap_$BASENAME.zip ./colmap
 
 from google.colab import files
 import os
