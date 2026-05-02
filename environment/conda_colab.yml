@@ -48,3 +48,4 @@ dependencies:
       - gsplat==1.4.0
       - fpsample
       - git+https://github.com/cvg/Hierarchical-Localization.git
+      - plyfile

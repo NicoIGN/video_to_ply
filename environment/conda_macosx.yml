@@ -52,3 +52,4 @@ dependencies:
       # utils
       - imageio
       - imageio-ffmpeg
+      - plyfile
