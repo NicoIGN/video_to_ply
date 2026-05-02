@@ -110,8 +110,11 @@ ARGS+=(--matcher-type "$MATCHER_TYPE")
 ARGS+=(--num-downscales "$NUM_DOWNSCALES")
 ARGS+=(--percent-radius-crop "$PERCENT_RADIUS_CROP")
 ARGS+=(--refine-intrinsics)
-ARGS+=(--use-single-camera-mode)
 ARGS+=(--sfm-tool "$SFMT_TOOL")
+
+if [[ "$SFMT_TOOL" == "colmap" && "$USE_SINGLE_CAMERA_MODE" == "true" ]]; then
+  ARGS+=(--use-single-camera-mode)
+fi
 
 if [[ -n "$CROP_FACTOR" ]]; then
   ARGS+=(--crop-factor $CROP_FACTOR)
