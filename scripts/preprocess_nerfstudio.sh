@@ -84,6 +84,16 @@ if [[ "$DEVICE" == "cpu" ]]; then
   export MPLBACKEND=Agg
   export CUDA_VISIBLE_DEVICES=""
   export OMP_NUM_THREADS=1
+else
+  export OMP_NUM_THREADS=3
+  export MKL_NUM_THREADS=3
+  export TORCH_NUM_THREADS=3
+
+  # HLOC / DataLoader workers (matching pairs)
+  export DATASET_WORKERS=3
+
+  # CUDA memory (important pour SuperGlue + Nerfstudio)
+  export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 fi
 
 # ======================
