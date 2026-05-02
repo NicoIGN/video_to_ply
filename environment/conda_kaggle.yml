@@ -14,18 +14,18 @@ dependencies:
   - tree
   - tqdm
 
-  # Build tools
+  # Build tools (only if compilation needed)
   - cmake
   - ninja
 
-  # PyTorch + CUDA
+  # PyTorch + CUDA (T4 optimized)
   - pytorch=2.3.1
   - torchvision=0.18.1
   - torchaudio=2.3.1
   - pytorch-cuda=12.1
 
-  # Scientific stack
-  - "numpy<2"
+  # Scientific stack (stable)
+  - numpy<2
   - scipy
 
   # IO / Media
@@ -34,18 +34,24 @@ dependencies:
   - imageio
   - imageio-ffmpeg
 
-  # Geometry / SfM
+  # Geometry / SfM (light version for Kaggle)
   - colmap=3.8
   - faiss-cpu
   - plyfile
 
-  # Graphics
-  - glew
-  - qt-main
+  # ⚠️ REMOVE heavy GUI stack (not needed on Kaggle T4)
+  # - glew
+  # - qt-main
 
   - pip:
-      - nerfstudio==1.1.5
-      - gsplat==1.4.0
+      # ✅ Stable Kaggle-compatible NeRF stack
+      - nerfstudio==1.0.3
+      - gsplat==0.1.11
+
+      # speed + utils
       - fpsample
+      - torchmetrics==0.11.4
+      - typing_extensions<5
+
+      # localization (optional heavy dependency)
       - git+https://github.com/cvg/Hierarchical-Localization.git
-      - plyfile
