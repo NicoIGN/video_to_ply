@@ -239,6 +239,8 @@ fi
   # ======================
   echo "🔌 Activating env: $CONDA_ENV_NAME"
   conda activate "$CONDA_ENV_NAME"
+  
+  bash scripts/check_torch_stack.sh
 
 fi
 
