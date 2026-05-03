@@ -210,6 +210,9 @@ COMMON_ARGS=(
   --logging.local-writer.enable True
   --logging.steps-per-log "$STEPS_PER_LOG"
   --viewer.quit-on-train-completion True
+    # 🚀 Performance
+  --mixed-precision True
+  --use-grad-scaler True
 )
 
 if [[ -n "$LOAD_DIR" ]]; then
@@ -224,11 +227,17 @@ if [[ "$DEVICE" == "gpu" ]]; then
 
   DEVICE_ARGS=(
     --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
+    --pipeline.datamanager.cache-images gpu
+    --pipeline.datamanager.images-on-gpu True
+    --pipeline.datamanager.masks-on-gpu False
     --pipeline.model.densify-grad-thresh $DENSIFY_GRAD_THRESH
     --pipeline.model.cull-alpha-thresh $CULL_ALPHA_THRESH
     --pipeline.model.cull-screen-size $CULL_SCREEN_SIZE
     --pipeline.model.split-screen-size $SPLIT_SCREEN_SIZE
     --pipeline.model.refine-every $REFINE_EVERY
+        # ✨ Quality improvements
+    --pipeline.model.use-bilateral-grid True
+    --pipeline.model.use-scale-regularization True
   )
 
 elif [[ "$DEVICE" == "cpu" ]]; then

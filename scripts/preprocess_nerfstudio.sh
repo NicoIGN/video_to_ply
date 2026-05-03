@@ -163,25 +163,26 @@ if [ ! -f "$TRANSFORMS" ]; then
   exit 1
 fi
 
-
 # ======================
-# COLMAP COVERAGE CHECK (NEW)
+# COLMAP COVERAGE CHECK
 # ======================
 if [ -f "$PROCESS_LOG" ]; then
+  # Cas 1 : Nerfstudio affiche un pourcentage explicite
   COLMAP_PERCENT=$(grep "COLMAP only found poses" "$PROCESS_LOG" \
     | grep -oE '[0-9]+(\.[0-9]+)?' \
     | tail -n 1)
 
+  # Cas 2 : HLOC/Nerfstudio a trouvé toutes les poses
+  if grep -q "COLMAP found poses for all images" "$PROCESS_LOG"; then
+    COLMAP_PERCENT="100"
+  fi
+
   if [ -n "$COLMAP_PERCENT" ]; then
-    echo "📊 COLMAP pose coverage: $COLMAP_PERCENT%"
+    echo "📊 COLMAP pose coverage: ${COLMAP_PERCENT}%"
 
-    # comparaison float-safe
-    LOW=$(echo "$COLMAP_PERCENT < 70" | bc -l)
-
-    if [ "$LOW" -eq 1 ]; then
+    if (( $(echo "$COLMAP_PERCENT < 70" | bc -l) )); then
       echo "❌ STOP: COLMAP coverage too low (<70%)"
       echo "📉 Failing pipeline to avoid bad reconstruction"
-
       tail -n 80 "$PROCESS_LOG"
       exit 1
     fi
