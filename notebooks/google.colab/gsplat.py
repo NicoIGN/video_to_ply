@@ -24,7 +24,7 @@ Original file is located at
 # export GIT_BRANCH="dev"
 # export BASENAME="motos"
 # 
-# export PREPROCESS_PROFILE="colmap"
+# export PREPROCESS_PROFILE="hloc"
 # export GSPLAT_PROFILE="quality"
 # 
 # EOF
@@ -147,7 +147,7 @@ mamba run -n gsplat bash run.sh  \
 --skip-filter \
 --no-proxy
 
-!source /usr/local/miniforge/etc/profile.d/conda.sh && mamba run -n gsplat tree /content/exterieur/model3d
+!source /usr/local/miniforge/etc/profile.d/conda.sh &&  source /content/config.sh && mamba run -n gsplat tree /content/$BASENAME/model3d
 
 !RUN=0; \
 [ "$RUN" -eq 0 ] && echo "skipping this stage" || \

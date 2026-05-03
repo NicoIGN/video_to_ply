@@ -5,10 +5,15 @@ set -euo pipefail
 # Gaussian Splat PLY Cleaner (SCALE-INVARIANT PIPELINE)
 # ============================================================
 
+
 : "${PLY_FILE:?PLY_FILE is required}"
 : "${EXPORT_DIR:?EXPORT_DIR is required}"
 : "${BASENAME:?BASENAME is required}"
+
 SKIP_FILTER="${SKIP_FILTER:-false}"
+LEVELS="${LEVELS:-minimal balanced}"
+
+IFS=' ' read -r -a SELECTED_LEVELS <<< "$LEVELS"
 
 
 if [[ ! -f "$PLY_FILE" ]]; then
@@ -94,8 +99,8 @@ declare -A MAX_RELATIVE_SCALE=(
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-for LEVEL in "${LEVELS[@]}"; do
-    [ "$LEVEL" != "minimal" ] && continue
+for LEVEL in "${SELECTED_LEVELS[@]}"; do
+    [ "$LEVEL" != "minimal" ] && [ "$LEVEL" != "balanced" ] && continue
     
     echo ""
     echo "🚀 =============================="
