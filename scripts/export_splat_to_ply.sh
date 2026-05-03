@@ -55,10 +55,14 @@ fi
 
 mkdir -p "$EXPORT_DIR"
 
-cp $CONFIG "$EXPORT_DIR"
+cp "$CONFIG" "$EXPORT_DIR" && \
+if [ -f "$EXPORT_DIR/$(basename "$CONFIG")" ]; then
+  echo "✅ Configuration copied: $EXPORT_DIR/$(basename "$CONFIG")"
+else
+  echo "❌ Failed to copy configuration: $(basename "$CONFIG")" >&2
+fi
 
 echo "────────────────────────────────────────────"
-echo "📦 ROOT DIR       : $ROOT_DIR"
 echo "📦 SPLAT ROOT      : $SPLAT_ROOT"
 echo "📦 RUN DIR        : $RUN_DIR"
 echo "📄 CONFIG         : $CONFIG"

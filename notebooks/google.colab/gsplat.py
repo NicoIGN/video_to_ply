@@ -12,21 +12,21 @@ Original file is located at
 # cat << 'EOF' > /content/config.sh
 # #!/bin/bash
 # 
-# export ROOTDIR="/content/exterieur"
-# export VIDEOSOURCE="gsplat/input/IMG_4797.MOV"
+# export ROOTDIR="/content/motos"
+# export VIDEOSOURCE="gsplat/input/IMG_4806.MOV"
 # export IMAGESET="gsplat/input/perfume/video"
 # export INPUT_MODE="video"
 # 
 # #export NUM_FRAMES=150
-# export FPS=3
+# export FPS=5
 # 
 # #branche dev
 # export GIT_BRANCH="dev"
-# export BASENAME="exterieur"
+# export BASENAME="motos"
 # 
-# export PROFILE="gpu/quality"
-# #export PROFILE="gpu/balanced"
-# #export PROFILE="cpu/fast"
+# export PREPROCESS_PROFILE="colmap"
+# export GSPLAT_PROFILE="quality"
+# 
 # EOF
 
 !cat /content/config.sh
@@ -134,16 +134,18 @@ mamba env create -n gsplat -f environment/conda_colab.yml -y
 # fi
 
 !source /usr/local/miniforge/etc/profile.d/conda.sh && \
-source /content/config.sh && unset NUM_FRAMES && \
-echo INPUT_MODE=$INPUT_MODE && \
+source /content/config.sh && \
 cd /content/video_to_ply/ && \
-INPUT_ARG="" && \
-if [ "$INPUT_MODE" = "images" ] && [ -n "$IMAGESET" ]; then \
-  INPUT_ARG="--images $ROOTDIR/images --name $BASENAME"; \
-elif [ "$INPUT_MODE" = "video" ] && [ -n "$VIDEOSOURCE" ]; then \
-  INPUT_ARG="--video $ROOTDIR/video.mp4 --fps $FPS --name $BASENAME"; \
-fi && \
-mamba run -n gsplat bash run.sh $INPUT_ARG --root "$ROOTDIR" --skip-conda --skip-filter --profile "$PROFILE" --no-proxy
+mamba run -n gsplat bash run.sh  \
+--root "$ROOTDIR" \
+--name "$BASENAME" \
+--video $ROOTDIR/video.mp4  \
+--preprocess-profile "$PREPROCESS_PROFILE" \
+--gsplat-profile "$GSPLAT_PROFILE" \
+--fps $FPS \
+--skip-conda \
+--skip-filter \
+--no-proxy
 
 !source /usr/local/miniforge/etc/profile.d/conda.sh && mamba run -n gsplat tree /content/exterieur/model3d
 
@@ -199,16 +201,27 @@ if not basename:
     print("❌ BASENAME is not set")
     raise SystemExit(1)
 
-base_ply = os.path.join(export_dir, f"{basename}.ply")
 
 # =========================
 # EXPORT ORIGINAL PLY
 # =========================
+base_ply = os.path.join(export_dir, f"{basename}.ply")
 if os.path.exists(base_ply):
     print(f"⬇️ Downloading original PLY: {os.path.basename(base_ply)}")
     files.download(base_ply)
 else:
     print(f"⚠️ Original PLY not found: {base_ply}")
+
+
+# =========================
+# EXPORT CONFIG
+# =========================
+training_config = os.path.join(export_dir, f"config.yml")
+if os.path.exists(training_config):
+    print(f"⬇️ Downloading training config: {os.path.basename(training_config)}")
+    files.download(training_config)
+else:
+    print(f"⚠️ Config not found: {training_config}")
 
 from google.colab import files
 import os

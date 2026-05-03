@@ -543,7 +543,8 @@ else
         exit 1
         ;;
     esac
-
+    
+    
     # ======================
     # VALIDATION
     # ======================
@@ -554,6 +555,16 @@ else
     else
       echo "❌ PLY export failed"
       exit 1
+    fi
+    
+    #copie du config
+    CONFIG_FILE="$OUTPUT_DIR/config.yml"
+
+    if [ -f "$CONFIG_FILE" ]; then
+      cp "$CONFIG_FILE" "$EXPORT_DIR/"
+      echo "📄 Copied config.yml to $EXPORT_DIR"
+    else
+      echo "⚠️ config.yml not found in $OUTPUT_DIR"
     fi
 fi
 
