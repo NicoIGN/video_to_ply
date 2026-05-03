@@ -55,6 +55,8 @@ fi
 
 mkdir -p "$EXPORT_DIR"
 
+cp $CONFIG "$EXPORT_DIR"
+
 echo "────────────────────────────────────────────"
 echo "📦 ROOT DIR       : $ROOT_DIR"
 echo "📦 SPLAT ROOT      : $SPLAT_ROOT"
