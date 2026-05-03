@@ -30,6 +30,7 @@ PLY_FILE="$FINAL_PLY"
 
 if [[ "$SKIP_FILTER" == "true" ]]; then
   echo "⏩ Skipping filter (config)"
+  exit 0
 fi
 
 echo "✅ Input ready: $PLY_FILE"
