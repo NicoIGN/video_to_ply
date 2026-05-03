@@ -119,67 +119,93 @@ fi
 # COLMAP / PREPROCESS
 ############################
 
-SFMT_TOOL="hloc" # colmap | hloc | any
-# → hloc = meilleur pour scènes difficiles / moins d’artefacts
+if [ -z "${SFMT_TOOL+x}" ]; then
+    SFMT_TOOL="hloc" # colmap | hloc | any
+    # → hloc = meilleur pour scènes difficiles / moins d’artefacts
+fi
 
-MATCHING_METHOD="exhaustive"
-# sequential | vocab_tree | exhaustive
-# → exhaustive = plus précis mais lent
-# → vocab_tree = bon compromis
-# → sequential = vidéo uniquement
+if [ -z "${MATCHING_METHOD+x}" ]; then
+    MATCHING_METHOD="exhaustive"
+    # sequential | vocab_tree | exhaustive
+    # → exhaustive = plus précis mais lent
+    # → vocab_tree = bon compromis
+    # → sequential = vidéo uniquement
+fi
 
-NUM_DOWNSCALES=2
-# 0 | 1 | 2 | 3
-# → + haut = moins de détails mais plus stable
+if [ -z "${NUM_DOWNSCALES+x}" ]; then
+    NUM_DOWNSCALES=2
+    # 0 | 1 | 2 | 3
+    # → plus haut = moins de détails mais plus stable
+fi
 
-SKIP_IMAGE_PROCESSING=true
-# true | false
-# → évite resize/copie images si déjà préparées
+if [ -z "${SKIP_IMAGE_PROCESSING+x}" ]; then
+    SKIP_IMAGE_PROCESSING=true
+    # true | false
+    # → évite resize/copie images si déjà préparées
+fi
 
-CAMERA_TYPE="perspective"
-# perspective | pinhole | fisheye | equirectangular
-# → mauvais choix = déformations COLMAP
-
-############################
-# FEATURE / MATCHING (COLMAP / HLOC)
-############################
-
-FEATURE_TYPE="any"
-# sift | superpoint | superpoint_aachen | disk | r2d2 | any
-# → superpoint/disk = meilleur pour scènes complexes
-# disk pas compatible colmap
-
-MATCHER_TYPE="any"
-# NN | NN-mutual | superglue | superglue-fast | lightglue | disk+lightglue | any
-# → superglue/lightglue = réduction artefacts + meilleurs matches -> incompatible colmap, utiliser hloc
+if [ -z "${CAMERA_TYPE+x}" ]; then
+    CAMERA_TYPE="perspective"
+    # perspective | pinhole | fisheye | equirectangular
+    # → mauvais choix = déformations COLMAP
+fi
 
 ############################
-# CAMERA / STRUCTURE OPTIONS
+# FEATURE / MATCHING
 ############################
 
-USE_SFM_DEPTH=false
-# true | false
-# → depth SfM utile pour densification mais plus lourd
+if [ -z "${FEATURE_TYPE+x}" ]; then
+    FEATURE_TYPE="any"
+    # sift | superpoint | superpoint_aachen | disk | r2d2 | any
+    # → superpoint/disk = meilleur pour scènes complexes
+    # → disk incompatible avec COLMAP pur
+fi
 
-REFINE_INTRINSICS=true
-# true | false
-# → améliore calibration caméra (bundle adjustment)
-
-USE_SINGLE_CAMERA_MODE=true
-# true | false
-# → true si une seule caméra (sinon artefacts possibles)
+if [ -z "${MATCHER_TYPE+x}" ]; then
+    MATCHER_TYPE="any"
+    # NN | NN-mutual | superglue | superglue-fast
+    # lightglue | disk+lightglue | any
+    # → superglue/lightglue = meilleurs matches
+    # → incompatibles avec COLMAP pur, nécessitent HLOC
+fi
 
 ############################
-# CROPPING / FILTERING INPUT
+# CAMERA / STRUCTURE
 ############################
 
-PERCENT_RADIUS_CROP=0.95
-# 0.0 → 1.0
-# → supprime bords image (réduit clusters parasites COLMAP)
+if [ -z "${USE_SFM_DEPTH+x}" ]; then
+    USE_SFM_DEPTH=false
+    # true | false
+    # → depth SfM utile pour densification mais plus lourd
+fi
 
-CROP_FACTOR="0.02 0.05 0.02 0.02"
-# top bottom left right (0-1)
-# → crop manuel zones instables
+if [ -z "${REFINE_INTRINSICS+x}" ]; then
+    REFINE_INTRINSICS=true
+    # true | false
+    # → améliore calibration caméra
+fi
+
+if [ -z "${USE_SINGLE_CAMERA_MODE+x}" ]; then
+    USE_SINGLE_CAMERA_MODE=true
+    # true | false
+    # → true si une seule caméra
+fi
+
+############################
+# CROPPING / FILTERING
+############################
+
+if [ -z "${PERCENT_RADIUS_CROP+x}" ]; then
+    PERCENT_RADIUS_CROP=0.95
+    # 0.0 → 1.0
+    # → supprime les bords parasites
+fi
+
+if [ -z "${CROP_FACTOR+x}" ]; then
+    CROP_FACTOR="0.02 0.05 0.02 0.02"
+    # top bottom left right (0-1)
+    # → crop manuel zones instables
+fi
 
 ############################
 # IMAGE PREPROCESSING

@@ -14,13 +14,15 @@ NO_PROXY=false
 # PIPELINE SKIP DEFAULTS (from config.sh, overridable by CLI)
 # ======================
 SKIP_FRAME_EXTRACTION=false
-SKIP_COLMAP=false
+SKIP_PREPROCESS=false
 SKIP_TRAINING=false
 SKIP_EXPORT=false
 SKIP_FILTER=false
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+PREPROCESS_PROFILE=""
+GSPLAT_PROFILE=""
 
 source $SCRIPT_DIR/config/config.sh
 
@@ -56,11 +58,12 @@ Options:
   --root                 Root output directory (default: runs/default)
   --num-frames           Number of frames to extract (video mode only)
   --skip-conda           Skip conda environment setup
-  --profile              fast | balanced | quality | best
+  --preprocess-profile   colmap | hloc
+  --gsplat-profile       fast | balanced | quality | best
   --name                 base name of the outputfile
 
   --skip-frame-extraction
-  --skip-colmap
+  --skip-preprocess
   --skip-training
   --skip-export
   --skip-filter
@@ -78,7 +81,8 @@ while [[ $# -gt 0 ]]; do
     --images) IMAGES="$2"; INPUT_MODE="images"; shift 2 ;;
     --num-frames) NUM_FRAMES="$2"; shift 2 ;;
     --fps) FPS="$2"; shift 2 ;;
-    --profile) PROFILE="$2"; shift 2 ;;
+    --preprocess-profile) PREPROCESS_PROFILE="$2"; shift 2 ;;
+    --gsplat-profile) GSPLAT_PROFILE="$2"; shift 2 ;;
     --name) BASENAME="$2"; shift 2 ;;
     --root) ROOT_DIR="$2"; shift 2 ;;
     --skip-conda) SKIP_CONDA=true; shift ;;
@@ -88,7 +92,7 @@ while [[ $# -gt 0 ]]; do
     # PIPELINE OVERRIDES
     # ======================
     --skip-frame-extraction) SKIP_FRAME_EXTRACTION=true; shift ;;
-    --skip-colmap) SKIP_COLMAP=true; shift ;;
+    --skip-preprocess) SKIP_PREPROCESS=true; shift ;;
     --skip-training) SKIP_TRAINING=true; shift ;;
     --skip-export) SKIP_EXPORT=true; shift ;;
     --skip-filter) SKIP_FILTER=true; shift ;;
@@ -146,17 +150,28 @@ case "$INPUT_MODE" in
     ;;
 esac
 
-
-
-if [ -z "$PROFILE" ]; then
-  echo "⚠️  no profile loaded"
+if [ -z "$PREPROCESS_PROFILE" ]; then
+  echo "⚠️  no preprocessing profile loaded"
 else
-  if [ -f "profiles/${PROFILE}.sh" ]; then
-    source profiles/${PROFILE}.sh
-     echo "👉 using profile: ${TRAINING_PROFILE}"
+  if [ -f "profiles/preprocess/${PREPROCESS_PROFILE}.sh" ]; then
+    source profiles/preprocess/${PREPROCESS_PROFILE}.sh
+     echo "👉 using profile: preprocess/${PREPROCESS_PROFILE}"
   else
-    echo "❌  profile ${PROFILE} not found"
-    echo "❌  use profile [gpu|cpu]/fast|quality|balanced|best"
+    echo "❌  profile preprocess/${PREPROCESS_PROFILE} not found"
+    echo "❌  use profil hloc | colmap"
+    exit 1
+  fi
+fi
+
+if [ -z "$GSPLAT_PROFILE" ]; then
+  echo "⚠️  no gsplat profile loaded"
+else
+  if [ -f "profiles/gsplat/${GSPLAT_PROFILE}.sh" ]; then
+    source profiles/gsplat/${GSPLAT_PROFILE}.sh
+     echo "👉 using profile: gsplat/${GSPLAT_PROFILE}"
+  else
+    echo "❌  profile gsplat/${GSPLAT_PROFILE} not found"
+    echo "❌  use profile fast|quality|balanced|best"
     exit 1
   fi
 fi
@@ -417,16 +432,16 @@ case "$INPUT_MODE" in
 esac
 
 # ----------------------
-# 2. COLMAP
+# 2. PREPROCESS
 # ----------------------
-if [ "$SKIP_COLMAP" = true ]; then
-  echo "⏩ Skipping COLMAP (config)"
+if [ "$SKIP_PREPROCESS" = true ]; then
+  echo "⏩ Skipping PREPROCESS (config)"
 elif [ -f "$ORI_DIR/transforms.json" ]; then
-  echo "⏩ Skipping COLMAP"
+  echo "⏩ Skipping PREPROCESS"
 else
     echo ""
     echo ""
-    echo "🧭 Running COLMAP through NerfStudio..."
+    echo "🧭 Running PREPROCESS through NerfStudio..."
 
     DATA_DIR="$IMAGE_DIR" \
     OUTPUT_DIR="$ORI_DIR" \
