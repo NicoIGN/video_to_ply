@@ -156,6 +156,7 @@ else
   if [ -f "profiles/preprocess/${PREPROCESS_PROFILE}.sh" ]; then
     source profiles/preprocess/${PREPROCESS_PROFILE}.sh
      echo "👉 using profile: preprocess/${PREPROCESS_PROFILE}"
+     echo "MATCHING_METHOD=$MATCHING_METHOD
   else
     echo "❌  profile preprocess/${PREPROCESS_PROFILE} not found"
     echo "❌  use profil hloc | colmap"
