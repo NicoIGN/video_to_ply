@@ -220,9 +220,17 @@ fi
 # TRAINING PARAMETERS (NERF CORE)
 ############################
 
-STEPS_PER_SAVE=2000
-STEPS_PER_EVAL_ALL_IMAGES=500
-REFINE_EVERY=100
+if [ -z "${STEPS_PER_SAVE+x}" ]; then
+  STEPS_PER_SAVE=2000
+fi
+
+if [ -z "${STEPS_PER_EVAL_ALL_IMAGES+x}" ]; then
+  STEPS_PER_EVAL_ALL_IMAGES=2000
+fi
+
+if [ -z "${REFINE_EVERY+x}" ]; then
+  REFINE_EVERY=100
+fi
 
 # Nombre total d’itérations d’entraînement
 # → 1 itération = optimisation sur un batch de rayons
