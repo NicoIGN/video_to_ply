@@ -1,5 +1,5 @@
 ########################################
-# PERFORMANCE PROFILE - QUALITY+ (STABLE)
+# PERFORMANCE PROFILE - QUALITY+ (CONTROLLED)
 ########################################
 
 TRAINING_PROFILE="gpu/quality_plus"
@@ -30,25 +30,24 @@ NUM_NERF_SAMPLES_PER_RAY=96
 NUM_PROPOSAL_SAMPLES_PER_RAY="192 96"
 
 ########################################
-# GAUSSIAN SPLATTING (BALANCED)
+# GAUSSIAN SPLATTING (CONTROLLED GROWTH)
 ########################################
 
-# ⚖️ moins permissif → évite explosion de splats
-DENSIFY_GRAD_THRESH=0.0007
+# 🧠 ralentit la surdensification précoce
+DENSIFY_GRAD_THRESH=0.00085
 
-# 🧹 prune plus efficacement le bruit invisible
-CULL_ALPHA_THRESH=0.065
+# 🧹 pruning un peu plus strict pour compenser la densification
+CULL_ALPHA_THRESH=0.07
 
-# 🧽 supprime davantage les gros splats inutiles
-CULL_SCREEN_SIZE=0.34
+# 🧽 nettoie mieux les splats larges (stabilité visuelle)
+CULL_SCREEN_SIZE=0.36
 
-# 🎯 split plus contrôlé → garde détail sans surdensifier
-SPLIT_SCREEN_SIZE=0.012
+# 🎯 split légèrement plus conservateur (évite duplication inutile)
+SPLIT_SCREEN_SIZE=0.011
 
 ########################################
 # EXPORT QUALITY
 ########################################
 
-# ⚠️ aligné avec un budget réaliste de splats
-EXPORT_NUM_POINTS=2000000
+EXPORT_NUM_POINTS=1500000
 EXPORT_DOWNSAMPLE=1
