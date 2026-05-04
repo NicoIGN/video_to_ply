@@ -15,14 +15,24 @@ fi
 IMAGE_DIR="${IMAGE_DIR:-dataset/images}"
 TMP_DIR="${TMP_DIR:-$(dirname "$IMAGE_DIR")/tmp_frames}"
 
-IMAGE_WIDTH="${IMAGE_WIDTH:-1280}"
-IMAGE_HEIGHT="${IMAGE_HEIGHT:-720}"   # 🔥 FIX IMPORTANT : hauteur fixée
+# 0 = keep original video resolution
+IMAGE_WIDTH="${IMAGE_WIDTH:-0}"
+IMAGE_HEIGHT="${IMAGE_HEIGHT:-0}"
 
 FPS="${FPS:-}"
 NUM_FRAMES="${NUM_FRAMES:-}"
 
 BLUR_THRESHOLD="${BLUR_THRESHOLD:-120}"
 DIFF_THRESHOLD="${DIFF_THRESHOLD:-5}"
+
+# ======================
+# SCALE LOGIC
+# ======================
+if [[ "$IMAGE_WIDTH" -ne 0 && "$IMAGE_HEIGHT" -ne 0 ]]; then
+    SCALE_FILTER="scale=${IMAGE_WIDTH}:${IMAGE_HEIGHT},setsar=1,format=rgb24"
+else
+    SCALE_FILTER="setsar=1,format=rgb24"
+fi
 
 # ======================
 # VALIDATION
@@ -58,7 +68,7 @@ if [[ -n "$FPS" ]]; then
 
     ffmpeg -hide_banner -loglevel error -stats \
         -i "$VIDEO" \
-        -vf "fps=$FPS,scale=${IMAGE_WIDTH}:${IMAGE_HEIGHT},setsar=1" \
+        -vf "fps=$FPS,${SCALE_FILTER}" \
         "$IMAGE_DIR/frame_%06d.png"
 
 # ======================
@@ -88,11 +98,11 @@ EOF
     echo "⏱️ Interval: $INTERVAL s"
 
     # ----------------------
-    # FIX IMPORTANT: geometry FIXED
+    # Dense extraction
     # ----------------------
     ffmpeg -hide_banner -loglevel error -stats \
         -i "$VIDEO" \
-        -vf "fps=1/${INTERVAL},scale=${IMAGE_WIDTH}:${IMAGE_HEIGHT},setsar=1,format=rgb24" \
+        -vf "fps=1/${INTERVAL},${SCALE_FILTER}" \
         "$TMP_DIR/frame_%06d.png"
 
     echo "🔎 Filtering (blur + redundancy)..."
@@ -154,9 +164,8 @@ fi
 rm -rf "$TMP_DIR"
 
 # ======================
-# 🔥 FATAL SIZE CHECK (COLMAP SAFE GUARD)
+# 🔥 FATAL SIZE CHECK (COLMAP SAFE)
 # ======================
-
 echo "🔎 Checking image geometry consistency..."
 
 python3 - <<EOF
