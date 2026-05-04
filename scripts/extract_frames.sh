@@ -13,7 +13,14 @@ fi
 # CONFIGURATION
 # ======================
 IMAGE_DIR="${IMAGE_DIR:-dataset/images}"
+TMP_DIR="${TMP_DIR:-dataset/tmp_frames}"
 IMAGE_WIDTH="${IMAGE_WIDTH:-1280}"
+
+FPS="${FPS:-}"
+NUM_FRAMES="${NUM_FRAMES:-}"
+
+BLUR_THRESHOLD="${BLUR_THRESHOLD:-120}"
+DIFF_THRESHOLD="${DIFF_THRESHOLD:-5}" # % difference (ImageMagick)
 
 # ======================
 # VALIDATION
@@ -23,50 +30,29 @@ if [[ ! -f "$VIDEO" ]]; then
     exit 1
 fi
 
-FPS="${FPS:-}"
-NUM_FRAMES="${NUM_FRAMES:-}"
-
-
 if [[ -n "$FPS" && -n "$NUM_FRAMES" ]]; then
-    echo "❌ Please define either FPS ($FPS) or NUM_FRAMES ($NUM_FRAMES), but not both"
+    echo "❌ Define either FPS or NUM_FRAMES, not both"
     exit 1
 fi
 
 if [[ -z "$FPS" && -z "$NUM_FRAMES" ]]; then
-    echo "❌ Please define either FPS or NUM_FRAMES"
+    echo "❌ Define FPS or NUM_FRAMES"
     exit 1
 fi
 
-if [[ -n "$FPS" ]]; then
-    if ! [[ "$FPS" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
-        echo "❌ FPS must be a positive number"
-        exit 1
-    fi
-fi
-
-if [[ -n "$NUM_FRAMES" ]]; then
-    if ! [[ "$NUM_FRAMES" =~ ^[0-9]+$ ]] || [[ "$NUM_FRAMES" -le 0 ]]; then
-        echo "❌ NUM_FRAMES must be a positive integer"
-        exit 1
-    fi
-fi
-
-# ======================
-# PREPARE OUTPUT
-# ======================
 mkdir -p "$IMAGE_DIR"
+mkdir -p "$TMP_DIR"
 rm -f "$IMAGE_DIR"/frame_*.png
+rm -f "$TMP_DIR"/frame_*.png
 
-echo "🎬 Video:   $VIDEO"
-echo "📏 Width:   ${IMAGE_WIDTH}px"
-echo "📁 Output:  $IMAGE_DIR"
+echo "🎬 Video: $VIDEO"
+echo "📁 Output: $IMAGE_DIR"
 
 # ======================
-# EXTRACTION MODE: FPS
+# MODE FPS (simple)
 # ======================
 if [[ -n "$FPS" ]]; then
-    echo "⚙️ Mode:    Fixed FPS"
-    echo "🎞️ FPS:     $FPS"
+    echo "⚙️ Mode: FPS ($FPS)"
 
     ffmpeg -hide_banner -loglevel error -stats \
         -i "$VIDEO" \
@@ -74,46 +60,101 @@ if [[ -n "$FPS" ]]; then
         "$IMAGE_DIR/frame_%05d.png"
 
 # ======================
-# EXTRACTION MODE: SHARP FRAMES
+# MODE SMART NUM_FRAMES
 # ======================
 else
-    echo "⚙️ Mode:    Sharp frame selection"
-    echo "🖼️ Frames:  $NUM_FRAMES"
+    echo "⚙️ Mode: SMART selection ($NUM_FRAMES)"
 
+    # --- duration
     DURATION=$(ffprobe -v error \
         -show_entries format=duration \
         -of default=noprint_wrappers=1:nokey=1 \
         "$VIDEO")
 
-    if [[ -z "$DURATION" ]]; then
-        echo "❌ Failed to read video duration"
-        exit 1
-    fi
+    # --- oversample x2
+    TARGET_TMP=$(python3 - <<EOF
+print(int($NUM_FRAMES * 3))
+EOF
+)
 
     INTERVAL=$(python3 - <<EOF
 duration = float("$DURATION")
-count = int("$NUM_FRAMES")
+count = int("$TARGET_TMP")
 print(duration / count)
 EOF
 )
 
-    echo "⏱️ Duration: ${DURATION}s"
-    echo "📐 Interval: ${INTERVAL}s"
+    echo "📐 Oversampling: $TARGET_TMP frames"
+    echo "⏱️ Interval: $INTERVAL s"
 
+    # --- extraction dense
     ffmpeg -hide_banner -loglevel error -stats \
         -i "$VIDEO" \
-        -vf "fps=1/${INTERVAL},thumbnail=4,scale=${IMAGE_WIDTH}:-1" \
-        -frames:v "$NUM_FRAMES" \
-        "$IMAGE_DIR/frame_%05d.png"
+        -vf "fps=1/${INTERVAL},scale=${IMAGE_WIDTH}:-1" \
+        "$TMP_DIR/frame_%05d.png"
+
+    echo "🔎 Filtering..."
+
+    python3 - <<EOF
+import cv2
+import os
+from glob import glob
+
+tmp_dir = "$TMP_DIR"
+out_dir = "$IMAGE_DIR"
+
+blur_threshold = float("$BLUR_THRESHOLD")
+
+files = sorted(glob(os.path.join(tmp_dir, "*.png")))
+
+selected = []
+last_img = None
+
+def sharpness(img):
+    return cv2.Laplacian(img, cv2.CV_64F).var()
+
+def diff(img1, img2):
+    return cv2.absdiff(img1, img2).mean()
+
+for f in files:
+    img = cv2.imread(f)
+    if img is None:
+        continue
+
+    s = sharpness(img)
+    if s < blur_threshold:
+        continue
+
+    if last_img is not None:
+        d = diff(img, last_img)
+        if d < 2.0:
+            continue
+
+    selected.append((f, s))
+    last_img = img
+
+# sort by sharpness
+selected.sort(key=lambda x: -x[1])
+
+# keep best N
+N = int("$NUM_FRAMES")
+selected = selected[:N]
+
+# restore chronological order
+selected = sorted(selected, key=lambda x: x[0])
+
+for i, (f, _) in enumerate(selected):
+    out = os.path.join(out_dir, f"frame_{i:05d}.png")
+    os.rename(f, out)
+
+print(f"✅ Selected {len(selected)} frames")
+EOF
 fi
+
+rm -rf $TMP_DIR
 
 # ======================
 # SUMMARY
 # ======================
-EXTRACTED=$(find "$IMAGE_DIR" -maxdepth 1 -name 'frame_*.png' | wc -l | tr -d ' ')
-
-echo "✅ Extracted $EXTRACTED frames"
-
-if [[ -n "$NUM_FRAMES" && "$EXTRACTED" -ne "$NUM_FRAMES" ]]; then
-    echo "⚠️ Requested $NUM_FRAMES frames, got $EXTRACTED"
-fi
+COUNT=$(find "$IMAGE_DIR" -name "frame_*.png" | wc -l | tr -d ' ')
+echo "✅ Final frames: $COUNT"

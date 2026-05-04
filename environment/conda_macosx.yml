@@ -1,55 +1,50 @@
 name: gsplat
+
 channels:
+  - pytorch
+  - nvidia
   - conda-forge
 
 dependencies:
-  - python=3.11
+  - python=3.10
   - pip
+
+  # Utilities
   - rclone
   - tree
-  - bash
+  - tqdm
 
-  # 🔧 build
+  # Build tools
   - cmake
   - ninja
 
-  # 🧮 math stable
-  - numpy
-  - scipy
-  - eigen=3
-  - suitesparse
+  # PyTorch + CUDA
+  - pytorch=2.3.1
+  - torchvision=0.18.1
 
-  # 🖼️ vision
+  # Scientific stack
+  - "numpy<2"
+  - scipy
+
+  # IO / Media
   - openimageio
   - ffmpeg
+  - imageio
+  - imageio-ffmpeg
 
-  # 🧊 geometry / SfM stack
-  - colmap=3.8  # au dela, incomaptibilité avec nerfstudio
-  - hloc
-  - cgal
+  # Geometry / SfM
+  - colmap=3.8
   - faiss-cpu
   - plyfile
 
-  # 🖥️ UI
+  # Graphics
   - glew
-  - qt=5
-
-  # system
-  - libiconv
+  - qt-main
 
   - pip:
-      # 🔥 ML stack stable
-      - torch==2.2
-      - torchvision
-      - torchaudio
-
-      # nerfstudio stable
       - nerfstudio==1.1.5
-
-      # COLMAP bindings correct
-      - pycolmap
-
-      # utils
-      - imageio
-      - imageio-ffmpeg
+      - gsplat==1.4.0
+      - pycolmap==3.12.5
+      - fpsample
+      - git+https://github.com/cvg/Hierarchical-Localization.git@v1.4
       - plyfile
