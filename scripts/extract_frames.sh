@@ -20,7 +20,7 @@ FPS="${FPS:-}"
 NUM_FRAMES="${NUM_FRAMES:-}"
 
 BLUR_THRESHOLD="${BLUR_THRESHOLD:-120}"
-DIFF_THRESHOLD="${DIFF_THRESHOLD:-5}" # % difference (ImageMagick)
+DIFF_THRESHOLD="${DIFF_THRESHOLD:-5}"
 
 # ======================
 # VALIDATION
@@ -49,7 +49,7 @@ echo "🎬 Video: $VIDEO"
 echo "📁 Output: $IMAGE_DIR"
 
 # ======================
-# MODE FPS (simple)
+# MODE FPS
 # ======================
 if [[ -n "$FPS" ]]; then
     echo "⚙️ Mode: FPS ($FPS)"
@@ -60,18 +60,16 @@ if [[ -n "$FPS" ]]; then
         "$IMAGE_DIR/frame_%05d.png"
 
 # ======================
-# MODE SMART NUM_FRAMES
+# MODE SMART (COLMAP SAFE)
 # ======================
 else
     echo "⚙️ Mode: SMART selection ($NUM_FRAMES)"
 
-    # --- duration
     DURATION=$(ffprobe -v error \
         -show_entries format=duration \
         -of default=noprint_wrappers=1:nokey=1 \
         "$VIDEO")
 
-    # --- oversample x2
     TARGET_TMP=$(python3 - <<EOF
 print(int($NUM_FRAMES * 3))
 EOF
@@ -87,37 +85,42 @@ EOF
     echo "📐 Oversampling: $TARGET_TMP frames"
     echo "⏱️ Interval: $INTERVAL s"
 
-    # --- extraction dense
+    # ----------------------
+    # 1. DENSE EXTRACTION
+    # ----------------------
     ffmpeg -hide_banner -loglevel error -stats \
         -i "$VIDEO" \
         -vf "fps=1/${INTERVAL},scale=${IMAGE_WIDTH}:-1" \
-        "$TMP_DIR/frame_%05d.png"
+        "$TMP_DIR/frame_%06d.png"
 
-    echo "🔎 Filtering..."
+    echo "🔎 Filtering (blur + redundancy)..."
 
     python3 - <<EOF
-import cv2
 import os
+import cv2
+import shutil
 from glob import glob
 
 tmp_dir = "$TMP_DIR"
 out_dir = "$IMAGE_DIR"
 
+N = int("$NUM_FRAMES")
 blur_threshold = float("$BLUR_THRESHOLD")
+diff_threshold = float("$DIFF_THRESHOLD")
 
 files = sorted(glob(os.path.join(tmp_dir, "*.png")))
-
-selected = []
-last_img = None
 
 def sharpness(img):
     return cv2.Laplacian(img, cv2.CV_64F).var()
 
-def diff(img1, img2):
-    return cv2.absdiff(img1, img2).mean()
+def diff(a, b):
+    return cv2.absdiff(a, b).mean()
+
+candidates = []
+last = None
 
 for f in files:
-    img = cv2.imread(f)
+    img = cv2.imread(f, cv2.IMREAD_GRAYSCALE)
     if img is None:
         continue
 
@@ -125,33 +128,38 @@ for f in files:
     if s < blur_threshold:
         continue
 
-    if last_img is not None:
-        d = diff(img, last_img)
-        if d < 2.0:
+    if last is not None:
+        if diff(img, last) < diff_threshold:
             continue
 
-    selected.append((f, s))
-    last_img = img
+    candidates.append(f)
+    last = img
 
-# sort by sharpness
-selected.sort(key=lambda x: -x[1])
+print(f"📊 Candidates after filtering: {len(candidates)}")
 
-# keep best N
-N = int("$NUM_FRAMES")
-selected = selected[:N]
+# ----------------------
+# IMPORTANT FIX:
+# uniform temporal sampling (preserves geometry)
+# ----------------------
+if len(candidates) > N:
+    step = len(candidates) / N
+    selected = [candidates[int(i * step)] for i in range(N)]
+else:
+    selected = candidates[:N]
 
-# restore chronological order
-selected = sorted(selected, key=lambda x: x[0])
+# ----------------------
+# COPY (NOT RENAME)
+# keeps stable indexing for HLOC / COLMAP
+# ----------------------
+for i, f in enumerate(selected):
+    dst = os.path.join(out_dir, f"frame_{i:06d}.png")
+    shutil.copy2(f, dst)
 
-for i, (f, _) in enumerate(selected):
-    out = os.path.join(out_dir, f"frame_{i:05d}.png")
-    os.rename(f, out)
-
-print(f"✅ Selected {len(selected)} frames")
+print(f"✅ Final selected frames: {len(selected)} (geometry preserved)")
 EOF
 fi
 
-rm -rf $TMP_DIR
+rm -rf "$TMP_DIR"
 
 # ======================
 # SUMMARY
