@@ -23,7 +23,7 @@ Original file is located at
 # export BASENAME="table"
 # 
 # export PREPROCESS_PROFILE="hloc"
-# export GSPLAT_PROFILE="quality"
+# export GSPLAT_PROFILE="best"
 # 
 # EOF
 # 
@@ -106,7 +106,7 @@ mamba run -n gsplat bash run.sh  \
 --num-frames $NUM_FRAMES \
 --no-proxy)
 
-!RUN=1; \
+!RUN=0; \
 [ "$RUN" -eq 0 ] && echo "skipping this stage" || \
  (source /usr/local/miniforge/etc/profile.d/conda.sh && \
 source /content/config.sh && \
