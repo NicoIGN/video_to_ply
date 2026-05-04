@@ -12,17 +12,15 @@ Original file is located at
 # cat << 'EOF' > /content/config.sh
 # #!/bin/bash
 # 
-# export ROOTDIR="/content/motos"
-# export VIDEOSOURCE="gsplat/input/IMG_4806.MOV"
-# export IMAGESET="gsplat/input/perfume/video"
-# export INPUT_MODE="video"
+# export ROOTDIR="/content/statue"
+# export VIDEOSOURCE="gsplat/input/IMG_4812.MOV"
 # 
-# #export NUM_FRAMES=150
-# export FPS=5
+# export NUM_FRAMES=150
+# #export FPS=10
 # 
 # #branche dev
 # export GIT_BRANCH="dev"
-# export BASENAME="motos"
+# export BASENAME="statue"
 # 
 # export PREPROCESS_PROFILE="hloc"
 # export GSPLAT_PROFILE="quality"
@@ -65,36 +63,6 @@ bash Miniconda3-latest-Linux-x86_64.sh -b -p /usr/local/miniconda  && \
 #   else
 #     echo "🎬 Copying video: $SRC_VIDEO"
 #     cp -f "$SRC_VIDEO" "$ROOTDIR/video.mp4"
-#   fi
-# fi
-# 
-# if [ -n "$IMAGESET" ]; then
-#   SRC_IMAGES="/content/drive/MyDrive/$IMAGESET"
-#   DST_IMAGES="$ROOTDIR/images"
-# 
-#   if [ ! -d "$SRC_IMAGES" ]; then
-#     echo "❌ Image dataset not found: $SRC_IMAGES"
-#   else
-#     echo "🖼️ Preparing image dataset: $SRC_IMAGES"
-# 
-#     mkdir -p "$DST_IMAGES"
-# 
-#     COUNT=$(find "$SRC_IMAGES" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) | wc -l | tr -d ' ')
-#     if [ "$COUNT" -lt 2 ]; then
-#       echo "❌ Not enough images ($COUNT)"
-#       exit 1
-#     fi
-# 
-#     rm -f "$DST_IMAGES"/frame_*.png 2>/dev/null || true
-# 
-#     i=1
-#     for img in $(find "$SRC_IMAGES" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) | sort); do
-#       printf -v idx "%05d" "$i"
-#       cp "$img" "$DST_IMAGES/frame_${idx}.png"
-#       i=$((i+1))
-#     done
-# 
-#     echo "✅ Dataset ready in $DST_IMAGES"
 #   fi
 # fi
 
@@ -142,7 +110,7 @@ mamba run -n gsplat bash run.sh  \
 --video $ROOTDIR/video.mp4  \
 --preprocess-profile "$PREPROCESS_PROFILE" \
 --gsplat-profile "$GSPLAT_PROFILE" \
---fps $FPS \
+--num-frames $NUM_FRAMES \
 --skip-conda \
 --skip-filter \
 --no-proxy

@@ -69,7 +69,7 @@ if [[ -n "$FPS" ]]; then
     ffmpeg -hide_banner -loglevel error -stats \
         -i "$VIDEO" \
         -vf "fps=$FPS,${SCALE_FILTER}" \
-        "$IMAGE_DIR/frame_%06d.png"
+        "$IMAGE_DIR/frame_%05d.png"
 
 # ======================
 # MODE SMART
@@ -103,7 +103,7 @@ EOF
     ffmpeg -hide_banner -loglevel error -stats \
         -i "$VIDEO" \
         -vf "fps=1/${INTERVAL},${SCALE_FILTER}" \
-        "$TMP_DIR/frame_%06d.png"
+        "$TMP_DIR/frame_%05d.png"
 
     echo "🔎 Filtering (blur + redundancy)..."
 
