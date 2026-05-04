@@ -13,7 +13,7 @@ fi
 # CONFIGURATION
 # ======================
 IMAGE_DIR="${IMAGE_DIR:-dataset/images}"
-TMP_DIR="${TMP_DIR:-dataset/tmp_frames}"
+TMP_DIR="${TMP_DIR:-$(dirname "$IMAGE_DIR")/tmp_frames}"
 
 IMAGE_WIDTH="${IMAGE_WIDTH:-1280}"
 IMAGE_HEIGHT="${IMAGE_HEIGHT:-720}"   # 🔥 FIX IMPORTANT : hauteur fixée
