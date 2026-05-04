@@ -12,41 +12,25 @@ Original file is located at
 # cat << 'EOF' > /content/config.sh
 # #!/bin/bash
 # 
-# export ROOTDIR="/content/statue"
-# export VIDEOSOURCE="gsplat/input/IMG_4812.MOV"
+# export ROOTDIR="/content/table"
+# export VIDEOSOURCE="gsplat/input/IMG_4811.MOV"
 # 
 # export NUM_FRAMES=150
-# #export FPS=10
+# export FPS=4
 # 
 # #branche dev
 # export GIT_BRANCH="dev"
-# export BASENAME="statue"
+# export BASENAME="table"
 # 
 # export PREPROCESS_PROFILE="hloc"
 # export GSPLAT_PROFILE="quality"
 # 
 # EOF
-
-!cat /content/config.sh
+# 
+# cat /content/config.sh
 
 from google.colab import drive
 drive.mount('/content/drive')
-
-!wget -q https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
-!bash Miniforge3-Linux-x86_64.sh -b -p /usr/local/miniforge
-
-# activer conda pour cette session notebook
-import os
-os.environ["PATH"] = "/usr/local/miniforge/bin:" + os.environ["PATH"]
-
-!conda --version
-
-!RUN=0; \
-[ "$RUN" -eq 0 ] && echo "skipping this stage" || \
-(wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
-chmod +x Miniconda3-latest-Linux-x86_64.sh  && \
-bash Miniconda3-latest-Linux-x86_64.sh -b -p /usr/local/miniconda  && \
-/usr/local/miniconda/bin/conda init bash)
 
 # Commented out IPython magic to ensure Python compatibility.
 # %%bash
@@ -66,6 +50,15 @@ bash Miniconda3-latest-Linux-x86_64.sh -b -p /usr/local/miniconda  && \
 #   fi
 # fi
 
+!wget -q https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
+!bash Miniforge3-Linux-x86_64.sh -b -p /usr/local/miniforge
+
+# activer conda pour cette session notebook
+import os
+os.environ["PATH"] = "/usr/local/miniforge/bin:" + os.environ["PATH"]
+
+!conda --version
+
 # Commented out IPython magic to ensure Python compatibility.
 !git clone https://github.com/NicoIGN/video_to_ply.git
 # %cd video_to_ply
@@ -75,10 +68,6 @@ bash Miniconda3-latest-Linux-x86_64.sh -b -p /usr/local/miniconda  && \
 # cd /content/video_to_ply
 # source /content/config.sh
 # git stash save && git checkout $GIT_BRANCH && git pull
-
-!RUN=0; \
-[ "$RUN" -eq 0 ] && echo "skipping this stage" || \
-( source /usr/local/miniforge/etc/profile.d/conda.sh && mamba env remove -y -n gsplat )
 
 !source /usr/local/miniforge/etc/profile.d/conda.sh && \
 mamba env list | grep -q gsplat && \
@@ -101,42 +90,37 @@ mamba env create -n gsplat -f environment/conda_colab.yml -y
 #     echo "SuperGluePretrainedNetwork already installed."
 # fi
 
-!source /usr/local/miniforge/etc/profile.d/conda.sh && \
+!RUN=1; \
+[ "$RUN" -eq 0 ] && echo "skipping this stage" || \
+ (source /usr/local/miniforge/etc/profile.d/conda.sh && \
 source /content/config.sh && \
 cd /content/video_to_ply/ && \
 mamba run -n gsplat bash run.sh  \
 --root "$ROOTDIR" \
 --name "$BASENAME" \
 --video $ROOTDIR/video.mp4  \
+--skip-conda \
+--skip-filter \
 --preprocess-profile "$PREPROCESS_PROFILE" \
 --gsplat-profile "$GSPLAT_PROFILE" \
 --num-frames $NUM_FRAMES \
+--no-proxy)
+
+!RUN=1; \
+[ "$RUN" -eq 0 ] && echo "skipping this stage" || \
+ (source /usr/local/miniforge/etc/profile.d/conda.sh && \
+source /content/config.sh && \
+cd /content/video_to_ply/ && \
+mamba run -n gsplat bash run.sh  \
+--root "$ROOTDIR" \
+--name "$BASENAME" \
+--video $ROOTDIR/video.mp4  \
 --skip-conda \
 --skip-filter \
---no-proxy
-
-!source /usr/local/miniforge/etc/profile.d/conda.sh &&  source /content/config.sh && mamba run -n gsplat tree /content/$BASENAME/model3d
-
-!RUN=0; \
-[ "$RUN" -eq 0 ] && echo "skipping this stage" || \
-( source /usr/local/miniforge/etc/profile.d/conda.sh && \
-  source /content/config.sh && \
-  cd /content/video_to_ply/ && \
-  INPUT_ARG="" && \
-  if [ "$INPUT_MODE" = "images" ] && [ -n "$IMAGESET" ]; then \
-    INPUT_ARG="--images $ROOTDIR/images --name $BASENAME"; \
-  elif [ "$INPUT_MODE" = "video" ] && [ -n "$VIDEOSOURCE" ]; then \
-    INPUT_ARG="--video $ROOTDIR/video.mp4 --name $BASENAME"; \
-  fi && \
-  mamba run -n gsplat bash run.sh $INPUT_ARG \
-    --root "$ROOTDIR" \
-    --skip-conda \
-    --profile "$PROFILE" \
-    --no-proxy \
-    --skip-conda \
-    --skip-frame-extraction \
-    --skip-colmap \
-    --skip-training )
+--preprocess-profile "$PREPROCESS_PROFILE" \
+--gsplat-profile "$GSPLAT_PROFILE" \
+--fps $FPS \
+--no-proxy)
 
 from google.colab import files
 import os
@@ -190,55 +174,3 @@ if os.path.exists(training_config):
     files.download(training_config)
 else:
     print(f"⚠️ Config not found: {training_config}")
-
-from google.colab import files
-import os
-import subprocess
-import glob
-
-# =========================
-# LOAD CONFIG.SH VARIABLES
-# =========================
-result = subprocess.run(
-    "source /content/config.sh && env",
-    shell=True,
-    executable="/bin/bash",
-    capture_output=True,
-    text=True,
-)
-
-for line in result.stdout.splitlines():
-    if "=" in line:
-        key, value = line.split("=", 1)
-        os.environ[key] = value
-
-# =========================
-# CONFIG
-# =========================
-rootdir = os.environ.get("ROOTDIR", "/content/work")
-export_dir = os.path.join(rootdir, "exports")
-basename = os.environ.get("BASENAME", "")
-
-if not basename:
-    print("❌ BASENAME is not set")
-    raise SystemExit(1)
-
-# =========================
-# FIND FILTERED PLYS
-# =========================
-filtered_plys = sorted(
-    glob.glob(os.path.join(export_dir, f"{basename}_*.ply"))
-)
-
-# =========================
-# EXPORT FILTERED PLYS
-# =========================
-if not filtered_plys:
-    print("⚠️ No filtered PLY files found.")
-    print(f"📂 Searched: {export_dir}")
-else:
-    print(f"📦 Found {len(filtered_plys)} filtered PLY file(s)")
-
-    for ply_path in filtered_plys:
-        print(f"⬇️ Downloading filtered PLY: {os.path.basename(ply_path)}")
-        files.download(ply_path)

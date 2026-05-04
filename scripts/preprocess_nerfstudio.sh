@@ -167,16 +167,36 @@ fi
 # COLMAP COVERAGE CHECK
 # ======================
 if [ -f "$PROCESS_LOG" ]; then
-  # Cas 1 : Nerfstudio affiche un pourcentage explicite
+
+  COLMAP_PERCENT=""
+
+  # ======================
+  # Cas 1 : ancien format partiel
+  # ======================
   COLMAP_PERCENT=$(grep "COLMAP only found poses" "$PROCESS_LOG" \
     | grep -oE '[0-9]+(\.[0-9]+)?' \
     | tail -n 1)
 
-  # Cas 2 : HLOC/Nerfstudio a trouvé toutes les poses
+  # ======================
+  # Cas 2 : all images
+  # ======================
   if grep -q "COLMAP found poses for all images" "$PROCESS_LOG"; then
     COLMAP_PERCENT="100"
   fi
 
+  # ======================
+  # Cas 3 : percentage of poses
+  # ex: COLMAP found poses for 98.67% of the images
+  # ======================
+  if [ -z "$COLMAP_PERCENT" ]; then
+    COLMAP_PERCENT=$(grep -Eo "COLMAP found poses for [0-9]+(\.[0-9]+)?%" "$PROCESS_LOG" \
+      | grep -Eo "[0-9]+(\.[0-9]+)?" \
+      | tail -n 1)
+  fi
+
+  # ======================
+  # VALIDATION
+  # ======================
   if [ -n "$COLMAP_PERCENT" ]; then
     echo "📊 COLMAP pose coverage: ${COLMAP_PERCENT}%"
 

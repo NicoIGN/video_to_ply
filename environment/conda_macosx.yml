@@ -8,6 +8,8 @@ channels:
 dependencies:
   - python=3.10
   - pip
+  - bash=4
+  - wget
 
   # Utilities
   - rclone

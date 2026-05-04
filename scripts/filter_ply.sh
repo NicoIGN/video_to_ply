@@ -5,17 +5,24 @@ set -euo pipefail
 # Gaussian Splat PLY Cleaner (SCALE-INVARIANT PIPELINE)
 # ============================================================
 
-
 : "${PLY_FILE:?PLY_FILE is required}"
 : "${EXPORT_DIR:?EXPORT_DIR is required}"
 : "${BASENAME:?BASENAME is required}"
 
 SKIP_FILTER="${SKIP_FILTER:-false}"
-LEVELS="${LEVELS:-minimal balanced}"
 
-IFS=' ' read -r -a SELECTED_LEVELS <<< "$LEVELS"
+# 🔥 INPUT utilisateur (env)
+REQUESTED_LEVELS_STR="${LEVELS:-minimal balanced}"
 
+# parsing safe
+read -r -a REQUESTED_LEVELS <<< "$REQUESTED_LEVELS_STR"
 
+echo "🔎 Requested levels raw : $REQUESTED_LEVELS_STR"
+echo "🔎 Parsed levels        : ${REQUESTED_LEVELS[*]}"
+
+# ======================
+# INPUT CHECK
+# ======================
 if [[ ! -f "$PLY_FILE" ]]; then
     echo "❌ PLY file not found: $PLY_FILE"
     exit 1
@@ -32,7 +39,6 @@ echo "   TO  : $FINAL_PLY"
 cp -f "$PLY_FILE" "$FINAL_PLY"
 PLY_FILE="$FINAL_PLY"
 
-
 if [[ "$SKIP_FILTER" == "true" ]]; then
   echo "⏩ Skipping filter (config)"
   exit 0
@@ -45,12 +51,22 @@ echo ""
 # CLEANING LEVELS
 # ======================
 
-LEVELS=(
+# 🔒 niveaux disponibles (interne)
+AVAILABLE_LEVELS=(
     minimal
     balanced
     strong
     aggressive
 )
+
+# validation
+for LEVEL in "${REQUESTED_LEVELS[@]}"; do
+    if [[ ! " ${AVAILABLE_LEVELS[*]} " =~ " ${LEVEL} " ]]; then
+        echo "❌ Invalid LEVEL: $LEVEL"
+        echo "Allowed levels: ${AVAILABLE_LEVELS[*]}"
+        exit 1
+    fi
+done
 
 # KNN complexity
 declare -A K=(
@@ -84,8 +100,6 @@ declare -A MIN_NEIGHBORS=(
 )
 
 # SPLAT SIZE FILTER
-# Relative to local median scale.
-# 0 = disabled.
 declare -A MAX_RELATIVE_SCALE=(
     [minimal]=0
     [balanced]=8.0
@@ -99,9 +113,14 @@ declare -A MAX_RELATIVE_SCALE=(
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-for LEVEL in "${SELECTED_LEVELS[@]}"; do
-    [ "$LEVEL" != "minimal" ] && [ "$LEVEL" != "balanced" ] && continue
-    
+for LEVEL in "${REQUESTED_LEVELS[@]}"; do
+
+    # sécurité set -u
+    if [[ -z "${K[$LEVEL]:-}" ]]; then
+        echo "❌ Internal error: missing config for level '$LEVEL'"
+        exit 1
+    fi
+
     echo ""
     echo "🚀 =============================="
     echo "🚀 CLEAN LEVEL: $LEVEL"
