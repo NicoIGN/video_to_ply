@@ -14,7 +14,9 @@ fi
 # ======================
 IMAGE_DIR="${IMAGE_DIR:-dataset/images}"
 TMP_DIR="${TMP_DIR:-dataset/tmp_frames}"
+
 IMAGE_WIDTH="${IMAGE_WIDTH:-1280}"
+IMAGE_HEIGHT="${IMAGE_HEIGHT:-720}"   # 🔥 FIX IMPORTANT : hauteur fixée
 
 FPS="${FPS:-}"
 NUM_FRAMES="${NUM_FRAMES:-}"
@@ -56,11 +58,11 @@ if [[ -n "$FPS" ]]; then
 
     ffmpeg -hide_banner -loglevel error -stats \
         -i "$VIDEO" \
-        -vf "fps=$FPS,scale=${IMAGE_WIDTH}:-1" \
-        "$IMAGE_DIR/frame_%05d.png"
+        -vf "fps=$FPS,scale=${IMAGE_WIDTH}:${IMAGE_HEIGHT},setsar=1" \
+        "$IMAGE_DIR/frame_%06d.png"
 
 # ======================
-# MODE SMART (COLMAP SAFE)
+# MODE SMART
 # ======================
 else
     echo "⚙️ Mode: SMART selection ($NUM_FRAMES)"
@@ -86,11 +88,11 @@ EOF
     echo "⏱️ Interval: $INTERVAL s"
 
     # ----------------------
-    # 1. DENSE EXTRACTION
+    # FIX IMPORTANT: geometry FIXED
     # ----------------------
     ffmpeg -hide_banner -loglevel error -stats \
         -i "$VIDEO" \
-        -vf "fps=1/${INTERVAL},scale=${IMAGE_WIDTH}:-1" \
+        -vf "fps=1/${INTERVAL},scale=${IMAGE_WIDTH}:${IMAGE_HEIGHT},setsar=1,format=rgb24" \
         "$TMP_DIR/frame_%06d.png"
 
     echo "🔎 Filtering (blur + redundancy)..."
@@ -124,42 +126,65 @@ for f in files:
     if img is None:
         continue
 
-    s = sharpness(img)
-    if s < blur_threshold:
+    if sharpness(img) < blur_threshold:
         continue
 
-    if last is not None:
-        if diff(img, last) < diff_threshold:
-            continue
+    if last is not None and diff(img, last) < diff_threshold:
+        continue
 
     candidates.append(f)
     last = img
 
-print(f"📊 Candidates after filtering: {len(candidates)}")
+print(f"📊 Candidates: {len(candidates)}")
 
-# ----------------------
-# IMPORTANT FIX:
-# uniform temporal sampling (preserves geometry)
-# ----------------------
 if len(candidates) > N:
     step = len(candidates) / N
     selected = [candidates[int(i * step)] for i in range(N)]
 else:
     selected = candidates[:N]
 
-# ----------------------
-# COPY (NOT RENAME)
-# keeps stable indexing for HLOC / COLMAP
-# ----------------------
 for i, f in enumerate(selected):
     dst = os.path.join(out_dir, f"frame_{i:06d}.png")
     shutil.copy2(f, dst)
 
-print(f"✅ Final selected frames: {len(selected)} (geometry preserved)")
+print(f"✅ Selected frames: {len(selected)}")
 EOF
 fi
 
 rm -rf "$TMP_DIR"
+
+# ======================
+# 🔥 FATAL SIZE CHECK (COLMAP SAFE GUARD)
+# ======================
+
+echo "🔎 Checking image geometry consistency..."
+
+python3 - <<EOF
+import cv2
+import glob
+import sys
+from collections import Counter
+
+files = glob.glob("$IMAGE_DIR/frame_*.png")
+sizes = []
+
+for f in files:
+    img = cv2.imread(f)
+    if img is None:
+        print("❌ corrupted image:", f)
+        sys.exit(1)
+    sizes.append((img.shape[1], img.shape[0]))  # (W, H)
+
+c = Counter(sizes)
+
+if len(c) != 1:
+    print("❌ FATAL: inconsistent image sizes detected:")
+    for k, v in c.items():
+        print(f"  size {k}: {v} images")
+    sys.exit(1)
+
+print(f"✅ All images have consistent size: {list(c.keys())[0]}")
+EOF
 
 # ======================
 # SUMMARY
