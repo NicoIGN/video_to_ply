@@ -332,7 +332,7 @@ OUTPUT_DIR="$ROOT_DIR/model3d"
 EXPORT_DIR="$ROOT_DIR/exports"
 TRAIN_DIR="$ROOT_DIR"
 
-mkdir -p "$INPUT_DIR" "$IMAGE_DIR" "$OUTPUT_DIR" "$EXPORT_DIR" "$TRAIN_DIR"
+mkdir -p "$INPUT_DIR/images" "$IMAGE_DIR" "$OUTPUT_DIR" "$EXPORT_DIR" "$TRAIN_DIR"
 
 # copy input dataset
 case "$INPUT_MODE" in
@@ -391,19 +391,19 @@ case "$INPUT_MODE" in
     if [ "$SKIP_FRAME_EXTRACTION" = true ]; then
       echo "⏩ Skipping frame extraction (config)"
 
-    elif [ -d "$IMAGE_DIR" ] && [ "$(ls -A "$IMAGE_DIR" 2>/dev/null)" ]; then
+    elif [ -d "$INPUT_DIR/images" ] && [ "$(ls -A "$INPUT_DIR/images" 2>/dev/null)" ]; then
       echo "⏩ Skipping frame extraction"
     else
       if [[ -n "${FPS:-}" ]]; then
-        echo "🎬 Extracting frames at ${FPS} FPS → $IMAGE_DIR"
+        echo "🎬 Extracting frames at ${FPS} FPS → $INPUT_DIR/images"
         FPS="$FPS" \
-        IMAGE_DIR="$IMAGE_DIR" \
+        IMAGE_DIR="$INPUT_DIR/images" \
         VIDEO="$VIDEO" \
         bash scripts/extract_frames.sh
       else
-        echo "🎬 Extracting $NUM_FRAMES sharp frames → $IMAGE_DIR"
+        echo "🎬 Extracting $NUM_FRAMES sharp frames → $INPUT_DIR/images"
         NUM_FRAMES="$NUM_FRAMES" \
-        IMAGE_DIR="$IMAGE_DIR" \
+        IMAGE_DIR="$INPUT_DIR/images" \
         VIDEO="$VIDEO" \
         bash scripts/extract_frames.sh
       fi
@@ -418,11 +418,11 @@ case "$INPUT_MODE" in
 
     if [ "$SKIP_FRAME_EXTRACTION" = true ]; then
       echo "⏩ Skipping image preparation (config)"
-    elif [ -d "$IMAGE_DIR" ] && [ "$(ls -A "$IMAGE_DIR" 2>/dev/null)" ]; then
+    elif [ -d "$INPUT_DIR/images" ] && [ "$(ls -A "$INPUT_DIR/images" 2>/dev/null)" ]; then
       echo "⏩ Skipping image preparation"
     else
-      echo "🖼️ Preparing images → $IMAGE_DIR"
-      bash scripts/prepare_images.sh "$IMAGES" "$IMAGE_DIR"
+      echo "🖼️ Preparing images → $INPUT_DIR/images"
+      bash scripts/prepare_images.sh "$IMAGES" "$INPUT_DIR/images"
     fi
     ;;
 
@@ -444,7 +444,7 @@ else
     echo ""
     echo "🧭 Running PREPROCESS through NerfStudio..."
 
-    DATA_DIR="$IMAGE_DIR" \
+    DATA_DIR="$INPUT_DIR/images" \
     OUTPUT_DIR="$ORI_DIR" \
     DEVICE="$DEVICE" \
     CAMERA_TYPE="$CAMERA_TYPE" \
