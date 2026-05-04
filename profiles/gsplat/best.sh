@@ -24,7 +24,7 @@ MAX_JOBS=2
 ########################################
 
 MAX_ITER=20000
-REFINE_EVERY=1000
+REFINE_EVERY=400
 TRAIN_RAYS_PER_BATCH=768
 
 NUM_NERF_SAMPLES_PER_RAY=96
@@ -35,10 +35,10 @@ NUM_PROPOSAL_SAMPLES_PER_RAY="192 96"
 ########################################
 
 # 🧠 freine fortement la densification (évite explosion précoce)
-DENSIFY_GRAD_THRESH=0.0015
+DENSIFY_GRAD_THRESH=0.003
 
 # 🧹 pruning agressif → élimine rapidement bruit et splats faibles
-CULL_ALPHA_THRESH=0.09
+CULL_ALPHA_THRESH=0.15
 
 # 🧽 nettoie franchement les gros splats parasites
 CULL_SCREEN_SIZE=0.42
