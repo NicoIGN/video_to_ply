@@ -33,17 +33,17 @@ NUM_PROPOSAL_SAMPLES_PER_RAY="192 96"
 # GAUSSIAN SPLATTING (CONTROLLED GROWTH)
 ########################################
 
-# 🧠 ralentit la surdensification précoce
-DENSIFY_GRAD_THRESH=0.00085
+# 🧠 freine fortement la densification (évite explosion précoce)
+DENSIFY_GRAD_THRESH=0.0015
 
-# 🧹 pruning un peu plus strict pour compenser la densification
-CULL_ALPHA_THRESH=0.07
+# 🧹 pruning agressif → élimine rapidement bruit et splats faibles
+CULL_ALPHA_THRESH=0.09
 
-# 🧽 nettoie mieux les splats larges (stabilité visuelle)
-CULL_SCREEN_SIZE=0.36
+# 🧽 nettoie franchement les gros splats parasites
+CULL_SCREEN_SIZE=0.42
 
-# 🎯 split légèrement plus conservateur (évite duplication inutile)
-SPLIT_SCREEN_SIZE=0.011
+# 🎯 split très conservateur → limite duplication massive
+SPLIT_SCREEN_SIZE=0.008
 
 ########################################
 # EXPORT QUALITY
