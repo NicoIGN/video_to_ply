@@ -157,16 +157,20 @@ fi
 if [ -z "${FEATURE_TYPE+x}" ]; then
     FEATURE_TYPE="any"
     # sift | superpoint | superpoint_aachen | disk | r2d2 | any
-    # → superpoint/disk = meilleur pour scènes complexes
-    # → disk incompatible avec COLMAP pur
+    # → sift = COLMAP pur (robuste mais limité sur scènes peu texturées)
+    # → superpoint / disk = meilleurs pour scènes difficiles (indoor, faible texture)
+    # → disk souvent plus performant sur surfaces pauvres (table, objets)
+    # ⚠️ superpoint/disk nécessitent HLOC (pas compatibles COLMAP pur)
 fi
 
 if [ -z "${MATCHER_TYPE+x}" ]; then
     MATCHER_TYPE="any"
-    # NN | NN-mutual | superglue | superglue-fast
-    # lightglue | disk+lightglue | any
-    # → superglue/lightglue = meilleurs matches
-    # → incompatibles avec COLMAP pur, nécessitent HLOC
+    # NN | NN-mutual | superglue | superglue-fast | lightglue | disk+lightglue | any
+    # → NN / NN-mutual = matching classique (COLMAP pur)
+    # → superglue = très précis mais plus lent (HLOC)
+    # → lightglue = plus rapide et souvent plus robuste (recommandé)
+    # → disk+lightglue = combo très performant pour scènes peu texturées
+    # ⚠️ superglue / lightglue nécessitent HLOC (pas compatibles COLMAP pur)
 fi
 
 ############################
