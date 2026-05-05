@@ -503,7 +503,6 @@ else
     USE_SCALE_REGULARIZATION="$USE_SCALE_REGULARIZATION" \
     SSIM_LAMBDA="$SSIM_LAMBDA" \
     MAX_GAUSSIANS="$MAX_GAUSSIANS" \
-
     bash scripts/train.sh
   fi
 fi
