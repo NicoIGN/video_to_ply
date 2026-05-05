@@ -27,14 +27,14 @@ CAMERA_TYPE="perspective"
 # FEATURE / MATCHING (COLMAP / HLOC)
 ############################
 
-FEATURE_TYPE="superpoint"
+FEATURE_TYPE="superpoint_aachen"
 # sift | superpoint | superpoint_aachen | disk | r2d2 | any
 # → sift = COLMAP pur (robuste mais limité sur scènes peu texturées)
 # → superpoint / disk = meilleurs pour scènes difficiles (indoor, faible texture)
 # → disk souvent plus performant sur surfaces pauvres (table, objets)
 # ⚠️ superpoint/disk nécessitent HLOC (pas compatibles COLMAP pur)
 
-MATCHER_TYPE="lightglue"
+MATCHER_TYPE="superpoint+lightglue"
 # NN | NN-mutual | superglue | superglue-fast | lightglue | disk+lightglue | any
 # → NN / NN-mutual = matching classique (COLMAP pur)
 # → superglue = très précis mais plus lent (HLOC)
