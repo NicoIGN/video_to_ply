@@ -133,7 +133,7 @@ if [ -z "${MATCHING_METHOD+x}" ]; then
 fi
 
 if [ -z "${NUM_DOWNSCALES+x}" ]; then
-    NUM_DOWNSCALES=2
+    NUM_DOWNSCALES=0
     # 0 | 1 | 2 | 3
     # → plus haut = moins de détails mais plus stable
 fi
