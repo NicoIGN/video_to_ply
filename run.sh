@@ -157,7 +157,7 @@ else
     source profiles/preprocess/${PREPROCESS_PROFILE}.sh
      echo "👉 using profile: preprocess/${PREPROCESS_PROFILE}"
   else
-    echo "❌  profile preprocess/${PREPROCESS_PROFILE} not found"
+    echo "❌  profile preprocess/${PREPROCESS_PROFILE}.sh not found"
     echo "❌  use profil hloc | colmap"
     exit 1
   fi
