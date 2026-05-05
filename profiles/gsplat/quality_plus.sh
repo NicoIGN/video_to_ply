@@ -1,8 +1,8 @@
 ########################################
-# PERFORMANCE PROFILE - QUALITY ONLY
+# PERFORMANCE PROFILE - QUALITY STABLE
 ########################################
 
-TRAINING_PROFILE="gpu/quality_plus"
+TRAINING_PROFILE="gpu/quality_stable_4Mcap"
 
 DEVICE="gpu"
 MODEL="splatfacto"
@@ -23,32 +23,56 @@ MAX_JOBS=2
 # TRAINING
 ########################################
 
-MAX_ITER=20000
-REFINE_EVERY=200
+MAX_ITER=18000
+REFINE_EVERY=300
 TRAIN_RAYS_PER_BATCH=512
 
 NUM_NERF_SAMPLES_PER_RAY=64
 NUM_PROPOSAL_SAMPLES_PER_RAY="128 64"
 
 ########################################
-# GAUSSIAN SPLATTING
+# GAUSSIAN SPLATTING - STABILITY FIRST
 ########################################
 
-# densification (plus stable en high-res training)
-DENSIFY_GRAD_THRESH=0.002
+# densification plus stricte → évite explosion
+DENSIFY_GRAD_THRESH=0.0035
 
-# keep fine structures longer (better thin geometry / edges)
-CULL_ALPHA_THRESH=0.08
+# supprime plus agressivement les faibles contributions
+CULL_ALPHA_THRESH=0.12
 
-# slightly more aggressive pruning of oversized splats
-CULL_SCREEN_SIZE=0.3
+# évite accumulation de petits splats visibles
+CULL_SCREEN_SIZE=0.18
 
-# earlier splitting for higher geometric precision
-SPLIT_SCREEN_SIZE=0.015
+# split plus contrôlé (évite cascade)
+SPLIT_SCREEN_SIZE=0.03
+
+# stop split plus tôt → stabilise la structure
+STOP_SPLIT_AT=8000
+
+########################################
+# HARD STABILITY LIMITS (IMPORTANT)
+########################################
+
+# contrôle indirect de la croissance
+MAX_GAUSS_RATIO=5
+
+# évite formes trop extrêmes
+CULL_SCALE_THRESH=0.5
+
+# empêche explosion tardive
+RESET_ALPHA_EVERY=30
+
+########################################
+# QUALITY / REGULARIZATION
+########################################
+
+SSIM_LAMBDA=0.2
+USE_SCALE_REGULARIZATION=true
+MAX_GAUSS_RATIO=5
 
 ########################################
 # EXPORT QUALITY
 ########################################
 
-EXPORT_NUM_POINTS=2500000
+EXPORT_NUM_POINTS=3500000
 EXPORT_DOWNSAMPLE=1

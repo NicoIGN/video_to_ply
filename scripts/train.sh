@@ -225,20 +225,31 @@ fi
 # ======================
 if [[ "$DEVICE" == "gpu" ]]; then
 
-  DEVICE_ARGS=(
-    --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
-    --pipeline.datamanager.cache-images gpu
-    --pipeline.datamanager.images-on-gpu True
-    --pipeline.datamanager.masks-on-gpu False
-    --pipeline.model.densify-grad-thresh $DENSIFY_GRAD_THRESH
-    --pipeline.model.cull-alpha-thresh $CULL_ALPHA_THRESH
-    --pipeline.model.cull-screen-size $CULL_SCREEN_SIZE
-    --pipeline.model.split-screen-size $SPLIT_SCREEN_SIZE
-    --pipeline.model.refine-every $REFINE_EVERY
-        # ✨ Quality improvements
-    --pipeline.model.use-bilateral-grid True
-    --pipeline.model.use-scale-regularization True
-  )
+    DEVICE_ARGS=(
+      --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
+      --pipeline.datamanager.cache-images gpu
+      --pipeline.datamanager.images-on-gpu True
+      --pipeline.datamanager.masks-on-gpu False
+
+      --pipeline.model.densify-grad-thresh $DENSIFY_GRAD_THRESH
+      --pipeline.model.cull-alpha-thresh $CULL_ALPHA_THRESH
+      --pipeline.model.cull-screen-size $CULL_SCREEN_SIZE
+      --pipeline.model.split-screen-size $SPLIT_SCREEN_SIZE
+      --pipeline.model.refine-every $REFINE_EVERY
+
+      # ✨ Quality improvements
+      --pipeline.model.use-bilateral-grid True
+      --pipeline.model.use-scale-regularization True
+      --pipeline.model.max-gauss-ratio $MAX_GAUSS_RATIO
+
+      # 🧠 Stability & anti-explosion controls
+      --pipeline.model.stop-split-at $STOP_SPLIT_AT
+      --pipeline.model.cull-scale-thresh $CULL_SCALE_THRESH
+      --pipeline.model.reset-alpha-every $RESET_ALPHA_EVERY
+
+      # 📊 Rendering / perceptual quality
+      --pipeline.model.ssim-lambda $SSIM_LAMBDA
+    )
 
 elif [[ "$DEVICE" == "cpu" ]]; then
 
