@@ -24,6 +24,7 @@ MAX_JOBS=2
 ########################################
 
 MAX_ITER=20000
+REFINE_EVERY=200
 TRAIN_RAYS_PER_BATCH=512
 
 NUM_NERF_SAMPLES_PER_RAY=64
