@@ -12,7 +12,7 @@ MATCHING_METHOD="vocab_tree"
 # → vocab_tree = bon compromis
 # → sequential = vidéo uniquement
 
-NUM_DOWNSCALES=2
+NUM_DOWNSCALES=0
 # 0 | 1 | 2 | 3
 # → + haut = moins de détails mais plus stable
 
