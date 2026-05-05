@@ -60,18 +60,24 @@ mkdir -p "$EXPORT_DIR"
 # ======================
 # ZIP RUN DIRECTORY
 # ======================
-echo "📦 Zipping run directory directly to export: $RUN_DIR"
 ZIP_PATH="$EXPORT_DIR/${RUN_NAME}.zip"
-rm -f "$ZIP_PATH"
 
-(
-  cd "$(dirname "$RUN_DIR")" && \
-  zip -r "$ZIP_PATH" "$RUN_NAME" > /dev/null
-)
+if [ -f "$ZIP_PATH" ]; then
+  echo "⏭️ Zip already exists, skipping: $ZIP_PATH"
+else
+  echo "📦 Zipping run directory directly to export: $RUN_DIR"
 
-if [ ! -f "$ZIP_PATH" ]; then
-  echo "❌ Failed to create zip archive in export dir"
-  exit 1
+  (
+    cd "$(dirname "$RUN_DIR")" && \
+    zip -r "$ZIP_PATH" "$RUN_NAME" > /dev/null
+  )
+
+  if [ -f "$ZIP_PATH" ]; then
+    echo "✅ Archive created: $ZIP_PATH"
+  else
+    echo "❌ Failed to create zip archive in export dir"
+    exit 1
+  fi
 fi
 
 echo "✅ Archive created: $ZIP_PATH"

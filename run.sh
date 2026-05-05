@@ -558,14 +558,20 @@ else
       exit 1
     fi
     
-    #copie du config
-    CONFIG_FILE="$OUTPUT_DIR/config.yml"
+    # ======================
+    # TRANSFER ARCHIVE OF THE TRAINING TO EXPORT_DIR
+    # ======================
+    LATEST_ZIP=$(ls -t "$OUTPUT_DIR"/*.zip 2>/dev/null | head -n 1)
 
-    if [ -f "$CONFIG_FILE" ]; then
-      cp "$CONFIG_FILE" "$EXPORT_DIR/"
-      echo "📄 Copied config.yml to $EXPORT_DIR"
+    if [ -z "$LATEST_ZIP" ]; then
+      echo "⚠️ No .zip file found in $OUTPUT_DIR"
     else
-      echo "⚠️ config.yml not found in $OUTPUT_DIR"
+      mv "$LATEST_ZIP" "$EXPORT_DIR/" && \
+      if [ -f "$EXPORT_DIR/$(basename "$LATEST_ZIP")" ]; then
+        echo "📦 Moved $(basename "$LATEST_ZIP") to $EXPORT_DIR"
+      else
+        echo "❌ Failed to move $(basename "$LATEST_ZIP")" >&2
+      fi
     fi
 fi
 
