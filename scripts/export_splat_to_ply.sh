@@ -43,13 +43,25 @@ if [ -z "$RUN_DIR" ]; then
 fi
 
 RUN_NAME=$(basename "$RUN_DIR")
-ZIP_PATH="$EXPORT_DIR/${RUN_NAME}.zip"
+
+# ======================
+# CONFIG
+# ======================
+CONFIG="$RUN_DIR/config.yml"
+
+if [ ! -f "$CONFIG" ]; then
+  echo "❌ config.yml not found:"
+  echo "$RUN_DIR"
+  exit 1
+fi
+
+mkdir -p "$EXPORT_DIR"
 
 # ======================
 # ZIP RUN DIRECTORY
 # ======================
 echo "📦 Zipping run directory directly to export: $RUN_DIR"
-
+ZIP_PATH="$EXPORT_DIR/${RUN_NAME}.zip"
 rm -f "$ZIP_PATH"
 
 (
