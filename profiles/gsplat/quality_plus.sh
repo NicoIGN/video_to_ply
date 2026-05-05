@@ -35,19 +35,19 @@ NUM_PROPOSAL_SAMPLES_PER_RAY="128 64"
 ########################################
 
 # densification plus stricte → évite explosion
-DENSIFY_GRAD_THRESH=0.0035
+DENSIFY_GRAD_THRESH=0.0025
 
 # supprime plus agressivement les faibles contributions
 CULL_ALPHA_THRESH=0.12
 
 # évite accumulation de petits splats visibles
-CULL_SCREEN_SIZE=0.18
+CULL_SCREEN_SIZE=0.15
 
 # split plus contrôlé (évite cascade)
-SPLIT_SCREEN_SIZE=0.03
+SPLIT_SCREEN_SIZE=0.025
 
 # stop split plus tôt → stabilise la structure
-STOP_SPLIT_AT=8000
+STOP_SPLIT_AT=10000
 
 ########################################
 # HARD STABILITY LIMITS (IMPORTANT)
