@@ -1,8 +1,8 @@
 ########################################
-# PERFORMANCE PROFILE - QUALITY+ (CONTROLLED)
+# PERFORMANCE PROFILE - QUALITY ONLY
 ########################################
 
-TRAINING_PROFILE="gpu/best"
+TRAINING_PROFILE="gpu/quality_plus"
 
 DEVICE="gpu"
 MODEL="splatfacto"
@@ -14,8 +14,8 @@ TRAIN_VIS_MODE="tensorboard"
 ########################################
 
 CAMERA_RES_SCALE_FACTOR=1.0
-MAX_RES=1536
-NUM_DOWNSCALES=0
+MAX_RES=1024
+NUM_DOWNSCALES=1
 SKIP_IMAGE_PROCESSING=true
 MAX_JOBS=2
 
@@ -24,31 +24,30 @@ MAX_JOBS=2
 ########################################
 
 MAX_ITER=20000
-REFINE_EVERY=400
-TRAIN_RAYS_PER_BATCH=768
+TRAIN_RAYS_PER_BATCH=512
 
-NUM_NERF_SAMPLES_PER_RAY=96
-NUM_PROPOSAL_SAMPLES_PER_RAY="192 96"
+NUM_NERF_SAMPLES_PER_RAY=64
+NUM_PROPOSAL_SAMPLES_PER_RAY="128 64"
 
 ########################################
-# GAUSSIAN SPLATTING (CONTROLLED GROWTH)
+# GAUSSIAN SPLATTING
 ########################################
 
-# 🧠 freine fortement la densification (évite explosion précoce)
-DENSIFY_GRAD_THRESH=0.003
+# densification (plus stable en high-res training)
+DENSIFY_GRAD_THRESH=0.002
 
-# 🧹 pruning agressif → élimine rapidement bruit et splats faibles
-CULL_ALPHA_THRESH=0.15
+# keep fine structures longer (better thin geometry / edges)
+CULL_ALPHA_THRESH=0.08
 
-# 🧽 nettoie franchement les gros splats parasites
-CULL_SCREEN_SIZE=0.42
+# slightly more aggressive pruning of oversized splats
+CULL_SCREEN_SIZE=0.3
 
-# 🎯 split très conservateur → limite duplication massive
-SPLIT_SCREEN_SIZE=0.008
+# earlier splitting for higher geometric precision
+SPLIT_SCREEN_SIZE=0.015
 
 ########################################
 # EXPORT QUALITY
 ########################################
 
-EXPORT_NUM_POINTS=1500000
+EXPORT_NUM_POINTS=2500000
 EXPORT_DOWNSAMPLE=1

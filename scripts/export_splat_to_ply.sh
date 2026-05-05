@@ -42,25 +42,27 @@ if [ -z "$RUN_DIR" ]; then
   exit 1
 fi
 
-# ======================
-# CONFIG
-# ======================
-CONFIG="$RUN_DIR/config.yml"
+RUN_NAME=$(basename "$RUN_DIR")
+ZIP_PATH="$EXPORT_DIR/${RUN_NAME}.zip"
 
-if [ ! -f "$CONFIG" ]; then
-  echo "❌ config.yml not found:"
-  echo "$RUN_DIR"
+# ======================
+# ZIP RUN DIRECTORY
+# ======================
+echo "📦 Zipping run directory directly to export: $RUN_DIR"
+
+rm -f "$ZIP_PATH"
+
+(
+  cd "$(dirname "$RUN_DIR")" && \
+  zip -r "$ZIP_PATH" "$RUN_NAME" > /dev/null
+)
+
+if [ ! -f "$ZIP_PATH" ]; then
+  echo "❌ Failed to create zip archive in export dir"
   exit 1
 fi
 
-mkdir -p "$EXPORT_DIR"
-
-cp "$CONFIG" "$EXPORT_DIR" && \
-if [ -f "$EXPORT_DIR/$(basename "$CONFIG")" ]; then
-  echo "✅ Configuration copied: $EXPORT_DIR/$(basename "$CONFIG")"
-else
-  echo "❌ Failed to copy configuration: $(basename "$CONFIG")" >&2
-fi
+echo "✅ Archive created: $ZIP_PATH"
 
 echo "────────────────────────────────────────────"
 echo "📦 SPLAT ROOT      : $SPLAT_ROOT"
