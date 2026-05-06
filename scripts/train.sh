@@ -255,11 +255,14 @@ if [[ "$DEVICE" == "gpu" ]]; then
       # 📊 Rendering / perceptual quality
       --pipeline.model.ssim-lambda $SSIM_LAMBDA
       
-      --pipeline.model.collider-params.near_plane $COLLIDER_NEAR
-      --pipeline.model.collider-params.far_plane $COLLIDER_FAR
       --pipeline.model.enable-collider $ENABLE_COLLIDER
     )
-
+    
+    if [[ "$ENABLE_COLLIDER" == "True" ]]; then
+          DEVICE_ARGS+=(
+            --pipeline.model.collider-params near_plane "$COLLIDER_NEAR" far_plane "$COLLIDER_FAR"
+          )
+    fi
 
 elif [[ "$DEVICE" == "cpu" ]]; then
 
