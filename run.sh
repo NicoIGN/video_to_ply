@@ -481,7 +481,7 @@ if [ ! -f "$ESTIMATE_SCRIPT" ]; then
   exit 1
 fi
 
-EST_OUTPUT=$(python "$ESTIMATE_SCRIPT" "$COLMAP_DIR")
+EST_OUTPUT=$(python3 "$ESTIMATE_SCRIPT" --input "$COLMAP_DIR")
 
 NEAR=$(echo "$EST_OUTPUT" | grep NEAR | cut -d= -f2)
 FAR=$(echo "$EST_OUTPUT" | grep FAR  | cut -d= -f2)
