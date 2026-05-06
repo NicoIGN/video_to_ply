@@ -26,7 +26,7 @@ MAX_JOBS=2
 ########################################
 
 # ⚠️ CRITIQUE (temps de densification)
-MAX_ITER=12000
+MAX_ITER=6000
 
 # ⚠️ CRITIQUE (qualité du gradient)
 TRAIN_RAYS_PER_BATCH=512
