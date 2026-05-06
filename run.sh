@@ -461,7 +461,34 @@ else
 fi
 
 # ----------------------
-# 2.5 ESTIMATE NEAR / FAR FROM COLMAP
+# 3. ZIP COLMAP DATA
+# ----------------------
+
+echo ""
+echo "🗜️ Zipping COLMAP directory from ORI_DIR..."
+
+COLMAP_ZIP_NAME="colmap.zip"
+COLMAP_ZIP_PATH="$ORI_DIR/$COLMAP_ZIP_NAME"
+
+mkdir -p "$EXPORT_DIR"
+
+(
+  cd "$ORI_DIR"
+  zip -r "$COLMAP_ZIP_NAME" "colmap" > /dev/null
+)
+
+if [ ! -f "$COLMAP_ZIP_PATH" ]; then
+  echo "❌ Failed to create zip archive"
+  exit 1
+fi
+
+mv "$COLMAP_ZIP_PATH" "$EXPORT_DIR/"
+
+echo "✅ COLMAP zipped and moved:"
+echo "   $EXPORT_DIR/$COLMAP_ZIP_NAME"
+
+# ----------------------
+# 4 ESTIMATE NEAR / FAR FROM COLMAP
 # ----------------------
 
 COLMAP_DIR="$ORI_DIR/colmap/sparse/0"
@@ -502,7 +529,7 @@ export COLLIDER_FAR="$FAR"
 export ENABLE_COLLIDER="True"
 
 # ----------------------
-# 3. TRAIN
+# 5. TRAIN
 # ----------------------
 
 if [ "$SKIP_TRAINING" = true ]; then
@@ -552,7 +579,7 @@ else
 fi
 
 # ----------------------
-# 4. EXPORT
+# 6. EXPORT
 # ----------------------
 
 if [[ "$SKIP_EXPORT" == "true" ]]; then
@@ -626,7 +653,7 @@ else
 fi
 
 # ======================
-# 5. CLEAN PLY
+# 7. CLEAN PLY
 # ======================
 
 echo "🧹 Removing filtered Gaussian Splat files..."
@@ -648,10 +675,14 @@ else
 fi
 
 echo "📦 Source PLY: $PLY_FILE"
+$
 
-PLY_FILE="$PLY_FILE" \
-EXPORT_DIR="$EXPORT_DIR" \
-BASENAME="$BASENAME" \
-SKIP_FILTER="$SKIP_FILTER" \
-bash "$SCRIPT_DIR/scripts/filter_ply.sh"
-
+if [[ "$SKIP_FILTER" == "true" ]]; then
+  cp "$PLY_FILE" "$EXPORT_DIR"
+else
+  PLY_FILE="$PLY_FILE" \
+  EXPORT_DIR="$EXPORT_DIR" \
+  BASENAME="$BASENAME" \
+  SKIP_FILTER="$SKIP_FILTER" \
+  bash "$SCRIPT_DIR/scripts/filter_ply.sh"
+fi

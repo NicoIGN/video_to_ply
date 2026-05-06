@@ -1,5 +1,5 @@
 ########################################
-# PERFORMANCE PROFILE - QUALITY ONLY
+# PERFORMANCE PROFILE - QUALITY STABLE
 ########################################
 
 TRAINING_PROFILE="gpu/quality"
@@ -15,6 +15,7 @@ TRAIN_VIS_MODE="tensorboard"
 
 CAMERA_RES_SCALE_FACTOR=1.0
 MAX_RES=1024
+
 NUM_DOWNSCALES=1
 SKIP_IMAGE_PROCESSING=true
 MAX_JOBS=2
@@ -23,31 +24,56 @@ MAX_JOBS=2
 # TRAINING
 ########################################
 
-MAX_ITER=8000
+# + long mais pas inutilement
+if [ -z "${MAX_ITER+x}" ]; then
+  MAX_ITER=7000
+fi
+
+# compromis bruit / stabilité
 TRAIN_RAYS_PER_BATCH=512
 
-NUM_NERF_SAMPLES_PER_RAY=64
-NUM_PROPOSAL_SAMPLES_PER_RAY="128 64"
+# meilleur signal géométrique
+NUM_NERF_SAMPLES_PER_RAY=48
+NUM_PROPOSAL_SAMPLES_PER_RAY="96 48"
 
 ########################################
-# GAUSSIAN SPLATTING
+# GAUSSIAN SPLATTING (QUALITY CONTROLLED)
 ########################################
 
-# densification (plus stable en high-res training)
-DENSIFY_GRAD_THRESH=0.001
+# 🔥 DENSIFICATION (équilibrée)
+DENSIFY_GRAD_THRESH=0.0007
+# (plus bas que ton quality → permet split utile, sans explosion)
 
-# keep fine structures longer (better thin geometry / edges)
-CULL_ALPHA_THRESH=0.05
+# 🧹 CLEANING (garde le détail fin)
+CULL_ALPHA_THRESH=0.06
 
-# slightly more aggressive pruning of oversized splats
-CULL_SCREEN_SIZE=0.25
+# 📏 SPATIAL CONTROL (évite blobs)
+CULL_SCREEN_SIZE=0.22
+SPLIT_SCREEN_SIZE=0.018
 
-# earlier splitting for higher geometric precision
-SPLIT_SCREEN_SIZE=0.015
+# ⚡ FREQUENCY (clé pour qualité propre)
+REFINE_EVERY=200
+
+# 🛑 STOP split avant bruit
+STOP_SPLIT_AT=6500
+
+# 🧠 STABILISATION
+RESET_ALPHA_EVERY=35
+CULL_SCALE_THRESH=0.45
+
+########################################
+# QUALITY / REGULARIZATION
+########################################
+
+USE_BILATERAL_GRID=true
+USE_SCALE_REGULARIZATION=true
+
+MAX_GAUSS_RATIO=3.5
+SSIM_LAMBDA=0.3
 
 ########################################
 # EXPORT QUALITY
 ########################################
 
-EXPORT_NUM_POINTS=2500000
+EXPORT_NUM_POINTS=1500000
 EXPORT_DOWNSAMPLE=1

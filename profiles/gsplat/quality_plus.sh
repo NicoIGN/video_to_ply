@@ -1,8 +1,8 @@
 ########################################
-# PERFORMANCE PROFILE - QUALITY STABLE
+# PERFORMANCE PROFILE - QUALITY PRO
 ########################################
 
-TRAINING_PROFILE="gpu/quality_stable_4Mcap"
+TRAINING_PROFILE="gpu/quality_plus"
 
 DEVICE="gpu"
 MODEL="splatfacto"
@@ -15,6 +15,7 @@ TRAIN_VIS_MODE="tensorboard"
 
 CAMERA_RES_SCALE_FACTOR=1.0
 MAX_RES=2048
+
 NUM_DOWNSCALES=0
 SKIP_IMAGE_PROCESSING=true
 MAX_JOBS=2
@@ -23,56 +24,60 @@ MAX_JOBS=2
 # TRAINING
 ########################################
 
-MAX_ITER=18000
-REFINE_EVERY=200
+MAX_ITER=16000
+
+# ⚡ plus fréquent au début → meilleur détail
+REFINE_EVERY=150
+
 TRAIN_RAYS_PER_BATCH=512
 
 NUM_NERF_SAMPLES_PER_RAY=64
 NUM_PROPOSAL_SAMPLES_PER_RAY="128 64"
 
 ########################################
-# GAUSSIAN SPLATTING - STABILITY FIRST
+# GAUSSIAN SPLATTING (DETAIL FIRST)
 ########################################
 
-# densification plus stricte → évite explosion
-DENSIFY_GRAD_THRESH=0.002
+# 🔥 clé : ton 0.002 est trop haut
+DENSIFY_GRAD_THRESH=0.0009
 
-# supprime plus agressivement les faibles contributions
-CULL_ALPHA_THRESH=0.12
+# garde structures fines plus longtemps
+CULL_ALPHA_THRESH=0.07
 
-# évite accumulation de petits splats visibles
-CULL_SCREEN_SIZE=0.15
+# évite blobs mais sans tuer détails
+CULL_SCREEN_SIZE=0.20
 
-# split plus contrôlé (évite cascade)
-SPLIT_SCREEN_SIZE=0.025
+# split plus fin (important pour 2K)
+SPLIT_SCREEN_SIZE=0.018
 
-# stop split plus tôt → stabilise la structure
-STOP_SPLIT_AT=10000
+# laisse vivre la géométrie plus longtemps
+STOP_SPLIT_AT=14000
 
 ########################################
-# HARD STABILITY LIMITS (IMPORTANT)
+# STABILITY CONTROL (SMART)
 ########################################
 
-# contrôle indirect de la croissance
-MAX_GAUSS_RATIO=5
+# réduit dérive sans bloquer
+RESET_ALPHA_EVERY=40
 
-# évite formes trop extrêmes
-CULL_SCALE_THRESH=0.5
+# moins agressif que ton 0.5
+CULL_SCALE_THRESH=0.45
 
-# empêche explosion tardive
-RESET_ALPHA_EVERY=30
+# IMPORTANT : ton double MAX_GAUSS_RATIO était inutile
+MAX_GAUSS_RATIO=4.0
 
 ########################################
 # QUALITY / REGULARIZATION
 ########################################
 
-SSIM_LAMBDA=0.2
 USE_SCALE_REGULARIZATION=true
-MAX_GAUSS_RATIO=5
+
+# un peu plus fort → améliore sharpness perçue
+SSIM_LAMBDA=0.3
 
 ########################################
 # EXPORT QUALITY
 ########################################
 
-EXPORT_NUM_POINTS=3500000
+EXPORT_NUM_POINTS=3000000
 EXPORT_DOWNSAMPLE=1
