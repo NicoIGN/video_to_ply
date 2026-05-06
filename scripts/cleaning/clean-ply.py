@@ -2,6 +2,7 @@ import numpy as np
 import argparse
 import os
 import struct
+import json
 from scipy.spatial import cKDTree
 from plyfile import PlyData, PlyElement
 
@@ -28,9 +29,22 @@ def safe_read(f, size):
 
 
 # ======================
-# COLMAP LOADER (CLEAN + FINITE ONLY)
+# TRANSFORM
 # ======================
-def load_colmap_points(path, max_points=4_000_000):
+def apply_transform(pts, transform, scale=1.0):
+    R = np.array(transform[:3, :3], dtype=np.float64)
+    t = np.array(transform[:3, 3], dtype=np.float64)
+
+    pts = (pts @ R.T) + t
+    pts = pts * scale
+
+    return pts
+
+
+# ======================
+# COLMAP LOADER
+# ======================
+def load_colmap_points(path, transform, scale, max_points=4_000_000):
     if not os.path.isfile(path):
         raise FileNotFoundError(path)
 
@@ -51,12 +65,7 @@ def load_colmap_points(path, max_points=4_000_000):
                 track_len = struct.unpack("<Q", safe_read(f, 8))[0]
                 f.seek(track_len * 8, 1)
 
-                # HARD CLEAN
-                if (
-                    np.isfinite(x) and
-                    np.isfinite(y) and
-                    np.isfinite(z)
-                ):
+                if np.isfinite(x) and np.isfinite(y) and np.isfinite(z):
                     pts[idx] = (x, y, z)
                     idx += 1
 
@@ -72,25 +81,16 @@ def load_colmap_points(path, max_points=4_000_000):
     if len(pts) == 0:
         raise ValueError("No valid COLMAP points")
 
-    # FINAL CLEAN (IMPORTANT FIX FOR KDTree)
-    mask = np.isfinite(pts).all(axis=1)
-    pts = pts[mask]
+    # 🔥 APPLY TRANSFORM + SCALE
+    pts = apply_transform(pts, transform, scale)
 
-    log(f"Valid COLMAP points: {len(pts)}")
-
-    bbox_min = pts.min(axis=0)
-    bbox_max = pts.max(axis=0)
-
-    log("📦 COLMAP BBOX:")
-    log(f"  min: {bbox_min}")
-    log(f"  max: {bbox_max}")
-    log(f"  size: {bbox_max - bbox_min}")
+    log(f"Valid COLMAP points (transformed): {len(pts)}")
 
     return pts
 
 
 # ======================
-# RADIUS ESTIMATION
+# RADIUS
 # ======================
 def estimate_radius(pts, factor=3.0):
     n = min(5000, len(pts))
@@ -103,7 +103,7 @@ def estimate_radius(pts, factor=3.0):
 
 
 # ======================
-# LOAD PLY (PLYFILE SAFE)
+# LOAD PLY
 # ======================
 def load_ply(path):
     ply = PlyData.read(path)
@@ -117,7 +117,7 @@ def load_ply(path):
 
 
 # ======================
-# FILTER (FAST KDTree)
+# FILTER
 # ======================
 def filter_gaussians(gaussians, colmap_pts, dist, batch=200000):
     tree = cKDTree(colmap_pts)
@@ -127,30 +127,26 @@ def filter_gaussians(gaussians, colmap_pts, dist, batch=200000):
     for i in range(0, len(gaussians), batch):
         g = gaussians[i:i+batch]
 
-        # safety
         valid = np.isfinite(g).all(axis=1)
         if not np.any(valid):
             continue
 
         d, _ = tree.query(g[valid], k=1)
 
-        mask_idx = np.where(valid)[0]
+        idx_valid = np.where(valid)[0]
         mask[i:i+batch][valid] = d < dist
 
     return mask
 
 
 # ======================
-# WRITE PLY PROPERLY
+# WRITE PLY
 # ======================
 def write_ply(template_ply, mask, out_path):
     vertex = template_ply["vertex"].data
     new_vertex = vertex[mask]
 
-    PlyData(
-        [PlyElement.describe(new_vertex, "vertex")],
-        text=False
-    ).write(out_path)
+    PlyData([PlyElement.describe(new_vertex, "vertex")], text=False).write(out_path)
 
 
 # ======================
@@ -161,41 +157,57 @@ def main():
 
     parser.add_argument("--in-ply", required=True)
     parser.add_argument("--points", required=True)
+    parser.add_argument("--transform", required=True)  # JSON now
     parser.add_argument("--dist", type=float, default=None)
     parser.add_argument("--out-ply", required=True)
 
     args = parser.parse_args()
 
-    log("Loading COLMAP...")
-    colmap_pts = load_colmap_points(args.points)
+    # ======================
+    # LOAD TRANSFORM JSON
+    # ======================
+    log(f"Loading transform: {args.transform}")
+    with open(args.transform, "r") as f:
+        data = json.load(f)
 
-    log("Loading PLY...")
+    transform = np.array(data["transform"], dtype=np.float64)
+    scale = float(data.get("scale", 1.0))
+
+    # ======================
+    # LOAD COLMAP
+    # ======================
+    log(f"Loading COLMAP points from: {args.points}")
+    colmap_pts = load_colmap_points(args.points, transform, scale)
+
+    # ======================
+    # LOAD PLY
+    # ======================
+    log(f"Loading PLY from: {args.in_ply}")
     gaussians, ply, ply_mask = load_ply(args.in_ply)
-    
-# ======================
-# PLY BBOX (DEBUG)
-# ======================
-    bbox_min = np.min(gaussians, axis=0)
-    bbox_max = np.max(gaussians, axis=0)
-    bbox_size = bbox_max - bbox_min
-    bbox_center = (bbox_min + bbox_max) * 0.5
-
-    log("📦 PLY BBOX:")
-    log(f"  min: {bbox_min}")
-    log(f"  max: {bbox_max}")
-    log(f"  size: {bbox_size}")
-    log(f"  center: {bbox_center}")
 
     log(f"Gaussians: {len(gaussians)}")
 
+    bbox_min = gaussians.min(axis=0)
+    bbox_max = gaussians.max(axis=0)
+    log(f"PLY bbox: {bbox_min} → {bbox_max}")
+
+    # ======================
+    # RADIUS
+    # ======================
     dist = args.dist or estimate_radius(colmap_pts)
     log(f"Radius: {dist:.4f}")
 
+    # ======================
+    # FILTER
+    # ======================
     log("Filtering...")
     mask = filter_gaussians(gaussians, colmap_pts, dist)
 
     log(f"Remaining: {mask.sum()}")
 
+    # ======================
+    # WRITE
+    # ======================
     write_ply(ply, mask, args.out_ply)
 
     log(f"Saved: {args.out_ply}")
