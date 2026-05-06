@@ -1,6 +1,39 @@
 #!/bin/bash
 set -e
 
+# ======================
+# TIMING UTILS
+# ======================
+
+SCRIPT_START=$(date +%s)
+
+format_duration() {
+  local seconds=$1
+
+  local h=$((seconds / 3600))
+  local m=$(((seconds % 3600) / 60))
+  local s=$((seconds % 60))
+
+  if [ $h -gt 0 ]; then
+    printf "%02dh %02dm %02ds" "$h" "$m" "$s"
+  elif [ $m -gt 0 ]; then
+    printf "%02dm %02ds" "$m" "$s"
+  else
+    printf "%02ds" "$s"
+  fi
+}
+
+print_step_time() {
+  local label="$1"
+  local start_ts="$2"
+
+  local end_ts=$(date +%s)
+  local elapsed=$((end_ts - start_ts))
+
+  echo ""
+  echo "⏱️  ${label} completed in $(format_duration "$elapsed")"
+  echo ""
+}
 
 # ======================
 # DEFAULTS
@@ -385,6 +418,8 @@ echo "📦 ROOT: $ROOT_DIR"
 # ----------------------
 # 1. INPUT PREPARATION
 # ----------------------
+STEP_START=$(date +%s)
+
 case "$INPUT_MODE" in
   video)
     if [ "$SKIP_FRAME_EXTRACTION" = true ]; then
@@ -431,6 +466,8 @@ case "$INPUT_MODE" in
     ;;
 esac
 
+print_step_time "INPUT PREPARATION" "$STEP_START"
+
 # ----------------------
 # 2. PREPROCESS
 # ----------------------
@@ -442,6 +479,7 @@ else
     echo ""
     echo ""
     echo "🧭 Running PREPROCESS through NerfStudio..."
+    STEP_START=$(date +%s)
 
     DATA_DIR="$INPUT_DIR/images" \
     OUTPUT_DIR="$ORI_DIR" \
@@ -458,6 +496,8 @@ else
     REFINE_INTRINSICS="$REFINE_INTRINSICS" \
     CROP_FACTOR="$CROP_FACTOR" \
     bash scripts/preprocess_nerfstudio.sh
+    
+    print_step_time "PREPROCESS" "$STEP_START"
 fi
 
 # ----------------------
@@ -544,6 +584,8 @@ else
     echo ""
     echo "🧠 Training..."
   
+    STEP_START=$(date +%s)
+  
     MODEL="$MODEL" \
     MODEL_IMPLEMENTATION="$MODEL_IMPLEMENTATION" \
     DEVICE="$DEVICE" \
@@ -575,6 +617,8 @@ else
     COLLIDER_FAR="$COLLIDER_FAR" \
     ENABLE_COLLIDER="$ENABLE_COLLIDER" \
     bash scripts/train.sh
+    
+    print_step_time "TRAINING" "$STEP_START"
   fi
 fi
 
@@ -595,7 +639,8 @@ else
   fi
 
     echo "🚀 Exporting model in $EXPORT_DIR..."
-
+    STEP_START=$(date +%s)
+    
     case "$MODEL" in
       *nerfacto*)
         echo "📦 Exporting Nerfacto point cloud (.ply)..."
@@ -622,7 +667,7 @@ else
         ;;
     esac
     
-    
+
     # ======================
     # VALIDATION
     # ======================
@@ -630,6 +675,7 @@ else
 
     if [[ -f "$PLY_FILE" ]]; then
       echo "✅ PLY export successful: $PLY_FILE"
+      print_step_time "EXPORT" "$STEP_START"
     else
       echo "❌ PLY export failed"
       exit 1
@@ -679,9 +725,11 @@ echo "📦 Source PLY: $PLY_FILE"
 if [[ "$SKIP_FILTER" == "true" ]]; then
   cp "$PLY_FILE" "$EXPORT_DIR/${BASENAME}.ply"
 else
+  STEP_START=$(date +%s)
   PLY_FILE="$PLY_FILE" \
   EXPORT_DIR="$EXPORT_DIR" \
   BASENAME="$BASENAME" \
   SKIP_FILTER="$SKIP_FILTER" \
   bash "$SCRIPT_DIR/scripts/filter_ply.sh"
+  print_step_time "CLEAN PLY" "$STEP_START"
 fi
