@@ -36,39 +36,39 @@ NUM_NERF_SAMPLES_PER_RAY=32
 NUM_PROPOSAL_SAMPLES_PER_RAY="64 32"
 
 ########################################
-# GAUSSIAN SPLATTING
+# GAUSSIAN SPLATTING (REDUCED SPLATS)
 ########################################
 
-# 🔥 DENSIFICATION (plus agressif mais contrôlé)
-DENSIFY_GRAD_THRESH=0.0003
+# 🔥 DENSIFICATION (moins agressif)
+DENSIFY_GRAD_THRESH=0.00045   # ↑ moins de split
 
-# 🧹 Nettoyage (équilibre densification)
-CULL_ALPHA_THRESH=0.08
+# 🧹 CLEANING (plus strict)
+CULL_ALPHA_THRESH=0.12        # ↑ supprime plus tôt les splats faibles
 
-# 📏 Contrôle spatial
-CULL_SCREEN_SIZE=0.2
-SPLIT_SCREEN_SIZE=0.015
+# 📏 SPATIAL CONTROL (réduction explosion)
+CULL_SCREEN_SIZE=0.25         # ↑ plus agressif en screen-space
+SPLIT_SCREEN_SIZE=0.02        # ↑ moins de split fin
 
-# ⚡ Fréquence de raffinement (clé)
-REFINE_EVERY=200
+# ⚡ DENSIFICATION FREQUENCY (moins de croissance)
+REFINE_EVERY=300              # ↑ réduit création de nouveaux splats
 
-# 🛑 Stop explosion tardive
-STOP_SPLIT_AT=8000
+# 🛑 STOP SPLIT PLUS TÔT
+STOP_SPLIT_AT=6000            # ↓ stop plus tôt (important)
 
-# 🧠 Stabilisation
-RESET_ALPHA_EVERY=50
-CULL_SCALE_THRESH=0.6
+# 🧠 STABILISATION (évite accumulation de bruit)
+RESET_ALPHA_EVERY=40          # ↑ nettoyage plus fréquent
+CULL_SCALE_THRESH=0.5         # ↓ supprime petits clusters instables
 
 ########################################
 # QUALITY / REGULARIZATION
 ########################################
 
+
 USE_BILATERAL_GRID=true
 USE_SCALE_REGULARIZATION=true
-MAX_GAUSS_RATIO=5.0
 
-# 🎨 Meilleure qualité perceptuelle
-SSIM_LAMBDA=0.2
+MAX_GAUSS_RATIO=4.0          # ↓ limite taille splats
+SSIM_LAMBDA=0.25             # léger boost stabilité image (optionnel)
 
 ########################################
 # EXPORT BALANCED
