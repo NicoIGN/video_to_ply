@@ -466,37 +466,40 @@ fi
 
 COLMAP_DIR="$ORI_DIR/colmap/sparse/0"
 
-if [ -d "$COLMAP_DIR" ]; then
-  echo ""
-  echo "📏 Estimating near/far planes from COLMAP..."
-
-  ESTIMATE_SCRIPT="$SCRIPT_DIR/scripts/estimate_planes.py"
-
-  if [ ! -f "$ESTIMATE_SCRIPT" ]; then
-    echo "⚠️ Missing script: $ESTIMATE_SCRIPT"
-  else
-    EST_OUTPUT=$(python "$ESTIMATE_SCRIPT" "$COLMAP_DIR")
-
-    NEAR=$(echo "$EST_OUTPUT" | grep NEAR | cut -d= -f2)
-    FAR=$(echo "$EST_OUTPUT" | grep FAR  | cut -d= -f2)
-
-    if [[ -n "$NEAR" && -n "$FAR" ]]; then
-      echo "✅ Estimated:"
-      echo "   near = $NEAR"
-      echo "   far  = $FAR"
-
-      export COLLIDER_NEAR="$NEAR"
-      export COLLIDER_FAR="$FAR"
-      export ENABLE_COLLIDER="True"
-    else
-      echo "⚠️ Failed to parse near/far → fallback"
-      export ENABLE_COLLIDER="False"
-    fi
-  fi
-else
-  echo "⚠️ COLMAP directory not found → skipping collider estimation"
-  export ENABLE_COLLIDER="False"
+if [ ! -d "$COLMAP_DIR" ]; then
+  echo "❌ COLMAP directory not found: $COLMAP_DIR"
+  exit 1
 fi
+
+echo ""
+echo "📏 Estimating near/far planes from COLMAP..."
+
+ESTIMATE_SCRIPT="$SCRIPT_DIR/scripts/estimate_planes.py"
+
+if [ ! -f "$ESTIMATE_SCRIPT" ]; then
+  echo "❌ Missing script: $ESTIMATE_SCRIPT"
+  exit 1
+fi
+
+EST_OUTPUT=$(python "$ESTIMATE_SCRIPT" "$COLMAP_DIR")
+
+NEAR=$(echo "$EST_OUTPUT" | grep NEAR | cut -d= -f2)
+FAR=$(echo "$EST_OUTPUT" | grep FAR  | cut -d= -f2)
+
+# validation minimale
+if [[ -z "$NEAR" || -z "$FAR" || "$NEAR" == "nan" || "$FAR" == "nan" ]]; then
+  echo "❌ Invalid near/far values"
+  echo "$EST_OUTPUT"
+  exit 1
+fi
+
+echo "✅ Estimated:"
+echo "   near = $NEAR"
+echo "   far  = $FAR"
+
+export COLLIDER_NEAR="$NEAR"
+export COLLIDER_FAR="$FAR"
+export ENABLE_COLLIDER="True"
 
 # ----------------------
 # 3. TRAIN
