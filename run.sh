@@ -467,7 +467,7 @@ fi
 echo ""
 echo "🗜️ Zipping COLMAP directory from ORI_DIR..."
 
-COLMAP_ZIP_NAME="colmap.zip"
+COLMAP_ZIP_NAME="colmap_${BASENAME}.zip"
 COLMAP_ZIP_PATH="$ORI_DIR/$COLMAP_ZIP_NAME"
 
 mkdir -p "$EXPORT_DIR"
