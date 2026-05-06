@@ -4,21 +4,14 @@ import os
 import sys
 import argparse
 
-
-MAX_POINTS = 200000
-MAX_CAMERAS = 200
-
-
 # ======================
 # LOGGING
 # ======================
 def log(msg):
     print(f"[INFO] {msg}")
 
-
 def err(msg):
     print(f"[ERROR] {msg}", file=sys.stderr)
-
 
 # ======================
 # HELP
@@ -30,18 +23,25 @@ COLMAP Scene Inspector
 Usage:
   python estimate_planes.py --input /path/to/colmap/sparse/0
 
-Input:
-  --input    Path to COLMAP sparse model folder (must contain images.bin & points3D.bin)
+Options:
+  --input          COLMAP sparse folder (must contain images.bin & points3D.bin)
+
+  --filter         Outlier trimming ratio (default: 0.05)
+                   -> 0.0 = no filter
+                   -> 0.05 = standard indoor
+                   -> 0.1 = strong filtering
+
+  --max-points     Max 3D points loaded (default: 200000)
+  --max-cameras    Max cameras loaded (default: 200)
 
 Output:
   NEAR=...
   FAR=...
 
 Example:
-  python estimate_planes.py --input ./sparse/0
+  python estimate_planes.py --input ./sparse/0 --filter 0.05
 """)
     sys.exit(0)
-
 
 # ======================
 # SAFETY
@@ -52,26 +52,21 @@ def safe_normalize(q):
         return None
     return q / norm
 
-
 def check_file(path):
     if not os.path.exists(path):
         raise FileNotFoundError(f"Missing file: {path}")
     if os.path.getsize(path) < 100:
         raise ValueError(f"File too small / corrupted: {path}")
 
-
 # ======================
 # COLMAP LOADING
 # ======================
-def read_points3d_bin(path):
+def read_points3d_bin(path, max_points):
     check_file(path)
 
     pts = []
     with open(path, "rb") as f:
         num_points = struct.unpack("<Q", f.read(8))[0]
-
-        if num_points > 50_000_000 or num_points <= 0:
-            raise ValueError(f"Invalid num_points3D: {num_points}")
 
         for _ in range(num_points):
             f.read(8)
@@ -80,35 +75,28 @@ def read_points3d_bin(path):
             f.read(8)
 
             track_len = struct.unpack("<Q", f.read(8))[0]
-
-            # safety: avoid insane reads (corrupted COLMAP)
             if track_len > 1_000_000:
-                raise ValueError(f"Corrupted track_len: {track_len}")
+                raise ValueError("Corrupted track_len")
 
             f.read(8 * track_len)
 
             if np.all(np.isfinite(xyz)):
                 pts.append(xyz)
 
-            if len(pts) >= MAX_POINTS:
+            if len(pts) >= max_points:
                 break
 
     pts = np.array(pts, dtype=np.float64)
     log(f"Loaded points3D: {len(pts)}")
     return pts
 
-
-def read_images_bin(path):
+def read_images_bin(path, max_cameras):
     check_file(path)
 
     cams = []
 
     with open(path, "rb") as f:
         num_images = struct.unpack("<Q", f.read(8))[0]
-
-        if num_images > 1_000_000 or num_images <= 0:
-            raise ValueError(f"Invalid num_images: {num_images}")
-
         log(f"Images found: {num_images}")
 
         for _ in range(num_images):
@@ -117,15 +105,13 @@ def read_images_bin(path):
             tvec = np.array(struct.unpack("<ddd", f.read(24)))
             f.read(4)
 
-            # image name
             while True:
                 if f.read(1) == b"\x00":
                     break
 
             num_pts2D = struct.unpack("<Q", f.read(8))[0]
-
             if num_pts2D > 5_000_000:
-                raise ValueError(f"Corrupted num_pts2D: {num_pts2D}")
+                raise ValueError("Corrupted num_pts2D")
 
             f.read(num_pts2D * 24)
 
@@ -149,52 +135,50 @@ def read_images_bin(path):
             if np.all(np.isfinite(C)):
                 cams.append(C)
 
-            if len(cams) >= MAX_CAMERAS:
+            if len(cams) >= max_cameras:
                 break
 
     cams = np.array(cams, dtype=np.float64)
     log(f"Valid cameras: {len(cams)}")
     return cams
 
-
 # ======================
 # ESTIMATION
 # ======================
-def estimate_planes(colmap_dir):
-    pts = read_points3d_bin(os.path.join(colmap_dir, "points3D.bin"))
-    cams = read_images_bin(os.path.join(colmap_dir, "images.bin"))
+def estimate_planes(colmap_dir, trim, max_points, max_cameras):
+
+    pts = read_points3d_bin(
+        os.path.join(colmap_dir, "points3D.bin"),
+        max_points
+    )
+
+    cams = read_images_bin(
+        os.path.join(colmap_dir, "images.bin"),
+        max_cameras
+    )
 
     if len(pts) < 1000 or len(cams) < 2:
         raise RuntimeError("Invalid COLMAP data")
 
     # ======================
-    # 1. CLEAN BBOX (ignore outliers)
+    # FILTER (ROBUST TRIMMING)
     # ======================
-    bbox_min = np.percentile(pts, 5, axis=0)
-    bbox_max = np.percentile(pts, 95, axis=0)
+    if trim > 0:
+        bbox_min = np.percentile(pts, trim * 100, axis=0)
+        bbox_max = np.percentile(pts, (1 - trim) * 100, axis=0)
+    else:
+        bbox_min = np.min(pts, axis=0)
+        bbox_max = np.max(pts, axis=0)
 
     scene_size = np.linalg.norm(bbox_max - bbox_min)
 
-    # ======================
-    # 2. CAMERA CENTER STATS
-    # ======================
     cam_center = np.mean(cams, axis=0)
-
     cam_dist = np.linalg.norm(cams - cam_center, axis=1)
     cam_scale = np.median(cam_dist)
 
-    # ======================
-    # 3. NEAR (stable)
-    # ======================
     near = cam_scale * 0.3
-
-    # ======================
-    # 4. FAR (IMPORTANT FIX)
-    # ======================
-    # clamp scene depth instead of raw point distance
     far = min(scene_size * 0.6, cam_scale * 2.5)
 
-    # safety constraints
     near = max(near, 0.05)
     far = max(far, near * 3)
 
@@ -203,29 +187,35 @@ def estimate_planes(colmap_dir):
 
     return float(near), float(far)
 
-
 # ======================
 # MAIN
 # ======================
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("--input", type=str)
+    parser.add_argument("--input", type=str, required=True)
+    parser.add_argument("--filter", type=float, default=0.05)
+    parser.add_argument("--max-points", type=int, default=200000)
+    parser.add_argument("--max-cameras", type=int, default=200)
 
-    args, unknown = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
-    if "--help" in sys.argv or args.input is None:
+    if "--help" in sys.argv:
         print_help()
 
-    colmap_dir = args.input
-
-    if not os.path.isdir(colmap_dir):
-        err(f"Invalid input directory: {colmap_dir}")
+    if not os.path.isdir(args.input):
+        err(f"Invalid input directory: {args.input}")
         sys.exit(1)
 
     try:
         log("📦 Loading COLMAP scene...")
-        near, far = estimate_planes(colmap_dir)
+
+        near, far = estimate_planes(
+            args.input,
+            args.filter,
+            args.max_points,
+            args.max_cameras
+        )
 
         log("📏 Estimated planes:")
         print(f"NEAR={near:.4f}")
