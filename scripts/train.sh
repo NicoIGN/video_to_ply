@@ -249,8 +249,12 @@ if [[ "$DEVICE" == "gpu" ]]; then
 
       # 📊 Rendering / perceptual quality
       --pipeline.model.ssim-lambda $SSIM_LAMBDA
+      
+      --pipeline.model.collider-params.near_plane $COLLIDER_NEAR
+      --pipeline.model.collider-params.far_plane $COLLIDER_FAR
+      --pipeline.model.enable-collider ENABLE_COLLIDER
     )
-    
+
 
 elif [[ "$DEVICE" == "cpu" ]]; then
 

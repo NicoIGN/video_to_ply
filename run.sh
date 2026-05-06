@@ -461,6 +461,44 @@ else
 fi
 
 # ----------------------
+# 2.5 ESTIMATE NEAR / FAR FROM COLMAP
+# ----------------------
+
+COLMAP_DIR="$ORI_DIR/colmap/sparse/0"
+
+if [ -d "$COLMAP_DIR" ]; then
+  echo ""
+  echo "📏 Estimating near/far planes from COLMAP..."
+
+  ESTIMATE_SCRIPT="$SCRIPT_DIR/scripts/estimate_planes.py"
+
+  if [ ! -f "$ESTIMATE_SCRIPT" ]; then
+    echo "⚠️ Missing script: $ESTIMATE_SCRIPT"
+  else
+    EST_OUTPUT=$(python "$ESTIMATE_SCRIPT" "$COLMAP_DIR")
+
+    NEAR=$(echo "$EST_OUTPUT" | grep NEAR | cut -d= -f2)
+    FAR=$(echo "$EST_OUTPUT" | grep FAR  | cut -d= -f2)
+
+    if [[ -n "$NEAR" && -n "$FAR" ]]; then
+      echo "✅ Estimated:"
+      echo "   near = $NEAR"
+      echo "   far  = $FAR"
+
+      export COLLIDER_NEAR="$NEAR"
+      export COLLIDER_FAR="$FAR"
+      export ENABLE_COLLIDER="True"
+    else
+      echo "⚠️ Failed to parse near/far → fallback"
+      export ENABLE_COLLIDER="False"
+    fi
+  fi
+else
+  echo "⚠️ COLMAP directory not found → skipping collider estimation"
+  export ENABLE_COLLIDER="False"
+fi
+
+# ----------------------
 # 3. TRAIN
 # ----------------------
 
@@ -503,6 +541,9 @@ else
     USE_SCALE_REGULARIZATION="$USE_SCALE_REGULARIZATION" \
     SSIM_LAMBDA="$SSIM_LAMBDA" \
     MAX_GAUSSIANS="$MAX_GAUSSIANS" \
+    COLLIDER_NEAR="$COLLIDER_NEAR" \
+    COLLIDER_FAR="$COLLIDER_FAR" \
+    ENABLE_COLLIDER="$ENABLE_COLLIDER" \
     bash scripts/train.sh
   fi
 fi
