@@ -24,7 +24,7 @@ MAX_JOBS=2
 ########################################
 
 MAX_ITER=18000
-REFINE_EVERY=300
+REFINE_EVERY=200
 TRAIN_RAYS_PER_BATCH=512
 
 NUM_NERF_SAMPLES_PER_RAY=64
@@ -35,7 +35,7 @@ NUM_PROPOSAL_SAMPLES_PER_RAY="128 64"
 ########################################
 
 # densification plus stricte → évite explosion
-DENSIFY_GRAD_THRESH=0.0025
+DENSIFY_GRAD_THRESH=0.002
 
 # supprime plus agressivement les faibles contributions
 CULL_ALPHA_THRESH=0.12

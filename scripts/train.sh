@@ -250,6 +250,13 @@ if [[ "$DEVICE" == "gpu" ]]; then
       # 📊 Rendering / perceptual quality
       --pipeline.model.ssim-lambda $SSIM_LAMBDA
     )
+    
+    DEVICE_ARGS=(
+      --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
+      --pipeline.datamanager.cache-images gpu
+      --pipeline.datamanager.images-on-gpu True
+      --pipeline.datamanager.masks-on-gpu False
+      )
 
 elif [[ "$DEVICE" == "cpu" ]]; then
 
