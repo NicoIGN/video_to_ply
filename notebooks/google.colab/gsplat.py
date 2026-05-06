@@ -12,18 +12,17 @@ Original file is located at
 # cat << 'EOF' > /content/config.sh
 # #!/bin/bash
 # 
-# export ROOTDIR="/content/table"
-# export VIDEOSOURCE="gsplat/input/IMG_4811.MOV"
+# export ROOTDIR="/content/statue"
+# export VIDEOSOURCE="gsplat/input/IMG_4794.MOV"
 # 
-# export NUM_FRAMES=150
-# export FPS=4
+# export NUM_FRAMES=100
 # 
 # #branche dev
 # export GIT_BRANCH="dev"
-# export BASENAME="table"
+# export BASENAME="sofa"
 # 
-# export PREPROCESS_PROFILE="hloc"
-# export GSPLAT_PROFILE="best"
+# export PREPROCESS_PROFILE="hloc-lightblue"
+# export GSPLAT_PROFILE="quality_plus"
 # 
 # EOF
 # 
@@ -68,6 +67,8 @@ os.environ["PATH"] = "/usr/local/miniforge/bin:" + os.environ["PATH"]
 # cd /content/video_to_ply
 # source /content/config.sh
 # git stash save && git checkout $GIT_BRANCH && git pull
+
+
 
 !source /usr/local/miniforge/etc/profile.d/conda.sh && \
 mamba env list | grep -q gsplat && \
@@ -164,13 +165,63 @@ if os.path.exists(base_ply):
 else:
     print(f"⚠️ Original PLY not found: {base_ply}")
 
+from google.colab import files
+import os
+import subprocess
+import os
 
 # =========================
-# EXPORT CONFIG
+# LOAD CONFIG.SH VARIABLES
 # =========================
-training_config = os.path.join(export_dir, f"config.yml")
-if os.path.exists(training_config):
-    print(f"⬇️ Downloading training config: {os.path.basename(training_config)}")
-    files.download(training_config)
+result = subprocess.run(
+    "source /content/config.sh && env",
+    shell=True,
+    executable="/bin/bash",
+    capture_output=True,
+    text=True,
+)
+
+for line in result.stdout.splitlines():
+    if "=" in line:
+        key, value = line.split("=", 1)
+        os.environ[key] = value
+
+# =========================
+# CONFIG
+# =========================
+rootdir = os.environ.get("ROOTDIR", "/content/work")
+export_dir = os.path.join(rootdir, "exports")
+basename = os.environ.get("BASENAME", "")
+
+if not basename:
+    print("❌ BASENAME is not set")
+    raise SystemExit(1)
+
+
+# =========================
+# EXPORT COLMAP DATA
+# =========================
+base_zip = os.path.join(export_dir, f"colmap_{basename}.zip")
+if os.path.exists(base_zip):
+    print(f"⬇️ Downloading original PLY: {os.path.basename(base_zip)}")
+    files.download(base_zip)
 else:
-    print(f"⚠️ Config not found: {training_config}")
+    print(f"⚠️ COLMAP data not found: {base_zip}")
+
+# =========================
+# EXPORT LATEST RUN ZIP
+# =========================
+
+zip_files = [
+    os.path.join(export_dir, f)
+    for f in os.listdir(export_dir)
+    if f.endswith(".zip")
+]
+
+if not zip_files:
+    print(f"⚠️ No zip archives found in: {export_dir}")
+else:
+    latest_zip = max(zip_files, key=os.path.getmtime)
+
+    print(f"⬇️ Downloading latest run archive: {os.path.basename(latest_zip)}")
+    files.download(latest_zip)
