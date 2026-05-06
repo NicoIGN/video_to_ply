@@ -119,6 +119,11 @@ echo "  - cull alpha threshold    : $CULL_ALPHA_THRESH"
 echo "  - cull screen size        : $CULL_SCREEN_SIZE"
 echo "  - split screen size       : $SPLIT_SCREEN_SIZE"
 
+echo "────────────────────────────────────────────"
+echo "🧱 COLLIDER"
+echo "  - near plane              : $COLLIDER_NEAR"
+echo "  - far plane               : $COLLIDER_FAR"
+echo "  - enable collider         : $ENABLE_COLLIDER"
 
 echo "────────────────────────────────────────────"
 echo "🔥 STARTING TRAINING..."
