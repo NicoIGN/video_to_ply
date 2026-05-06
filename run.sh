@@ -678,7 +678,7 @@ echo "📦 Source PLY: $PLY_FILE"
 $
 
 if [[ "$SKIP_FILTER" == "true" ]]; then
-  cp "$PLY_FILE" "$EXPORT_DIR"
+  cp "$PLY_FILE" "$EXPORT_DIR/${BASENAME}.ply"
 else
   PLY_FILE="$PLY_FILE" \
   EXPORT_DIR="$EXPORT_DIR" \
