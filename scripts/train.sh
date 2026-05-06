@@ -252,7 +252,7 @@ if [[ "$DEVICE" == "gpu" ]]; then
       
       --pipeline.model.collider-params.near_plane $COLLIDER_NEAR
       --pipeline.model.collider-params.far_plane $COLLIDER_FAR
-      --pipeline.model.enable-collider ENABLE_COLLIDER
+      --pipeline.model.enable-collider $ENABLE_COLLIDER
     )
 
 
