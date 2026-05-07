@@ -34,7 +34,7 @@ NUM_PROPOSAL_SAMPLES_PER_RAY="128 96"
 ########################################
 
 # densification (réduit pour éviter explosion de splats)
-DENSIFY_GRAD_THRESH=0.00025
+DENSIFY_GRAD_THRESH=0.0025
 
 # meilleure suppression des floaters
 CULL_ALPHA_THRESH=0.04
@@ -43,7 +43,7 @@ CULL_ALPHA_THRESH=0.04
 CULL_SCREEN_SIZE=0.15
 
 # split plus fin mais moins agressif globalement
-SPLIT_SCREEN_SIZE=0.012
+SPLIT_SCREEN_SIZE=0.01
 
 # meilleure convergence géométrique
 REFINE_EVERY=300
