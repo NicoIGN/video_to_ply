@@ -1,5 +1,5 @@
 ########################################
-# PERFORMANCE PROFILE - QUALITY ONLY
+# PERFORMANCE PROFILE - QUALITY
 ########################################
 
 TRAINING_PROFILE="gpu/quality"
@@ -13,9 +13,15 @@ TRAIN_VIS_MODE="tensorboard"
 # IMAGE / PREPROCESSING
 ########################################
 
+# vraie résolution de travail
 CAMERA_RES_SCALE_FACTOR=1.0
-MAX_RES=1024
-NUM_DOWNSCALES=1
+
+# bon compromis qualité / stabilité
+MAX_RES=1536
+
+# conserve tous les détails
+NUM_DOWNSCALES=0
+
 SKIP_IMAGE_PROCESSING=true
 MAX_JOBS=2
 
@@ -23,9 +29,13 @@ MAX_JOBS=2
 # TRAINING
 ########################################
 
-MAX_ITER=8000
-TRAIN_RAYS_PER_BATCH=512
+# convergence correcte
+MAX_ITER=16000
 
+# très important pour stabilité haute qualité
+TRAIN_RAYS_PER_BATCH=1024
+
+# meilleur signal géométrique
 NUM_NERF_SAMPLES_PER_RAY=64
 NUM_PROPOSAL_SAMPLES_PER_RAY="128 64"
 
@@ -33,17 +43,46 @@ NUM_PROPOSAL_SAMPLES_PER_RAY="128 64"
 # GAUSSIAN SPLATTING
 ########################################
 
-# densification (plus stable en high-res training)
-DENSIFY_GRAD_THRESH=0.001
+# plus de détails / plus de splats
+DENSIFY_GRAD_THRESH=0.0004
 
-# keep fine structures longer (better thin geometry / edges)
-CULL_ALPHA_THRESH=0.05
+# conserve détails fins sans explosion
+CULL_ALPHA_THRESH=0.08
 
-# slightly more aggressive pruning of oversized splats
-CULL_SCREEN_SIZE=0.25
+# évite gros blobs visibles
+CULL_SCREEN_SIZE=0.18
 
-# earlier splitting for higher geometric precision
-SPLIT_SCREEN_SIZE=0.015
+# split plus fin pour géométrie détaillée
+SPLIT_SCREEN_SIZE=0.018
+
+########################################
+# DENSIFICATION CONTROL
+########################################
+
+# ralentit légèrement la croissance
+REFINE_EVERY=200
+
+# laisse la scène densifier longtemps
+STOP_SPLIT_AT=12000
+
+# stabilise les alphas
+RESET_ALPHA_EVERY=35
+
+########################################
+# REGULARIZATION / STABILITY
+########################################
+
+USE_BILATERAL_GRID=true
+USE_SCALE_REGULARIZATION=true
+
+# évite splats géants dégénérés
+MAX_GAUSS_RATIO=4.5
+
+# nettoie petits clusters instables
+CULL_SCALE_THRESH=0.45
+
+# meilleur rendu perceptuel
+SSIM_LAMBDA=0.28
 
 ########################################
 # EXPORT QUALITY

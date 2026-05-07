@@ -1,8 +1,8 @@
 ########################################
-# PERFORMANCE PROFILE - QUALITY STABLE
+# PERFORMANCE PROFILE - QUALITY PLUS
 ########################################
 
-TRAINING_PROFILE="gpu/quality_stable_4Mcap"
+TRAINING_PROFILE="gpu/quality_plus"
 
 DEVICE="gpu"
 MODEL="splatfacto"
@@ -13,9 +13,15 @@ TRAIN_VIS_MODE="tensorboard"
 # IMAGE / PREPROCESSING
 ########################################
 
+# pleine résolution utile
 CAMERA_RES_SCALE_FACTOR=1.0
+
+# qualité élevée sans instabilité extrême
 MAX_RES=2048
+
+# conserve tous les détails source
 NUM_DOWNSCALES=0
+
 SKIP_IMAGE_PROCESSING=true
 MAX_JOBS=2
 
@@ -23,56 +29,64 @@ MAX_JOBS=2
 # TRAINING
 ########################################
 
-MAX_ITER=18000
-REFINE_EVERY=200
-TRAIN_RAYS_PER_BATCH=512
+# convergence longue
+MAX_ITER=22000
 
+# critique pour stabilité à haute densité
+TRAIN_RAYS_PER_BATCH=1024
+
+# meilleur signal géométrique
 NUM_NERF_SAMPLES_PER_RAY=64
 NUM_PROPOSAL_SAMPLES_PER_RAY="128 64"
 
 ########################################
-# GAUSSIAN SPLATTING - STABILITY FIRST
+# GAUSSIAN SPLATTING
 ########################################
 
-# densification plus stricte → évite explosion
-DENSIFY_GRAD_THRESH=0.002
+# densification fine et agressive
+DENSIFY_GRAD_THRESH=0.0003
 
-# supprime plus agressivement les faibles contributions
-CULL_ALPHA_THRESH=0.12
+# garde davantage de petits détails
+CULL_ALPHA_THRESH=0.07
 
-# évite accumulation de petits splats visibles
-CULL_SCREEN_SIZE=0.15
+# évite blobs géants
+CULL_SCREEN_SIZE=0.16
 
-# split plus contrôlé (évite cascade)
-SPLIT_SCREEN_SIZE=0.025
-
-# stop split plus tôt → stabilise la structure
-STOP_SPLIT_AT=10000
+# split plus fin
+SPLIT_SCREEN_SIZE=0.016
 
 ########################################
-# HARD STABILITY LIMITS (IMPORTANT)
+# DENSIFICATION CONTROL
 ########################################
 
-# contrôle indirect de la croissance
-MAX_GAUSS_RATIO=5
+# densification soutenue mais stable
+REFINE_EVERY=180
 
-# évite formes trop extrêmes
-CULL_SCALE_THRESH=0.5
+# laisse vivre la densification longtemps
+STOP_SPLIT_AT=17000
 
-# empêche explosion tardive
+# évite dérive alpha / saturation
 RESET_ALPHA_EVERY=30
 
 ########################################
-# QUALITY / REGULARIZATION
+# REGULARIZATION / STABILITY
 ########################################
 
-SSIM_LAMBDA=0.2
+USE_BILATERAL_GRID=true
 USE_SCALE_REGULARIZATION=true
-MAX_GAUSS_RATIO=5
+
+# contrôle anisotropie
+MAX_GAUSS_RATIO=4.0
+
+# nettoie clusters dégénérés
+CULL_SCALE_THRESH=0.45
+
+# meilleur rendu perceptuel
+SSIM_LAMBDA=0.30
 
 ########################################
 # EXPORT QUALITY
 ########################################
 
-EXPORT_NUM_POINTS=3500000
+EXPORT_NUM_POINTS=4000000
 EXPORT_DOWNSAMPLE=1
