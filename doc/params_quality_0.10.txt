@@ -1,0 +1,486 @@
+🚫 Proxy disabled (NO_PROXY=true)
+👉 using profile: preprocess/hloc-lightblue
+👉 using profile: gsplat/quality
+⏩ Skipping conda setup (--skip-conda enabled)
+✅ Using python: Python 3.10.20
+🚀 GPU model OK: splatfacto
+📦 ROOT: /content/table_clem
+🎬 Extracting 100 sharp frames → /content/table_clem/input/images
+🎬 Video: /content/table_clem/input/video.mov
+📁 Output: /content/table_clem/input/images
+⚙️ Mode: SMART selection (100)
+📐 Oversampling: 300 frames
+⏱️ Interval: 0.3639222233333333 s
+frame=  300 fps=2.8 q=-0.0 Lsize=N/A time=00:01:49.17 bitrate=N/A speed=1.01x
+🔎 Adaptive filtering...
+📊 After blur filter: 210
+📐 Adaptive diff threshold: 10.786479552469135
+📊 Candidates: 201
+✅ Selected frames: 100
+🔎 Checking image geometry consistency...
+✅ All images have consistent size: (1920, 1080)
+✅ Final frames: 100
+
+
+🧭 Running PREPROCESS through NerfStudio...
+📝 Process log: /content/table_clem/ori/logs/ns_process.log
+💓 Heartbeat log: /content/table_clem/ori/logs/ns_process_heartbeat.log
+────────────────────────────────────
+📁 INPUT                 : /content/table_clem/input/images
+📁 OUTPUT                : /content/table_clem/ori
+⚙️ DEVICE                : gpu
+📷 CAMERA TYPE           : perspective
+🔀 MATCHING METHOD       : vocab_tree
+🧠 SFM TOOL             : hloc
+🧬 FEATURE TYPE          : superpoint_aachen
+🔗 MATCHER TYPE          : superpoint+lightglue
+📉 NUM DOWNSCALES        : 1
+✂️ CROP FACTOR           : 0.02 0.05 0.02 0.02
+🎯 RADIUS CROP           : 0.95
+📐 SCALE FACTOR          : 1.0
+📷 SINGLE CAMERA MODE    : true
+🔧 REFINE INTRINSICS     : true
+────────────────────────────────────
+🚀 Running ns-process-data...
+[16:50:37] 🎉 Done copying images with prefix 'frame_'.                                        process_data_utils.py:348
+           🎉 Generated and saved masks.                                                       process_data_utils.py:693
+[2026/05/07 16:50:37 hloc INFO] Extracting local features with configuration:
+{'model': {'max_keypoints': 4096, 'name': 'superpoint', 'nms_radius': 3},
+ 'output': 'feats-superpoint-n4096-r1024',
+ 'preprocessing': {'grayscale': True, 'resize_max': 1024}}
+Loaded SuperPoint model
+100%|██████████| 100/100 [00:09<00:00, 10.52it/s]
+[2026/05/07 16:50:47 hloc INFO] Finished exporting features.
+[2026/05/07 16:50:47 hloc INFO] Extracting local features with configuration:
+{'model': {'name': 'netvlad'},
+ 'output': 'global-feats-netvlad',
+ 'preprocessing': {'resize_max': 1024}}
+[2026/05/07 16:50:47 hloc INFO] Found 100 images in root /content/table_clem/ori/images.
+100%|██████████| 529M/529M [00:25<00:00, 21.4MB/s]
+100%|██████████| 100/100 [00:09<00:00, 10.21it/s]
+[2026/05/07 16:51:35 hloc INFO] Finished exporting features.
+[2026/05/07 16:51:35 hloc INFO] Extracting image pairs from a retrieval database.
+[2026/05/07 16:51:35 hloc INFO] Found 5000 pairs.
+[2026/05/07 16:51:35 hloc INFO] Matching local features with configuration:
+{'model': {'features': 'superpoint', 'name': 'lightglue'},
+ 'output': 'matches-superpoint-lightglue'}
+Downloading: "https://github.com/cvg/LightGlue/releases/download/v0.1_arxiv/superpoint_lightglue.pth" to /root/.cache/torch/hub/checkpoints/superpoint_lightglue_v0-1_arxiv.pth
+100%|██████████| 45.3M/45.3M [00:00<00:00, 515MB/s]
+/usr/local/miniforge/envs/gsplat/lib/python3.10/site-packages/torch/utils/data/dataloader.py:558: UserWarning: This DataLoader will create 5 worker processes in total. Our suggested max number of worker in current system is 2, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(_create_warning_msg(
+100%|██████████| 2995/2995 [02:31<00:00, 19.73it/s]
+[2026/05/07 16:54:08 hloc INFO] Finished exporting matches.
+[2026/05/07 16:54:08 hloc INFO] Writing COLMAP logs to /content/table_clem/ori/colmap/sparse/0/colmap.LOG.*
+[2026/05/07 16:54:08 hloc INFO] Creating an empty database...
+[2026/05/07 16:54:08 hloc INFO] Importing images into the database...
+[2026/05/07 16:54:13 hloc INFO] Importing features into the database...
+100%|██████████| 100/100 [00:00<00:00, 1145.97it/s]
+[2026/05/07 16:54:13 hloc INFO] Importing matches into the database...
+100%|██████████| 5000/5000 [00:03<00:00, 1438.92it/s]
+[2026/05/07 16:54:17 hloc INFO] Performing geometric verification of the matches...
+[2026/05/07 16:55:20 hloc INFO] Running 3D reconstruction...
+Reconstruction 0:  94%|█████████▍| 94/100 [03:43<00:14,  2.38s/images, registered]
+Reconstruction 1:   2%|▏         | 2/100 [00:00<00:10,  9.02images/s, registered]
+Reconstruction 2:   2%|▏         | 2/100 [00:00<00:11,  8.35images/s, registered]
+Reconstruction 3:   3%|▎         | 3/100 [00:00<00:12,  7.54images/s, registered]
+Reconstruction 4:   2%|▏         | 2/100 [00:00<00:02, 32.99images/s, registered]
+[2026/05/07 16:59:05 hloc INFO] Reconstructed 1 model(s).
+[2026/05/07 16:59:05 hloc INFO] Largest model is #0 with 94 images.
+[2026/05/07 16:59:05 hloc INFO] Reconstruction statistics:
+Reconstruction:
+    num_rigs = 1
+    num_cameras = 1
+    num_frames = 94
+    num_reg_frames = 94
+    num_images = 94
+    num_points3D = 11415
+    num_observations = 51862
+    mean_track_length = 4.54332
+    mean_observations_per_image = 551.723
+    mean_reprojection_error = 1.33225
+    num_input_images = 100
+[16:59:06] 🎉 🎉 🎉 All DONE 🎉 🎉 🎉                                                images_to_nerfstudio_dataset.py:135
+           Starting with 100 images                                                  images_to_nerfstudio_dataset.py:138
+           Saved mask(s)                                                             images_to_nerfstudio_dataset.py:138
+           Colmap matched 94 images                                                  images_to_nerfstudio_dataset.py:138
+           COLMAP found poses for 94.00% of the images.                              images_to_nerfstudio_dataset.py:138
+📊 COLMAP pose coverage: 94.00%
+⚠️ Possible silent failure detected
+[16:50:37] 🎉 Done copying images with prefix 'frame_'.                                        process_data_utils.py:348
+           🎉 Generated and saved masks.                                                       process_data_utils.py:693
+[2026/05/07 16:50:37 hloc INFO] Extracting local features with configuration:
+{'model': {'max_keypoints': 4096, 'name': 'superpoint', 'nms_radius': 3},
+ 'output': 'feats-superpoint-n4096-r1024',
+ 'preprocessing': {'grayscale': True, 'resize_max': 1024}}
+Loaded SuperPoint model
+100%|██████████| 100/100 [00:09<00:00, 10.52it/s]
+[2026/05/07 16:50:47 hloc INFO] Finished exporting features.
+[2026/05/07 16:50:47 hloc INFO] Extracting local features with configuration:
+{'model': {'name': 'netvlad'},
+ 'output': 'global-feats-netvlad',
+ 'preprocessing': {'resize_max': 1024}}
+[2026/05/07 16:50:47 hloc INFO] Found 100 images in root /content/table_clem/ori/images.
+100%|██████████| 529M/529M [00:25<00:00, 21.4MB/s]
+100%|██████████| 100/100 [00:09<00:00, 10.21it/s]
+[2026/05/07 16:51:35 hloc INFO] Finished exporting features.
+[2026/05/07 16:51:35 hloc INFO] Extracting image pairs from a retrieval database.
+[2026/05/07 16:51:35 hloc INFO] Found 5000 pairs.
+[2026/05/07 16:51:35 hloc INFO] Matching local features with configuration:
+{'model': {'features': 'superpoint', 'name': 'lightglue'},
+ 'output': 'matches-superpoint-lightglue'}
+Downloading: "https://github.com/cvg/LightGlue/releases/download/v0.1_arxiv/superpoint_lightglue.pth" to /root/.cache/torch/hub/checkpoints/superpoint_lightglue_v0-1_arxiv.pth
+100%|██████████| 45.3M/45.3M [00:00<00:00, 515MB/s]
+/usr/local/miniforge/envs/gsplat/lib/python3.10/site-packages/torch/utils/data/dataloader.py:558: UserWarning: This DataLoader will create 5 worker processes in total. Our suggested max number of worker in current system is 2, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(_create_warning_msg(
+100%|██████████| 2995/2995 [02:31<00:00, 19.73it/s]
+[2026/05/07 16:54:08 hloc INFO] Finished exporting matches.
+[2026/05/07 16:54:08 hloc INFO] Writing COLMAP logs to /content/table_clem/ori/colmap/sparse/0/colmap.LOG.*
+[2026/05/07 16:54:08 hloc INFO] Creating an empty database...
+[2026/05/07 16:54:08 hloc INFO] Importing images into the database...
+[2026/05/07 16:54:13 hloc INFO] Importing features into the database...
+100%|██████████| 100/100 [00:00<00:00, 1145.97it/s]
+[2026/05/07 16:54:13 hloc INFO] Importing matches into the database...
+100%|██████████| 5000/5000 [00:03<00:00, 1438.92it/s]
+[2026/05/07 16:54:17 hloc INFO] Performing geometric verification of the matches...
+[2026/05/07 16:55:20 hloc INFO] Running 3D reconstruction...
+Reconstruction 0:  94%|█████████▍| 94/100 [03:43<00:14,  2.38s/images, registered]
+Reconstruction 1:   2%|▏         | 2/100 [00:00<00:10,  9.02images/s, registered]
+Reconstruction 2:   2%|▏         | 2/100 [00:00<00:11,  8.35images/s, registered]
+Reconstruction 3:   3%|▎         | 3/100 [00:00<00:12,  7.54images/s, registered]
+Reconstruction 4:   2%|▏         | 2/100 [00:00<00:02, 32.99images/s, registered]
+[2026/05/07 16:59:05 hloc INFO] Reconstructed 1 model(s).
+[2026/05/07 16:59:05 hloc INFO] Largest model is #0 with 94 images.
+[2026/05/07 16:59:05 hloc INFO] Reconstruction statistics:
+Reconstruction:
+    num_rigs = 1
+    num_cameras = 1
+    num_frames = 94
+    num_reg_frames = 94
+    num_images = 94
+    num_points3D = 11415
+    num_observations = 51862
+    mean_track_length = 4.54332
+    mean_observations_per_image = 551.723
+    mean_reprojection_error = 1.33225
+    num_input_images = 100
+[16:59:06] 🎉 🎉 🎉 All DONE 🎉 🎉 🎉                                                images_to_nerfstudio_dataset.py:135
+           Starting with 100 images                                                  images_to_nerfstudio_dataset.py:138
+           Saved mask(s)                                                             images_to_nerfstudio_dataset.py:138
+           Colmap matched 94 images                                                  images_to_nerfstudio_dataset.py:138
+           COLMAP found poses for 94.00% of the images.                              images_to_nerfstudio_dataset.py:138
+✅ ns-process-data SUCCESS
+📦 OUTPUT READY: /content/table_clem/ori
+
+
+🧠 Training...
+🚫 Proxy disabled (NO_PROXY=true)
+⚙️ TORCH_CUDA_ARCH_LIST auto-set to: 7.5
+────────────────────────────────────────────
+🚀 TRAINING CONFIG SUMMARY
+────────────────────────────────────────────
+📁 DATA                     : /content/table_clem/ori
+📁 OUTPUTDIR                : /content/table_clem
+🧪 MODEL                    : splatfacto
+🧪 MODEL_IMPLEMENTATION     : tcnn
+🧪 EXPERIMENT_NAME          : model3d
+⚙️ DEVICE                   : gpu
+🔁 MAX ITERATIONS           : 8000
+🔁 MAX JOBS                 : 2
+📊 VIS MODE                 : tensorboard
+💾 STEPS PER SAVE           : 2000
+🖼️ STEPS PER EVAL ALL IMG   : 2000
+🧪 REFINE EVERY             : 100
+────────────────────────────────────────────
+🧠 DATA PIPELINE
+  - train rays per batch    : 512
+  - camera resolution scale : 1.0
+────────────────────────────────────────────
+🧠 MODEL CONFIG
+  - NeRF samples per ray    : 64
+  - proposal samples/ray    : 128 64
+  - max resolution          : 1024
+  - implementation          : tcnn
+────────────────────────────────────────────
+✨ GAUSSIAN SPLATTING
+  - densify grad threshold  : 0.001
+  - cull alpha threshold    : 0.05
+  - cull screen size        : 0.25
+  - split screen size       : 0.015
+────────────────────────────────────────────
+🔥 STARTING TRAINING...
+────────────────────────────────────────────
+────────────────────────────────────────────
+🔍 CHECKPOINT AUTO-RESUME
+────────────────────────────────────────────
+📁 OUTPUTDIR      : /content/table_clem
+🧪 MODEL          : splatfacto
+🧪 EXPERIMENT     : model3d
+📂 BASE_DIR       : /content/table_clem/model3d/splatfacto
+ℹ️ No direct checkpoint at:
+   /content/table_clem/model3d/splatfacto/nerfstudio_models
+⚠️ BASE_DIR does not exist:
+   /content/table_clem/model3d/splatfacto
+🆕 No checkpoint found; starting from scratch
+────────────────────────────────────────────
+🆕 Starting new run
+🕒 TIMESTAMP     : 2026-05-07_165912
+📝 Full training log: /content/table_clem/logs/ns_train.log
+💓 Heartbeat log: /content/table_clem/logs/ns_train_heartbeat.log
+──────────────────────────────────────────────────────── Config ────────────────────────────────────────────────────────
+TrainerConfig(
+    _target=<class 'nerfstudio.engine.trainer.Trainer'>,
+    output_dir=PosixPath('/content/table_clem'),
+    method_name='splatfacto',
+    experiment_name='model3d',
+    project_name='nerfstudio-project',
+    timestamp='2026-05-07_165920',
+    machine=MachineConfig(seed=42, num_devices=1, num_machines=1, machine_rank=0, dist_url='auto', device_type='cuda'),
+    logging=LoggingConfig(
+        relative_log_dir=PosixPath('.'),
+        steps_per_log=250,
+        max_buffer_size=20,
+        local_writer=LocalWriterConfig(
+            _target=<class 'nerfstudio.utils.writer.LocalWriter'>,
+            enable=True,
+            stats_to_track=(
+                <EventName.ITER_TRAIN_TIME: 'Train Iter (time)'>,
+                <EventName.TRAIN_RAYS_PER_SEC: 'Train Rays / Sec'>,
+                <EventName.CURR_TEST_PSNR: 'Test PSNR'>,
+                <EventName.VIS_RAYS_PER_SEC: 'Vis Rays / Sec'>,
+                <EventName.TEST_RAYS_PER_SEC: 'Test Rays / Sec'>,
+                <EventName.ETA: 'ETA (time)'>
+            ),
+            max_log_size=10
+        ),
+        profiler='basic'
+    ),
+    viewer=ViewerConfig(
+        relative_log_filename='viewer_log_filename.txt',
+        websocket_port=None,
+        websocket_port_default=7007,
+        websocket_host='0.0.0.0',
+        num_rays_per_chunk=32768,
+        max_num_display_images=512,
+        quit_on_train_completion=True,
+        image_format='jpeg',
+        jpeg_quality=75,
+        make_share_url=False,
+        camera_frustum_scale=0.1,
+        default_composite_depth=True
+    ),
+    pipeline=VanillaPipelineConfig(
+        _target=<class 'nerfstudio.pipelines.base_pipeline.VanillaPipeline'>,
+        datamanager=FullImageDatamanagerConfig(
+            _target=<class 'nerfstudio.data.datamanagers.full_images_datamanager.FullImageDatamanager'>,
+            data=None,
+            masks_on_gpu=False,
+            images_on_gpu=True,
+            dataparser=NerfstudioDataParserConfig(
+                _target=<class 'nerfstudio.data.dataparsers.nerfstudio_dataparser.Nerfstudio'>,
+                data=PosixPath('/content/table_clem/ori'),
+                scale_factor=1.0,
+                downscale_factor=None,
+                scene_scale=1.0,
+                orientation_method='up',
+                center_method='poses',
+                auto_scale_poses=True,
+                eval_mode='fraction',
+                train_split_fraction=0.9,
+                eval_interval=8,
+                depth_unit_scale_factor=0.001,
+                mask_color=None,
+                load_3D_points=True
+            ),
+            camera_res_scale_factor=1.0,
+            eval_num_images_to_sample_from=-1,
+            eval_num_times_to_repeat_images=-1,
+            eval_image_indices=(0,),
+            cache_images='gpu',
+            cache_images_type='uint8',
+            max_thread_workers=None,
+            train_cameras_sampling_strategy='random',
+            train_cameras_sampling_seed=42,
+            fps_reset_every=100
+        ),
+        model=SplatfactoModelConfig(
+            _target=<class 'nerfstudio.models.splatfacto.SplatfactoModel'>,
+            enable_collider=True,
+            collider_params={'near_plane': 2.0, 'far_plane': 6.0},
+            loss_coefficients={'rgb_loss_coarse': 1.0, 'rgb_loss_fine': 1.0},
+            eval_num_rays_per_chunk=4096,
+            prompt=None,
+            warmup_length=500,
+            refine_every=100,
+            resolution_schedule=3000,
+            background_color='random',
+            num_downscales=2,
+            cull_alpha_thresh=0.05,
+            cull_scale_thresh=0.5,
+            reset_alpha_every=30,
+            densify_grad_thresh=0.001,
+            use_absgrad=True,
+            densify_size_thresh=0.01,
+            n_split_samples=2,
+            sh_degree_interval=1000,
+            cull_screen_size=0.25,
+            split_screen_size=0.015,
+            stop_screen_size_at=4000,
+            random_init=False,
+            num_random=50000,
+            random_scale=10.0,
+            ssim_lambda=0.2,
+            stop_split_at=8000,
+            sh_degree=3,
+            use_scale_regularization=True,
+            max_gauss_ratio=5.0,
+            output_depth_during_training=False,
+            rasterize_mode='classic',
+            camera_optimizer=CameraOptimizerConfig(
+                _target=<class 'nerfstudio.cameras.camera_optimizers.CameraOptimizer'>,
+                mode='off',
+                trans_l2_penalty=0.01,
+                rot_l2_penalty=0.001,
+                optimizer=None,
+                scheduler=None
+            ),
+            use_bilateral_grid=True,
+            grid_shape=(16, 16, 8),
+            color_corrected_metrics=False
+        )
+    ),
+    optimizers={
+        'means': {
+            'optimizer': AdamOptimizerConfig(
+                _target=<class 'torch.optim.adam.Adam'>,
+                lr=0.00016,
+                eps=1e-15,
+                max_norm=None,
+                weight_decay=0
+            ),
+            'scheduler': ExponentialDecaySchedulerConfig(
+                _target=<class 'nerfstudio.engine.schedulers.ExponentialDecayScheduler'>,
+                lr_pre_warmup=1e-08,
+                lr_final=1.6e-06,
+                warmup_steps=0,
+                max_steps=30000,
+                ramp='cosine'
+            )
+        },
+        'features_dc': {
+            'optimizer': AdamOptimizerConfig(
+                _target=<class 'torch.optim.adam.Adam'>,
+                lr=0.0025,
+                eps=1e-15,
+                max_norm=None,
+                weight_decay=0
+            ),
+            'scheduler': None
+        },
+        'features_rest': {
+            'optimizer': AdamOptimizerConfig(
+                _target=<class 'torch.optim.adam.Adam'>,
+                lr=0.000125,
+                eps=1e-15,
+                max_norm=None,
+                weight_decay=0
+            ),
+            'scheduler': None
+        },
+        'opacities': {
+            'optimizer': AdamOptimizerConfig(
+                _target=<class 'torch.optim.adam.Adam'>,
+                lr=0.05,
+                eps=1e-15,
+                max_norm=None,
+                weight_decay=0
+            ),
+            'scheduler': None
+        },
+        'scales': {
+            'optimizer': AdamOptimizerConfig(
+                _target=<class 'torch.optim.adam.Adam'>,
+                lr=0.005,
+                eps=1e-15,
+                max_norm=None,
+                weight_decay=0
+            ),
+            'scheduler': None
+        },
+        'quats': {
+            'optimizer': AdamOptimizerConfig(
+                _target=<class 'torch.optim.adam.Adam'>,
+                lr=0.001,
+                eps=1e-15,
+                max_norm=None,
+                weight_decay=0
+            ),
+            'scheduler': None
+        },
+        'camera_opt': {
+            'optimizer': AdamOptimizerConfig(
+                _target=<class 'torch.optim.adam.Adam'>,
+                lr=0.0001,
+                eps=1e-15,
+                max_norm=None,
+                weight_decay=0
+            ),
+            'scheduler': ExponentialDecaySchedulerConfig(
+                _target=<class 'nerfstudio.engine.schedulers.ExponentialDecayScheduler'>,
+                lr_pre_warmup=0,
+                lr_final=5e-07,
+                warmup_steps=1000,
+                max_steps=30000,
+                ramp='cosine'
+            )
+        },
+        'bilateral_grid': {
+            'optimizer': AdamOptimizerConfig(
+                _target=<class 'torch.optim.adam.Adam'>,
+                lr=0.002,
+                eps=1e-15,
+                max_norm=None,
+                weight_decay=0
+            ),
+            'scheduler': ExponentialDecaySchedulerConfig(
+                _target=<class 'nerfstudio.engine.schedulers.ExponentialDecayScheduler'>,
+                lr_pre_warmup=0,
+                lr_final=0.0001,
+                warmup_steps=1000,
+                max_steps=30000,
+                ramp='cosine'
+            )
+        }
+    },
+    vis='tensorboard',
+    data=None,
+    prompt=None,
+    relative_model_dir=PosixPath('nerfstudio_models'),
+    load_scheduler=True,
+    steps_per_save=2000,
+    steps_per_eval_batch=0,
+    steps_per_eval_image=100,
+    steps_per_eval_all_images=2000,
+    max_num_iterations=8000,
+    mixed_precision=True,
+    use_grad_scaler=True,
+    save_only_latest_checkpoint=True,
+    load_dir=None,
+    load_step=None,
+    load_config=None,
+    load_checkpoint=None,
+    log_gradients=False,
+    gradient_accumulation_steps={},
+    start_paused=False
+)
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+[16:59:20] Saving config to:                                                                    experiment_config.py:136
+           /content/table_clem/model3d/splatfacto/2026-05-07_165920/config.yml
+           Saving checkpoints to:                                                                         trainer.py:142
+           /content/table_clem/model3d/splatfacto/2026-05-07_165920/nerfstudio_models
+           Auto image downscale factor of 2                                                 nerfstudio_dataparser.py:484
+Downloading: "https://download.pytorch.org/models/alexnet-owt-7be5be79.pth" to /root/.cache/torch/hub/checkpoints/alexnet-owt-7be5be79.pth
+100%|██████████| 233M/233M [00:01<00:00, 184MB/s]
+No Nerfstudio checkpoint to load, so training from scratch.
+logging events to: /content/table_clem/model3d/splatfacto/2026-05-07_165920
+[16:59:26] Caching / undistorting train images                                            full_images_datamanager.py:230
+
