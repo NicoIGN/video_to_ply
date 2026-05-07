@@ -26,11 +26,17 @@ add_arg() {
 add_bool_arg() {
   local array_name="$1"
   local flag="$2"
-  local value="$3"
+  local value="${3-}"
 
-  if [[ -n "${value:-}" ]]; then
-    eval "$array_name+=(\"\$flag\" \"\$value\")"
-  fi
+  [[ -z "$value" ]] && return
+
+  case "$value" in
+    True|true|1)   value="True" ;;
+    False|false|0) value="False" ;;
+    *) echo "⚠️ Invalid boolean value for $flag: $value"; return ;;
+  esac
+
+  eval "$array_name+=(\"\$flag\" \"\$value\")"
 }
 
 add_multi_arg() {
