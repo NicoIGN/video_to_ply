@@ -1,5 +1,5 @@
 ########################################
-# PERFORMANCE PROFILE - QUALITY ONLY
+# PERFORMANCE PROFILE - QUALITY ONLY (FIXED)
 ########################################
 
 TRAINING_PROFILE="gpu/quality"
@@ -14,8 +14,8 @@ TRAIN_VIS_MODE="tensorboard"
 ########################################
 
 CAMERA_RES_SCALE_FACTOR=1.0
-MAX_RES=1024
-NUM_DOWNSCALES=1
+MAX_RES=1536
+NUM_DOWNSCALES=0
 SKIP_IMAGE_PROCESSING=true
 MAX_JOBS=2
 
@@ -23,31 +23,49 @@ MAX_JOBS=2
 # TRAINING
 ########################################
 
-MAX_ITER=8000
-TRAIN_RAYS_PER_BATCH=512
+MAX_ITER=16000
+TRAIN_RAYS_PER_BATCH=1024
 
-NUM_NERF_SAMPLES_PER_RAY=64
-NUM_PROPOSAL_SAMPLES_PER_RAY="128 64"
+NUM_NERF_SAMPLES_PER_RAY=96
+NUM_PROPOSAL_SAMPLES_PER_RAY="128 96"
 
 ########################################
-# GAUSSIAN SPLATTING
+# GAUSSIAN SPLATTING (STABLE + CLEAN)
 ########################################
 
-# densification (plus stable en high-res training)
-DENSIFY_GRAD_THRESH=0.001
+# densification (réduit pour éviter explosion de splats)
+DENSIFY_GRAD_THRESH=0.00025
 
-# keep fine structures longer (better thin geometry / edges)
-CULL_ALPHA_THRESH=0.05
+# meilleure suppression des floaters
+CULL_ALPHA_THRESH=0.04
 
-# slightly more aggressive pruning of oversized splats
-CULL_SCREEN_SIZE=0.25
+# moins de blobs étirés (réduit ghosting)
+CULL_SCREEN_SIZE=0.15
 
-# earlier splitting for higher geometric precision
-SPLIT_SCREEN_SIZE=0.015
+# split plus fin mais moins agressif globalement
+SPLIT_SCREEN_SIZE=0.012
+
+# meilleure convergence géométrique
+REFINE_EVERY=300
+STOP_SPLIT_AT=9000
+
+# stabilité globale
+CULL_SCALE_THRESH=0.35
+RESET_ALPHA_EVERY=50
+
+########################################
+# QUALITY / REGULARIZATION
+########################################
+
+USE_BILATERAL_GRID=true
+USE_SCALE_REGULARIZATION=true
+
+MAX_GAUSS_RATIO=10
+SSIM_LAMBDA=0.32
 
 ########################################
 # EXPORT QUALITY
 ########################################
 
-EXPORT_NUM_POINTS=2500000
+EXPORT_NUM_POINTS=4000000
 EXPORT_DOWNSAMPLE=1
