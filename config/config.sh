@@ -337,6 +337,10 @@ if [ -z "${USE_SCALE_REGULARIZATION+x}" ]; then
   USE_SCALE_REGULARIZATION=true
 fi
 
+if [ -z "${USE_BILATERAL_GRID+x}" ]; then
+      USE_BILATERAL_GRID=True
+fi
+
 # Limite la taille relative des gaussiennes
 # → évite structures trop dominantes instables
 if [ -z "${CULL_SCALE_THRESH+x}" ]; then
