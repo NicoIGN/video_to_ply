@@ -1,5 +1,5 @@
 ########################################
-# PERFORMANCE PROFILE - QUALITY
+# PERFORMANCE PROFILE - QUALITY SAFE
 ########################################
 
 TRAINING_PROFILE="gpu/quality"
@@ -13,14 +13,13 @@ TRAIN_VIS_MODE="tensorboard"
 # IMAGE / PREPROCESSING
 ########################################
 
-# vraie résolution de travail
-CAMERA_RES_SCALE_FACTOR=1.0
+# montée progressive seulement
+CAMERA_RES_SCALE_FACTOR=0.9
+MAX_RES=1280
 
-# bon compromis qualité / stabilité
-MAX_RES=1536
-
-# conserve tous les détails
-NUM_DOWNSCALES=0
+# IMPORTANT :
+# garde le downscale stabilisateur
+NUM_DOWNSCALES=1
 
 SKIP_IMAGE_PROCESSING=true
 MAX_JOBS=2
@@ -29,64 +28,62 @@ MAX_JOBS=2
 # TRAINING
 ########################################
 
-# convergence correcte
-MAX_ITER=12000
+# plus long mais pas extrême
+MAX_ITER=10000
 
-# très important pour stabilité haute qualité
-TRAIN_RAYS_PER_BATCH=1024
+# améliore gradients sans explosion
+TRAIN_RAYS_PER_BATCH=768
 
-# meilleur signal géométrique
-NUM_NERF_SAMPLES_PER_RAY=64
-NUM_PROPOSAL_SAMPLES_PER_RAY="128 64"
+# augmentation modérée
+NUM_NERF_SAMPLES_PER_RAY=48
+NUM_PROPOSAL_SAMPLES_PER_RAY="96 48"
 
 ########################################
 # GAUSSIAN SPLATTING
 ########################################
 
-# plus de détails / plus de splats
-DENSIFY_GRAD_THRESH=0.0004
+# légèrement plus permissif
+DENSIFY_GRAD_THRESH=0.00038
 
-# conserve détails fins sans explosion
-CULL_ALPHA_THRESH=0.08
+# garde davantage de détails
+CULL_ALPHA_THRESH=0.10
 
-# évite gros blobs visibles
-CULL_SCREEN_SIZE=0.18
+# moins agressif mais stable
+CULL_SCREEN_SIZE=0.22
 
-# split plus fin pour géométrie détaillée
+# split un peu plus fin
 SPLIT_SCREEN_SIZE=0.018
 
 ########################################
 # DENSIFICATION CONTROL
 ########################################
 
-# ralentit légèrement la croissance
-REFINE_EVERY=200
+# densification un peu plus active
+REFINE_EVERY=250
 
-# laisse la scène densifier longtemps
-STOP_SPLIT_AT=12000
+# laisse vivre les splits plus longtemps
+STOP_SPLIT_AT=8500
 
-# stabilise les alphas
-RESET_ALPHA_EVERY=35
+# stabilisation
+RESET_ALPHA_EVERY=40
+
+# nettoyage modéré
+CULL_SCALE_THRESH=0.48
 
 ########################################
-# REGULARIZATION / STABILITY
+# QUALITY / REGULARIZATION
 ########################################
 
 USE_BILATERAL_GRID=true
 USE_SCALE_REGULARIZATION=true
 
-# évite splats géants dégénérés
-MAX_GAUSS_RATIO=4.5
+MAX_GAUSS_RATIO=4.0
 
-# nettoie petits clusters instables
-CULL_SCALE_THRESH=0.45
-
-# meilleur rendu perceptuel
-SSIM_LAMBDA=0.28
+SSIM_LAMBDA=0.26
 
 ########################################
 # EXPORT QUALITY
 ########################################
 
-EXPORT_NUM_POINTS=2500000
+EXPORT_NUM_POINTS=1500000
 EXPORT_DOWNSAMPLE=1
