@@ -330,7 +330,9 @@ elif [[ "$DEVICE" == "cpu" ]]; then
   fi
 fi
 
-echo "DEVICE_ARGS: $DEVICE_ARGS"
+echo "COMMON_ARGS: ${DEVICE_ARGS[@]}"
+
+echo "DEVICE_ARGS: ${DEVICE_ARGS[@]}"
 
 # ======================
 # LOGGING
