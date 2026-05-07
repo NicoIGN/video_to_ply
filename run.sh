@@ -137,7 +137,7 @@ done
 
 
 # ======================
-# VALIDATION
+# SETUP VALIDATION
 # ======================
 
 BASENAME=${BASENAME:-gsplat_$(date +%Y%m%d_%H%M%S)}
@@ -210,86 +210,72 @@ else
 fi
 
 # ======================
-# CONDA
+# CONDA ENVIRONMENT
 # ======================
 if [ "$SKIP_CONDA" = true ]; then
-  echo "⏩ Skipping conda setup (--skip-conda enabled)"
+    echo "⏩ Skipping conda setup (--skip-conda enabled)"
 else
+    ### LOAD CONDA FIRST
+    source "$(conda info --base)/etc/profile.d/conda.sh"
 
-  # ======================
-  # LOAD CONDA FIRST
-  # ======================
-  source "$(conda info --base)/etc/profile.d/conda.sh"
+    ### PROXY SETUP (RUNTIME FIRST)
+    if [ "$NO_PROXY" != true ]; then
+      echo NO_PROXY: $NO_PROXY
+      
+      if [ -n "$HTTP_PROXY" ]; then
+        export HTTP_PROXY="$HTTP_PROXY"
+        export http_proxy="$HTTP_PROXY"
+        echo "🌐 HTTP proxy enabled (1)"
+      fi
 
- # ======================
-# PROXY SETUP (RUNTIME FIRST)
-# ======================
+      if [ -n "$HTTPS_PROXY" ]; then
+        export HTTPS_PROXY="$HTTPS_PROXY"
+        export https_proxy="$HTTPS_PROXY"
+        echo "🌐 HTTPS proxy enabled (2)"
+      fi
 
-if [ "$NO_PROXY" != true ]; then
-  echo NO_PROXY: $NO_PROXY
-  
-  if [ -n "$HTTP_PROXY" ]; then
-    export HTTP_PROXY="$HTTP_PROXY"
-    export http_proxy="$HTTP_PROXY"
-    echo "🌐 HTTP proxy enabled (1)"
-  fi
+      ### CONDA PROXY CONFIG
+      conda config --set proxy_servers.http "$HTTP_PROXY" 2>/dev/null || true
+      conda config --set proxy_servers.https "$HTTPS_PROXY" 2>/dev/null || true
 
-  if [ -n "$HTTPS_PROXY" ]; then
-    export HTTPS_PROXY="$HTTPS_PROXY"
-    export https_proxy="$HTTPS_PROXY"
-    echo "🌐 HTTPS proxy enabled (2)"
-  fi
+    else
+      echo "🚫 Proxy disabled via NO_PROXY=true"
+      # 🔥 clean conda config
+      conda config --remove-key proxy_servers.http 2>/dev/null || true
+      conda config --remove-key proxy_servers.https 2>/dev/null || true
+    fi
 
-  # ======================
-  # CONDA PROXY CONFIG (SECONDARY)
-  # ======================
-  conda config --set proxy_servers.http "$HTTP_PROXY" 2>/dev/null || true
-  conda config --set proxy_servers.https "$HTTPS_PROXY" 2>/dev/null || true
+    ### ENV CREATE / UPDATE
+    set +e
 
-else
-  echo "🚫 Proxy disabled via NO_PROXY=true"
-  # 🔥 clean conda config
-  conda config --remove-key proxy_servers.http 2>/dev/null || true
-  conda config --remove-key proxy_servers.https 2>/dev/null || true
-fi
+    if conda env list | awk '{print $1}' | grep -qw "$CONDA_ENV_NAME"; then
+        echo "🔁 Updating env: $CONDA_ENV_NAME"
+        CONDA_CMD="conda env update -n $CONDA_ENV_NAME -f $CONDA_ENV_FILE --prune"
+    else
+        echo "🆕 Creating env: $CONDA_ENV_NAME"
+        conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+        conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+        CONDA_CMD="conda env create -n $CONDA_ENV_NAME -f $CONDA_ENV_FILE"
+    fi
 
+    echo "⚙️ Running: $CONDA_CMD"
 
-  # ======================
-  # ENV CREATE / UPDATE
-  # ======================
-  set +e
+    $CONDA_CMD
+    STATUS=$?
 
-  if conda env list | awk '{print $1}' | grep -qw "$CONDA_ENV_NAME"; then
-    echo "🔁 Updating env: $CONDA_ENV_NAME"
-    CONDA_CMD="conda env update -n $CONDA_ENV_NAME -f $CONDA_ENV_FILE --prune"
-  else
-    echo "🆕 Creating env: $CONDA_ENV_NAME"
-    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
-    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
-    CONDA_CMD="conda env create -n $CONDA_ENV_NAME -f $CONDA_ENV_FILE"
-  fi
+    if [ $STATUS -ne 0 ]; then
+        echo "❌ Conda failed ($CONDA_CMD)"
+        echo "👉 Run manually for debug"
+        exit 1
+    fi
 
-  echo "⚙️ Running: $CONDA_CMD"
+    set -e
 
-  $CONDA_CMD
-  STATUS=$?
+    ### ACTIVATE ENV
+    echo "🔌 Activating env: $CONDA_ENV_NAME"
+    conda activate "$CONDA_ENV_NAME"
 
-  if [ $STATUS -ne 0 ]; then
-    echo "❌ Conda failed ($CONDA_CMD)"
-    echo "👉 Run manually for debug"
-    exit 1
-  fi
-
-  set -e
-
-  # ======================
-  # ACTIVATE ENV (IMPORTANT FIX)
-  # ======================
-  echo "🔌 Activating env: $CONDA_ENV_NAME"
-  conda activate "$CONDA_ENV_NAME"
-  
-  bash scripts/check_torch_stack.sh
-
+    bash scripts/check_torch_stack.sh
 fi
 
 # ======================
@@ -305,16 +291,6 @@ if [[ "$PY_VER" != *"3.10"* && "$PY_VER" != *"3.11"* ]]; then
 fi
 
 echo "✅ Using python: $PY_VER "
-
-# ======================
-# MODEL VALIDATION
-# ======================
-CUDA_AVAILABLE=false
-if command -v nvidia-smi >/dev/null 2>&1; then
-  if nvidia-smi >/dev/null 2>&1; then
-    CUDA_AVAILABLE=true
-  fi
-fi
 
 # ======================
 # MODEL VALIDATION
@@ -355,7 +331,7 @@ if [ "$DEVICE" == "gpu" ]; then
 fi
 
 # ======================
-# STRUCTURE
+# DATA STRUCTURE
 # ======================
 INPUT_DIR="$ROOT_DIR/input"
 ORI_DIR="$ROOT_DIR/ori"
@@ -497,133 +473,129 @@ else
     CROP_FACTOR="$CROP_FACTOR" \
     bash scripts/preprocess_nerfstudio.sh
     
+    ### ZIP COLMAP DATA
+
+    echo ""
+    echo "🗜️ Zipping COLMAP directory from ORI_DIR..."
+
+    COLMAP_ZIP_NAME="colmap_${BASENAME}.zip"
+    COLMAP_ZIP_PATH="$ORI_DIR/$COLMAP_ZIP_NAME"
+
+    mkdir -p "$EXPORT_DIR"
+
+    (
+      cd "$ORI_DIR"
+      zip -r "$COLMAP_ZIP_NAME" "colmap" > /dev/null
+    )
+
+    if [ ! -f "$COLMAP_ZIP_PATH" ]; then
+      echo "❌ Failed to create zip archive"
+      exit 1
+    fi
+
+    mv "$COLMAP_ZIP_PATH" "$EXPORT_DIR/"
+
+    echo "✅ COLMAP zipped and moved:"
+    echo "   $EXPORT_DIR/$COLMAP_ZIP_NAME"
+    
     print_step_time "PREPROCESS" "$STEP_START"
 fi
 
-# ----------------------
-# 3. ZIP COLMAP DATA
-# ----------------------
-
-echo ""
-echo "🗜️ Zipping COLMAP directory from ORI_DIR..."
-
-COLMAP_ZIP_NAME="colmap_${BASENAME}.zip"
-COLMAP_ZIP_PATH="$ORI_DIR/$COLMAP_ZIP_NAME"
-
-mkdir -p "$EXPORT_DIR"
-
-(
-  cd "$ORI_DIR"
-  zip -r "$COLMAP_ZIP_NAME" "colmap" > /dev/null
-)
-
-if [ ! -f "$COLMAP_ZIP_PATH" ]; then
-  echo "❌ Failed to create zip archive"
-  exit 1
-fi
-
-mv "$COLMAP_ZIP_PATH" "$EXPORT_DIR/"
-
-echo "✅ COLMAP zipped and moved:"
-echo "   $EXPORT_DIR/$COLMAP_ZIP_NAME"
 
 # ----------------------
-# 4 ESTIMATE NEAR / FAR FROM COLMAP
-# ----------------------
-
-COLMAP_DIR="$ORI_DIR/colmap/sparse/0"
-
-if [ ! -d "$COLMAP_DIR" ]; then
-  echo "❌ COLMAP directory not found: $COLMAP_DIR"
-  exit 1
-fi
-
-echo ""
-echo "📏 Estimating near/far planes from COLMAP..."
-
-ESTIMATE_SCRIPT="$SCRIPT_DIR/scripts/estimate_planes.py"
-
-if [ ! -f "$ESTIMATE_SCRIPT" ]; then
-  echo "❌ Missing script: $ESTIMATE_SCRIPT"
-  exit 1
-fi
-
-EST_OUTPUT=$(python3 "$ESTIMATE_SCRIPT" --input "$COLMAP_DIR")
-
-NEAR=$(echo "$EST_OUTPUT" | grep NEAR | cut -d= -f2)
-FAR=$(echo "$EST_OUTPUT" | grep FAR  | cut -d= -f2)
-
-# validation minimale
-if [[ -z "$NEAR" || -z "$FAR" || "$NEAR" == "nan" || "$FAR" == "nan" ]]; then
-  echo "❌ Invalid near/far values"
-  echo "$EST_OUTPUT"
-  exit 1
-fi
-
-echo "✅ Estimated:"
-echo "   near = $NEAR"
-echo "   far  = $FAR"
-
-export COLLIDER_NEAR="$NEAR"
-export COLLIDER_FAR="$FAR"
-export ENABLE_COLLIDER="True"
-
-# ----------------------
-# 5. TRAIN
+# 3. TRAIN
 # ----------------------
 
 if [ "$SKIP_TRAINING" = true ]; then
   echo "⏩ Skipping training (config)"
 else
-  LATEST_RUN=$(ls -td "$OUTPUT_DIR"/ori/$MODEL/* 2>/dev/null | head -n 1 || true)
+    ### ESTIMATE NEAR / FAR FROM COLMAP
+    COLMAP_DIR="$ORI_DIR/colmap/sparse/0"
 
-  if [ -n "$LATEST_RUN" ] && [ -d "$LATEST_RUN/nerfstudio_models" ]; then
-    echo "⏩ Skipping training"
-  else
+    if [ ! -d "$COLMAP_DIR" ]; then
+      echo "❌ COLMAP directory not found: $COLMAP_DIR"
+      exit 1
+    fi
+
     echo ""
-    echo ""
-    echo "🧠 Training..."
-  
-    STEP_START=$(date +%s)
-  
-    MODEL="$MODEL" \
-    MODEL_IMPLEMENTATION="$MODEL_IMPLEMENTATION" \
-    DEVICE="$DEVICE" \
-    MAX_ITER="$MAX_ITER" \
-    REFINE_EVERY="$REFINE_EVERY" \
-    MAX_JOBS="$MAX_JOBS" \
-    STEPS_PER_SAVE="$STEPS_PER_SAVE" \
-    STEPS_PER_EVAL_ALL_IMAGES="$STEPS_PER_EVAL_ALL_IMAGES" \
-    DATA="$ORI_DIR" \
-    EXPERIMENT_NAME="$EXPERIMENT_NAME" \
-    OUTPUTDIR="$TRAIN_DIR" \
-    TRAIN_RAYS_PER_BATCH="$TRAIN_RAYS_PER_BATCH" \
-    CAMERA_RES_SCALE_FACTOR="$CAMERA_RES_SCALE_FACTOR" \
-    NUM_NERF_SAMPLES_PER_RAY="$NUM_NERF_SAMPLES_PER_RAY" \
-    NUM_PROPOSAL_SAMPLES_PER_RAY="$NUM_PROPOSAL_SAMPLES_PER_RAY" \
-    MAX_RES="$MAX_RES" \
-    MAX_GAUSS_RATIO="$MAX_GAUSS_RATIO" \
-    DENSIFY_GRAD_THRESH="$DENSIFY_GRAD_THRESH" \
-    CULL_ALPHA_THRESH="$CULL_ALPHA_THRESH" \
-    CULL_SCREEN_SIZE="$CULL_SCREEN_SIZE" \
-    SPLIT_SCREEN_SIZE="$SPLIT_SCREEN_SIZE" \
-    STOP_SPLIT_AT="$STOP_SPLIT_AT" \
-    CULL_SCALE_THRESH="$CULL_SCALE_THRESH" \
-    RESET_ALPHA_EVERY="$RESET_ALPHA_EVERY" \
-    USE_SCALE_REGULARIZATION="$USE_SCALE_REGULARIZATION" \
-    SSIM_LAMBDA="$SSIM_LAMBDA" \
-    MAX_GAUSSIANS="$MAX_GAUSSIANS" \
-    COLLIDER_NEAR="$COLLIDER_NEAR" \
-    COLLIDER_FAR="$COLLIDER_FAR" \
-    ENABLE_COLLIDER="$ENABLE_COLLIDER" \
-    bash scripts/train.sh
-    
-    print_step_time "TRAINING" "$STEP_START"
-  fi
+    echo "📏 Estimating near/far planes from COLMAP..."
+
+    ESTIMATE_SCRIPT="$SCRIPT_DIR/scripts/estimate_planes.py"
+
+    if [ ! -f "$ESTIMATE_SCRIPT" ]; then
+      echo "❌ Missing script: $ESTIMATE_SCRIPT"
+      exit 1
+    fi
+
+    EST_OUTPUT=$(python3 "$ESTIMATE_SCRIPT" --input "$COLMAP_DIR")
+
+    NEAR=$(echo "$EST_OUTPUT" | grep NEAR | cut -d= -f2)
+    FAR=$(echo "$EST_OUTPUT" | grep FAR  | cut -d= -f2)
+
+    # validation minimale
+    if [[ -z "$NEAR" || -z "$FAR" || "$NEAR" == "nan" || "$FAR" == "nan" ]]; then
+      echo "❌ Invalid near/far values"
+      echo "$EST_OUTPUT"
+      exit 1
+    fi
+
+    echo "✅ Estimated:"
+    echo "   near = $NEAR"
+    echo "   far  = $FAR"
+
+    export COLLIDER_NEAR="$NEAR"
+    export COLLIDER_FAR="$FAR"
+    export ENABLE_COLLIDER="True"
+
+    LATEST_RUN=$(ls -td "$OUTPUT_DIR"/ori/$MODEL/* 2>/dev/null | head -n 1 || true)
+
+    if [ -n "$LATEST_RUN" ] && [ -d "$LATEST_RUN/nerfstudio_models" ]; then
+        echo "⏩ Skipping training"
+        else
+        echo ""
+        echo ""
+        echo "🧠 Training..."
+
+        STEP_START=$(date +%s)
+
+        MODEL="$MODEL" \
+        MODEL_IMPLEMENTATION="$MODEL_IMPLEMENTATION" \
+        DEVICE="$DEVICE" \
+        MAX_ITER="$MAX_ITER" \
+        REFINE_EVERY="$REFINE_EVERY" \
+        MAX_JOBS="$MAX_JOBS" \
+        STEPS_PER_SAVE="$STEPS_PER_SAVE" \
+        STEPS_PER_EVAL_ALL_IMAGES="$STEPS_PER_EVAL_ALL_IMAGES" \
+        DATA="$ORI_DIR" \
+        EXPERIMENT_NAME="$EXPERIMENT_NAME" \
+        OUTPUTDIR="$TRAIN_DIR" \
+        TRAIN_RAYS_PER_BATCH="$TRAIN_RAYS_PER_BATCH" \
+        CAMERA_RES_SCALE_FACTOR="$CAMERA_RES_SCALE_FACTOR" \
+        NUM_NERF_SAMPLES_PER_RAY="$NUM_NERF_SAMPLES_PER_RAY" \
+        NUM_PROPOSAL_SAMPLES_PER_RAY="$NUM_PROPOSAL_SAMPLES_PER_RAY" \
+        MAX_RES="$MAX_RES" \
+        MAX_GAUSS_RATIO="$MAX_GAUSS_RATIO" \
+        DENSIFY_GRAD_THRESH="$DENSIFY_GRAD_THRESH" \
+        CULL_ALPHA_THRESH="$CULL_ALPHA_THRESH" \
+        CULL_SCREEN_SIZE="$CULL_SCREEN_SIZE" \
+        SPLIT_SCREEN_SIZE="$SPLIT_SCREEN_SIZE" \
+        STOP_SPLIT_AT="$STOP_SPLIT_AT" \
+        CULL_SCALE_THRESH="$CULL_SCALE_THRESH" \
+        RESET_ALPHA_EVERY="$RESET_ALPHA_EVERY" \
+        USE_SCALE_REGULARIZATION="$USE_SCALE_REGULARIZATION" \
+        SSIM_LAMBDA="$SSIM_LAMBDA" \
+        MAX_GAUSSIANS="$MAX_GAUSSIANS" \
+        COLLIDER_NEAR="$COLLIDER_NEAR" \
+        COLLIDER_FAR="$COLLIDER_FAR" \
+        ENABLE_COLLIDER="$ENABLE_COLLIDER" \
+        bash scripts/train.sh
+
+        print_step_time "TRAINING" "$STEP_START"
+    fi
 fi
 
 # ----------------------
-# 6. EXPORT
+# 4. EXPORT
 # ----------------------
 
 if [[ "$SKIP_EXPORT" == "true" ]]; then
@@ -667,10 +639,8 @@ else
         ;;
     esac
     
-
-    # ======================
-    # VALIDATION
-    # ======================
+    ### VALIDATION
+    
     PLY_FILE=$(find "$OUTPUT_DIR" -type f -name "*.ply" | head -n 1)
 
     if [[ -f "$PLY_FILE" ]]; then
@@ -681,9 +651,8 @@ else
       exit 1
     fi
     
-    # ======================
-    # TRANSFER ARCHIVE OF THE TRAINING TO EXPORT_DIR
-    # ======================
+    ### TRANSFER ARCHIVE OF THE TRAINING TO EXPORT_DIR
+    
     LATEST_ZIP=$(ls -t "$OUTPUT_DIR"/*.zip 2>/dev/null | head -n 1)
 
     if [ -z "$LATEST_ZIP" ]; then
@@ -699,7 +668,7 @@ else
 fi
 
 # ======================
-# 7. CLEAN PLY
+# 5. CLEAN PLY
 # ======================
 
 echo "🧹 Removing filtered Gaussian Splat files..."
