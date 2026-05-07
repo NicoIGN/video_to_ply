@@ -30,7 +30,7 @@ MAX_JOBS=2
 ########################################
 
 # convergence correcte
-MAX_ITER=16000
+MAX_ITER=12000
 
 # très important pour stabilité haute qualité
 TRAIN_RAYS_PER_BATCH=1024

@@ -30,7 +30,7 @@ MAX_JOBS=2
 ########################################
 
 # convergence longue
-MAX_ITER=22000
+MAX_ITER=18000
 
 # critique pour stabilité à haute densité
 TRAIN_RAYS_PER_BATCH=1024
