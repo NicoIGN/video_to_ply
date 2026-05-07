@@ -283,10 +283,10 @@ add_arg COMMON_ARGS --load-dir "$LOAD_DIR"
 
 DEVICE_ARGS=()
 
-unset DENSIFY_GRAD_THRESH
-unset CULL_ALPHA_THRESH
-unset CULL_SCREEN_SIZE
-unset SPLIT_SCREEN_SIZE
+#unset DENSIFY_GRAD_THRESH
+#unset CULL_ALPHA_THRESH
+#unset CULL_SCREEN_SIZE
+#unset SPLIT_SCREEN_SIZE
   
 if [[ "$DEVICE" == "gpu" ]]; then
 
