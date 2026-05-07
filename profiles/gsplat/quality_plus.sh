@@ -1,5 +1,5 @@
 ########################################
-# PERFORMANCE PROFILE - QUALITY PRO
+# PERFORMANCE PROFILE - QUALITY PLUS
 ########################################
 
 TRAINING_PROFILE="gpu/quality_plus"
@@ -13,10 +13,13 @@ TRAIN_VIS_MODE="tensorboard"
 # IMAGE / PREPROCESSING
 ########################################
 
+# meilleur équilibre stabilité / détail
 CAMERA_RES_SCALE_FACTOR=1.0
-MAX_RES=2048
+MAX_RES=1536
 
+# conserve pleine résolution source
 NUM_DOWNSCALES=0
+
 SKIP_IMAGE_PROCESSING=true
 MAX_JOBS=2
 
@@ -24,60 +27,65 @@ MAX_JOBS=2
 # TRAINING
 ########################################
 
+# temps suffisant pour convergence propre
 MAX_ITER=16000
 
-# ⚡ plus fréquent au début → meilleur détail
-REFINE_EVERY=150
+# IMPORTANT pour stabilité en haute résolution
+TRAIN_RAYS_PER_BATCH=1024
 
-TRAIN_RAYS_PER_BATCH=512
-
+# meilleur signal géométrique
 NUM_NERF_SAMPLES_PER_RAY=64
 NUM_PROPOSAL_SAMPLES_PER_RAY="128 64"
 
 ########################################
-# GAUSSIAN SPLATTING (DETAIL FIRST)
+# GAUSSIAN SPLATTING
 ########################################
 
-# 🔥 clé : ton 0.002 est trop haut
-DENSIFY_GRAD_THRESH=0.0009
+# densification fine mais stable
+DENSIFY_GRAD_THRESH=0.00055
 
-# garde structures fines plus longtemps
-CULL_ALPHA_THRESH=0.07
+# évite explosion de splats
+REFINE_EVERY=250
 
-# évite blobs mais sans tuer détails
-CULL_SCREEN_SIZE=0.20
+# stop densification avant phase finale
+STOP_SPLIT_AT=16000
 
-# split plus fin (important pour 2K)
+########################################
+# CLEANING / STABILITY
+########################################
+
+# nettoie les splats faibles avant dérive
+CULL_ALPHA_THRESH=0.10
+
+# évite gros blobs écran
+CULL_SCREEN_SIZE=0.22
+
+# split suffisamment fin pour détails
 SPLIT_SCREEN_SIZE=0.018
 
-# laisse vivre la géométrie plus longtemps
-STOP_SPLIT_AT=14000
-
-########################################
-# STABILITY CONTROL (SMART)
-########################################
-
-# réduit dérive sans bloquer
-RESET_ALPHA_EVERY=40
-
-# moins agressif que ton 0.5
+# supprime clusters instables
 CULL_SCALE_THRESH=0.45
 
-# IMPORTANT : ton double MAX_GAUSS_RATIO était inutile
-MAX_GAUSS_RATIO=4.0
+# reset périodique pour éviter saturation alpha
+RESET_ALPHA_EVERY=40
 
 ########################################
-# QUALITY / REGULARIZATION
+# REGULARIZATION / QUALITY
 ########################################
 
+USE_BILATERAL_GRID=true
 USE_SCALE_REGULARIZATION=true
 
-# un peu plus fort → améliore sharpness perçue
-SSIM_LAMBDA=0.3
+# limite taille extrême des splats
+MAX_GAUSS_RATIO=4.0
+
+# améliore netteté perçue
+SSIM_LAMBDA=0.30
 
 ########################################
-# EXPORT QUALITY
+# EXPORT
 ########################################
 
-EXPORT_NUM_POINTS=3000000
+# largement suffisant pour qualité élevée
+EXPORT_NUM_POINTS=1500000
 EXPORT_DOWNSAMPLE=1
