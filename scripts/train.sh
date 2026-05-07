@@ -329,6 +329,8 @@ elif [[ "$DEVICE" == "cpu" ]]; then
   fi
 fi
 
+echo "DEVICE_ARGS: $DEVICE_ARGS"
+
 # ======================
 # LOGGING
 # ======================
