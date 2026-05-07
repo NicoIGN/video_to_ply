@@ -1,5 +1,5 @@
 ########################################
-# PERFORMANCE PROFILE - QUALITY ONLY (FIXED)
+# PERFORMANCE PROFILE - QUALITY FIXED
 ########################################
 
 TRAINING_PROFILE="gpu/quality"
@@ -15,7 +15,7 @@ TRAIN_VIS_MODE="tensorboard"
 
 CAMERA_RES_SCALE_FACTOR=1.0
 MAX_RES=1536
-NUM_DOWNSCALES=0
+NUM_DOWNSCALES=1
 SKIP_IMAGE_PROCESSING=true
 MAX_JOBS=2
 
@@ -26,42 +26,43 @@ MAX_JOBS=2
 MAX_ITER=16000
 TRAIN_RAYS_PER_BATCH=1024
 
-NUM_NERF_SAMPLES_PER_RAY=96
-NUM_PROPOSAL_SAMPLES_PER_RAY="128 96"
+NUM_NERF_SAMPLES_PER_RAY=64        # (stable run = 64, plus stable que 96)
+NUM_PROPOSAL_SAMPLES_PER_RAY="128 64"
 
 ########################################
-# GAUSSIAN SPLATTING (STABLE + CLEAN)
+# GAUSSIAN SPLATTING (STABLE + HIGH QUALITY)
 ########################################
 
-# densification (réduit pour éviter explosion de splats)
-DENSIFY_GRAD_THRESH=0.0025
+# densification (stable run = 0.001, meilleur équilibre)
+DENSIFY_GRAD_THRESH=0.001
 
-# meilleure suppression des floaters
-CULL_ALPHA_THRESH=0.04
+# suppression floaters (stable)
+CULL_ALPHA_THRESH=0.05
 
-# moins de blobs étirés (réduit ghosting)
-CULL_SCREEN_SIZE=0.15
+# important: valeur stable (pas trop agressif)
+CULL_SCREEN_SIZE=0.25
 
-# split plus fin mais moins agressif globalement
-SPLIT_SCREEN_SIZE=0.01
+# split (stable run = 0.015 → plus cohérent que 0.01)
+SPLIT_SCREEN_SIZE=0.015
 
-# meilleure convergence géométrique
-REFINE_EVERY=300
-STOP_SPLIT_AT=9000
+# refine plus fréquent (meilleur tracking géométrique)
+REFINE_EVERY=100
 
-# stabilité globale
-CULL_SCALE_THRESH=0.35
-RESET_ALPHA_EVERY=50
+STOP_SPLIT_AT=8000
+
+# stabilité globale (identique stable run)
+CULL_SCALE_THRESH=0.5
+RESET_ALPHA_EVERY=30
 
 ########################################
 # QUALITY / REGULARIZATION
 ########################################
 
-USE_BILATERAL_GRID=true
-USE_SCALE_REGULARIZATION=true
+USE_BILATERAL_GRID=True
+USE_SCALE_REGULARIZATION=True
 
-MAX_GAUSS_RATIO=10
-SSIM_LAMBDA=0.32
+MAX_GAUSS_RATIO=5
+SSIM_LAMBDA=0.2
 
 ########################################
 # EXPORT QUALITY

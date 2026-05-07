@@ -290,44 +290,47 @@ DEVICE_ARGS=()
   
 if [[ "$DEVICE" == "gpu" ]]; then
 
-  add_arg DEVICE_ARGS       --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
-  add_arg DEVICE_ARGS       --pipeline.datamanager.cache-images gpu
-  add_bool_arg DEVICE_ARGS  --pipeline.datamanager.images-on-gpu True
-  add_bool_arg DEVICE_ARGS  --pipeline.datamanager.masks-on-gpu False
-  add_arg DEVICE_ARGS       --pipeline.model.densify-grad-thresh "$DENSIFY_GRAD_THRESH"
-  add_arg DEVICE_ARGS       --pipeline.model.cull-alpha-thresh "$CULL_ALPHA_THRESH"
-  add_arg DEVICE_ARGS       --pipeline.model.cull-screen-size "$CULL_SCREEN_SIZE"
-  add_arg DEVICE_ARGS       --pipeline.model.split-screen-size "$SPLIT_SCREEN_SIZE"
-  add_arg DEVICE_ARGS       --pipeline.model.refine-every "$REFINE_EVERY"
-  add_bool_arg DEVICE_ARGS  --pipeline.model.use-bilateral-grid "$USE_BILATERAL_GRID"
-  add_bool_arg DEVICE_ARGS  --pipeline.model.use-scale-regularization "$USE_SCALE_REGULARIZATION"
-  add_arg DEVICE_ARGS       --pipeline.model.max-gauss-ratio "$MAX_GAUSS_RATIO"
-  add_arg DEVICE_ARGS       --pipeline.model.stop-split-at "$STOP_SPLIT_AT"
-  add_arg DEVICE_ARGS       --pipeline.model.cull-scale-thresh "$CULL_SCALE_THRESH"
-  add_arg DEVICE_ARGS       --pipeline.model.reset-alpha-every "$RESET_ALPHA_EVERY"
-  add_arg DEVICE_ARGS       --pipeline.model.ssim-lambda "$SSIM_LAMBDA"
-  add_bool_arg DEVICE_ARGS  --pipeline.model.enable-collider "$ENABLE_COLLIDER"
+    add_arg DEVICE_ARGS       --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
+    add_arg DEVICE_ARGS       --pipeline.datamanager.cache-images gpu
+    add_bool_arg DEVICE_ARGS  --pipeline.datamanager.images-on-gpu True
+    add_bool_arg DEVICE_ARGS  --pipeline.datamanager.masks-on-gpu False
+    add_arg DEVICE_ARGS       --pipeline.model.densify-grad-thresh "$DENSIFY_GRAD_THRESH"
+    add_arg DEVICE_ARGS       --pipeline.model.cull-alpha-thresh "$CULL_ALPHA_THRESH"
+    add_arg DEVICE_ARGS       --pipeline.model.cull-screen-size "$CULL_SCREEN_SIZE"
+    add_arg DEVICE_ARGS       --pipeline.model.split-screen-size "$SPLIT_SCREEN_SIZE"
+    add_arg DEVICE_ARGS       --pipeline.model.refine-every "$REFINE_EVERY"
+    add_bool_arg DEVICE_ARGS  --pipeline.model.use-bilateral-grid "$USE_BILATERAL_GRID"
+    add_bool_arg DEVICE_ARGS  --pipeline.model.use-scale-regularization "$USE_SCALE_REGULARIZATION"
+    add_arg DEVICE_ARGS       --pipeline.model.max-gauss-ratio "$MAX_GAUSS_RATIO"
+    add_arg DEVICE_ARGS       --pipeline.model.stop-split-at "$STOP_SPLIT_AT"
+    add_arg DEVICE_ARGS       --pipeline.model.cull-scale-thresh "$CULL_SCALE_THRESH"
+    add_arg DEVICE_ARGS       --pipeline.model.reset-alpha-every "$RESET_ALPHA_EVERY"
+    add_arg DEVICE_ARGS       --pipeline.model.ssim-lambda "$SSIM_LAMBDA"
+    add_bool_arg DEVICE_ARGS  --pipeline.model.enable-collider "$ENABLE_COLLIDER"
 
-  if [[ "$ENABLE_COLLIDER" == "True" ]]; then
-    if [[ -n "${COLLIDER_NEAR:-}" ]]; then
-      add_multi_arg DEVICE_ARGS --pipeline.model.collider-params near_plane   "$COLLIDER_NEAR"
-    fi
+    if [[ "$ENABLE_COLLIDER" == "True" ]]; then
 
-    if [[ -n "${COLLIDER_FAR:-}" ]]; then
-      add_multi_arg DEVICE_ARGS --pipeline.model.collider-params far_plane    "$COLLIDER_FAR"
+      ARGS=()
+
+      [[ -n "${COLLIDER_NEAR:-}" ]] && ARGS+=("near_plane" "$COLLIDER_NEAR")
+      [[ -n "${COLLIDER_FAR:-}"  ]] && ARGS+=("far_plane"  "$COLLIDER_FAR")
+
+      if [[ ${#ARGS[@]} -gt 0 ]]; then
+        add_multi_arg DEVICE_ARGS --pipeline.model.collider-params "${ARGS[@]}"
+      fi
+
     fi
-  fi
 
 elif [[ "$DEVICE" == "cpu" ]]; then
-  add_arg DEVICE_ARGS --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
-  add_arg DEVICE_ARGS --pipeline.model.implementation "$MODEL_IMPLEMENTATION"
-  add_arg DEVICE_ARGS --pipeline.model.num-nerf-samples-per-ray "$NUM_NERF_SAMPLES_PER_RAY"
-  add_arg DEVICE_ARGS --pipeline.model.max-res "$MAX_RES"
-  add_bool_arg DEVICE_ARGS --pipeline.model.predict-normals True
+    add_arg DEVICE_ARGS --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
+    add_arg DEVICE_ARGS --pipeline.model.implementation "$MODEL_IMPLEMENTATION"
+    add_arg DEVICE_ARGS --pipeline.model.num-nerf-samples-per-ray "$NUM_NERF_SAMPLES_PER_RAY"
+    add_arg DEVICE_ARGS --pipeline.model.max-res "$MAX_RES"
+    add_bool_arg DEVICE_ARGS --pipeline.model.predict-normals True
 
-  if [[ -n "${NUM_PROPOSAL_SAMPLES_PER_RAY:-}" ]]; then
-    add_multi_arg DEVICE_ARGS --pipeline.model.num-proposal-samples-per-ray $NUM_PROPOSAL_SAMPLES_PER_RAY
-  fi
+    if [[ -n "${NUM_PROPOSAL_SAMPLES_PER_RAY:-}" ]]; then
+        add_multi_arg DEVICE_ARGS --pipeline.model.num-proposal-samples-per-ray $NUM_PROPOSAL_SAMPLES_PER_RAY
+    fi
 fi
 
 # ======================
