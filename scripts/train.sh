@@ -14,17 +14,17 @@ source "$SCRIPT_DIR/../config/config.sh"
 # ======================
 
 add_arg() {
-  local array_name="$1"
+  local -n arr="$1"
   local flag="$2"
-  local value="$3"
+  local value="${3-}"
 
-  if [[ -n "${value:-}" ]]; then
-    eval "$array_name+=(\"\$flag\" \"\$value\")"
-  fi
+  [[ -z "$value" ]] && return
+
+  arr+=("$flag" "$value")
 }
 
 add_bool_arg() {
-  local array_name="$1"
+  local -n arr="$1"
   local flag="$2"
   local value="${3-}"
 
@@ -36,21 +36,22 @@ add_bool_arg() {
     *) echo "⚠️ Invalid boolean value for $flag: $value"; return ;;
   esac
 
-  eval "$array_name+=(\"\$flag\" \"\$value\")"
+  arr+=("$flag" "$value")
 }
 
 add_multi_arg() {
-  local array_name="$1"
+  local -n arr="$1"
   local flag="$2"
+
   shift 2
 
-  if [[ $# -gt 0 ]]; then
-    eval "$array_name+=(\"\$flag\")"
+  [[ $# -eq 0 ]] && return
 
-    for arg in "$@"; do
-      eval "$array_name+=(\"\$arg\")"
-    done
-  fi
+  arr+=("$flag")
+
+  for arg in "$@"; do
+    arr+=("$arg")
+  done
 }
 
 # ======================
