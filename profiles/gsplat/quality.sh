@@ -23,7 +23,7 @@ MAX_JOBS=2
 # TRAINING
 ########################################
 
-MAX_ITER=16000
+MAX_ITER=12000
 TRAIN_RAYS_PER_BATCH=1024
 
 NUM_NERF_SAMPLES_PER_RAY=64        # (stable run = 64, plus stable que 96)
@@ -43,12 +43,12 @@ CULL_ALPHA_THRESH=0.05
 CULL_SCREEN_SIZE=0.25
 
 # split (stable run = 0.015 → plus cohérent que 0.01)
-SPLIT_SCREEN_SIZE=0.015
+SPLIT_SCREEN_SIZE=0.025
 
 # refine plus fréquent (meilleur tracking géométrique)
-REFINE_EVERY=100
+REFINE_EVERY=150
 
-STOP_SPLIT_AT=8000
+STOP_SPLIT_AT=12000
 
 # stabilité globale (identique stable run)
 CULL_SCALE_THRESH=0.5
