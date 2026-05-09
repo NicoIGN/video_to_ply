@@ -50,7 +50,7 @@ USE_SFM_DEPTH=false
 # true | false
 # → depth SfM utile pour densification mais plus lourd
 
-REFINE_INTRINSICS=true
+REFINE_INTRINSICS=false
 # true | false
 # → améliore calibration caméra (bundle adjustment)
 
