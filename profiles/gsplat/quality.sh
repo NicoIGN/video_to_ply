@@ -58,7 +58,7 @@ REFINE_EVERY=250
 
 # on arrête le split avant la fin
 # pour stabiliser la géométrie
-STOP_SPLIT_AT=8000
+STOP_SPLIT_AT=10000
 
 # moins agressif que 40
 # laisse converger les opacités
