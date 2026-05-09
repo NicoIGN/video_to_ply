@@ -1,5 +1,5 @@
 ########################################
-# PERFORMANCE PROFILE - QUALITY FIXED
+# PERFORMANCE PROFILE
 ########################################
 
 TRAINING_PROFILE="gpu/quality"
@@ -13,8 +13,10 @@ TRAIN_VIS_MODE="tensorboard"
 # IMAGE / PREPROCESSING
 ########################################
 
-CAMERA_RES_SCALE_FACTOR=1.0
-MAX_RES=1536
+# légère hausse qualité sans explosion mémoire
+CAMERA_RES_SCALE_FACTOR=1
+MAX_RES=1280
+
 NUM_DOWNSCALES=1
 SKIP_IMAGE_PROCESSING=true
 MAX_JOBS=2
@@ -23,50 +25,65 @@ MAX_JOBS=2
 # TRAINING
 ########################################
 
-MAX_ITER=12000
-TRAIN_RAYS_PER_BATCH=1024
+# un peu plus long pour converger proprement
+MAX_ITER=10000
 
-NUM_NERF_SAMPLES_PER_RAY=64        # (stable run = 64, plus stable que 96)
-NUM_PROPOSAL_SAMPLES_PER_RAY="128 64"
+# gradients plus stables
+TRAIN_RAYS_PER_BATCH=768
+
+# meilleur signal géométrique
+NUM_NERF_SAMPLES_PER_RAY=48
+NUM_PROPOSAL_SAMPLES_PER_RAY="96 48"
 
 ########################################
-# GAUSSIAN SPLATTING (STABLE + HIGH QUALITY)
+# GAUSSIAN SPLATTING
 ########################################
 
-# densification (stable run = 0.001, meilleur équilibre)
-DENSIFY_GRAD_THRESH=0.001
+# densification légèrement plus sensible
+# sans redevenir agressive
+DENSIFY_GRAD_THRESH=0.0004
 
-# suppression floaters (stable)
-CULL_ALPHA_THRESH=0.05
+# garde plus de micro-structure utile
+# sans laisser trop de poussière
+CULL_ALPHA_THRESH=0.10
 
-# important: valeur stable (pas trop agressif)
-CULL_SCREEN_SIZE=0.25
+# bon équilibre nettoyage/stabilité
+CULL_SCREEN_SIZE=0.22
 
-# split (stable run = 0.015 → plus cohérent que 0.01)
-SPLIT_SCREEN_SIZE=0.025
+# réduit le sur-splitting fin
+SPLIT_SCREEN_SIZE=0.03
 
-# refine plus fréquent (meilleur tracking géométrique)
-REFINE_EVERY=150
+# raffinement modéré
+REFINE_EVERY=250
 
-STOP_SPLIT_AT=12000
+# on arrête le split avant la fin
+# pour stabiliser la géométrie
+STOP_SPLIT_AT=8000
 
-# stabilité globale (identique stable run)
+# moins agressif que 40
+# laisse converger les opacités
+RESET_ALPHA_EVERY=60
+
+# garde le nettoyage des clusters instables
 CULL_SCALE_THRESH=0.5
-RESET_ALPHA_EVERY=30
 
 ########################################
 # QUALITY / REGULARIZATION
 ########################################
 
-USE_BILATERAL_GRID=True
-USE_SCALE_REGULARIZATION=True
+USE_BILATERAL_GRID=true
+USE_SCALE_REGULARIZATION=true
 
-MAX_GAUSS_RATIO=5
-SSIM_LAMBDA=0.2
+# un peu moins contraint
+# aide les détails fins
+MAX_GAUSS_RATIO=5.0
+
+# bon compromis détail/stabilité
+SSIM_LAMBDA=0.22
 
 ########################################
-# EXPORT QUALITY
+# EXPORT
 ########################################
 
-EXPORT_NUM_POINTS=4000000
+EXPORT_NUM_POINTS=1000000
 EXPORT_DOWNSAMPLE=1
