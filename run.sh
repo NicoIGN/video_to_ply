@@ -403,20 +403,31 @@ case "$INPUT_MODE" in
 
     elif [ -d "$INPUT_DIR/images" ] && [ "$(ls -A "$INPUT_DIR/images" 2>/dev/null)" ]; then
       echo "⏩ Skipping frame extraction"
+
     else
+
+      # optional trim env vars
+      EXTRA_ENV=()
+
+      [[ -n "${VIDEO_START:-}" ]] && EXTRA_ENV+=(VIDEO_START="$VIDEO_START")
+      [[ -n "${VIDEO_END:-}" ]] && EXTRA_ENV+=(VIDEO_END="$VIDEO_END")
+
+      # extraction mode
       if [[ -n "${FPS:-}" ]]; then
+        EXTRA_ENV+=(FPS="$FPS")
         echo "🎬 Extracting frames at ${FPS} FPS → $INPUT_DIR/images"
-        FPS="$FPS" \
-        IMAGE_DIR="$INPUT_DIR/images" \
-        VIDEO="$VIDEO" \
-        bash scripts/extract_frames.sh
+
       else
+        EXTRA_ENV+=(NUM_FRAMES="$NUM_FRAMES")
         echo "🎬 Extracting $NUM_FRAMES sharp frames → $INPUT_DIR/images"
-        NUM_FRAMES="$NUM_FRAMES" \
+      fi
+
+      env \
         IMAGE_DIR="$INPUT_DIR/images" \
         VIDEO="$VIDEO" \
+        "${EXTRA_ENV[@]}" \
         bash scripts/extract_frames.sh
-      fi
+
     fi
     ;;
 
