@@ -519,10 +519,9 @@ else
     COLMAP_ZIP_PATH="$ORI_DIR/$COLMAP_ZIP_NAME"
 
     mkdir -p "$EXPORT_DIR"
-
     (
       cd "$ORI_DIR"
-      zip -r "$COLMAP_ZIP_NAME" "colmap" > /dev/null
+      zip -r "$COLMAP_ZIP_NAME" "colmap" "transforms.json" > /dev/null
     )
 
     if [ ! -f "$COLMAP_ZIP_PATH" ]; then
