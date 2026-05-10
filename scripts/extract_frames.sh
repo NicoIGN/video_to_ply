@@ -89,7 +89,7 @@ rm -f "$IMAGE_DIR"/frame_*.png
 rm -f "$TMP_DIR"/frame_*.png
 
 echo "🎬 Video: $VIDEO"
-echo "📁 Output: $IMAGE_DIR"
+echo "📁 Output (IMAGE_DIR): $IMAGE_DIR"
 
 if [[ -n "$VIDEO_START" ]]; then
     echo "⏩ VIDEO_START: ${VIDEO_START}s"
