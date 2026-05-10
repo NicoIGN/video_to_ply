@@ -42,6 +42,7 @@ DEVICE="cpu"
 ROOT_DIR="runs/default"
 SKIP_CONDA=false
 NO_PROXY=false
+AUTOMASK=false
 
 # ======================
 # PIPELINE SKIP DEFAULTS (from config.sh, overridable by CLI)
@@ -88,20 +89,43 @@ Required:
   --images <directory>   Directory containing source images
 
 Options:
-  --root                 Root output directory (default: runs/default)
-  --num-frames           Number of frames to extract (video mode only)
-  --skip-conda           Skip conda environment setup
-  --preprocess-profile   colmap | hloc
-  --gsplat-profile       fast | balanced | quality | best
-  --name                 base name of the outputfile
+  --root <dir>                 Root output directory (default: runs/default)
+  --name <name>                Base name of outputs (default: gsplat_<timestamp>)
 
+  --num-frames <int>          Number of frames to extract (video mode only)
+      or
+  --fps <int>                 Extract frames at fixed FPS (video mode only)
+
+  --preprocess-profile <name> colmap | hloc | hloc-lightblue
+  --gsplat-profile <name>     fast | balanced | quality | quality_plus
+  --automask                  Enable automatic masking (default: false)
+
+
+  # Pipeline skips
+  --skip-conda                Skip conda environment setup
+  --no-proxy                  Disable proxy configuration
   --skip-frame-extraction
   --skip-preprocess
   --skip-training
   --skip-export
   --skip-filter
-  --no-proxy
-  --help
+
+Optional environment variables:
+  COLMAP_ARCHIVE=<file>      Path to COLMAP zip archive
+                              (restores ORI_DIR/colmap + transforms.json before preprocess)
+
+  VIDEO_START=<seconds>       Start time for video trimming
+  VIDEO_END=<seconds>         End time for video trimming
+
+Examples:
+  Video:
+    ./run.sh --video input.mov --fps 2 --gsplat-profile quality
+
+  Images:
+    ./run.sh --images ./imgs --preprocess-profile colmap
+
+  Resume COLMAP:
+    COLMAP_ARCHIVE=colmap.zip ./run.sh --video input.mov
 EOF
 }
 
@@ -120,7 +144,7 @@ while [[ $# -gt 0 ]]; do
     --root) ROOT_DIR="$2"; shift 2 ;;
     --skip-conda) SKIP_CONDA=true; shift ;;
     --no-proxy) NO_PROXY=true; shift ;;
-
+    --automask) AUTOMASK=true; shift ;;
     # ======================
     # PIPELINE OVERRIDES
     # ======================
@@ -480,7 +504,6 @@ if [ -n "${COLMAP_ARCHIVE:-}" ]; then
   fi
 
   echo "✅ COLMAP archive restored successfully"
-
 fi
 
 if [ "$SKIP_PREPROCESS" = true ]; then
@@ -507,6 +530,7 @@ else
     USE_SINGLE_CAMERA_MODE="$USE_SINGLE_CAMERA_MODE" \
     REFINE_INTRINSICS="$REFINE_INTRINSICS" \
     CROP_FACTOR="$CROP_FACTOR" \
+    AUTOMASK="$AUTOMASK" \
     bash scripts/preprocess_nerfstudio.sh
     
     ### ZIP COLMAP DATA

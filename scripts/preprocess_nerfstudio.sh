@@ -221,5 +221,43 @@ if ! echo "$LAST_LOG" | grep -q -E "Finished|Done|Writing"; then
   tail -n 80 "$PROCESS_LOG"
 fi
 
+# ----------------------
+# AUTOMASK PIPELINE
+# ----------------------
+
+if [ "${AUTOMASK:-false}" = true ]; then
+  echo ""
+  echo "🧠 AUTOMASK enabled → generating foreground masks..."
+
+  STEP_START=$(date +%s)
+
+  MASK_DIR="$ORI_DIR/masks"
+
+  mkdir -p "$MASK_DIR"
+
+  # 1. Generate masks
+  echo "🎯 Running auto_image_masker..."
+  python masking/auto_image_masker.py \
+    --input "$INPUT_DIR/images" \
+    --masks "$MASK_DIR"
+
+  # 2. Inject masks into transforms.json
+  if [ -f "$ORI_DIR/transforms.json" ]; then
+    echo "🧩 Injecting masks into transforms.json..."
+
+    cp "$ORI_DIR/transforms.json" "$ORI_DIR/transforms_backup.json"
+
+    python masking/inject_masks.py \
+      --transforms "$ORI_DIR/transforms.json" \
+      --masks "$MASK_DIR" \
+      --output "$ORI_DIR/transforms.json"
+  else
+    echo "❌ transforms.json not found, skipping mask injection"
+    exit 1
+  fi
+
+  print_step_time "AUTOMASK" "$STEP_START"
+fi
+
 echo "✅ ns-process-data SUCCESS"
 echo "📦 OUTPUT READY: $OUTPUT_DIR"
