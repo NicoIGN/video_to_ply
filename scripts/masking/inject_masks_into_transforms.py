@@ -4,7 +4,9 @@ import argparse
 
 
 def main():
-    parser = argparse.ArgumentParser("Inject masks into transforms.json")
+    parser = argparse.ArgumentParser(
+        "Inject masks into transforms.json and remove frames without masks"
+    )
 
     parser.add_argument(
         "--transforms",
@@ -41,33 +43,42 @@ def main():
 
     print(f"Found {len(frames)} frames")
 
-    # check mask existence helper
     def find_mask(frame_file):
         base = os.path.basename(frame_file)
         return os.path.join("masks", base)
 
-    missing = 0
+    kept_frames = []
+    removed = 0
 
     for frame in frames:
-        file_path = frame.get("file_path", None)
+        file_path = frame.get("file_path")
 
         if file_path is None:
+            removed += 1
             continue
 
         mask_path = find_mask(file_path)
 
-        full_mask_path = os.path.join(masks_dir, os.path.basename(mask_path))
+        full_mask_path = os.path.join(
+            masks_dir,
+            os.path.basename(mask_path)
+        )
 
         if not os.path.exists(full_mask_path):
-            missing += 1
+            removed += 1
             continue
 
         frame["mask_path"] = mask_path
+        kept_frames.append(frame)
+
+    data["frames"] = kept_frames
 
     with open(output_path, "w") as f:
         json.dump(data, f, indent=2)
 
-    print(f"Done. Missing masks: {missing}")
+    print("Done")
+    print(f"Kept frames   : {len(kept_frames)}")
+    print(f"Removed frames: {removed}")
     print(f"Saved: {output_path}")
 
 
