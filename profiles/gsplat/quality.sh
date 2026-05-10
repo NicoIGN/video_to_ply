@@ -26,9 +26,9 @@ MAX_JOBS=2
 ########################################
 
 # ⚠️ CRITIQUE (temps de densification)
-MAX_ITER=12000
+MAX_ITER=10000
 # 🛑 STOP SPLIT PLUS TÔT
-STOP_SPLIT_AT=12000
+STOP_SPLIT_AT=6000
 
 
 # ⚠️ CRITIQUE (qualité du gradient)
