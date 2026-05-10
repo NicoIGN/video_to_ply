@@ -805,13 +805,14 @@ fi
 
 echo "📦 Source PLY: $PLY_FILE"
 
-
 STEP_START=$(date +%s)
 
-LATEST_RUN=$(ls -td "$OUTPUT_DIR"/ori/$MODEL/* 2>/dev/null | head -n 1 || true)
+RUN_ROOT="$OUTPUT_DIR/model3d/$MODEL"
+
+LATEST_RUN=$(find "$RUN_ROOT" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort | tail -n 1 || true)
 
 if [ -z "$LATEST_RUN" ] || [ ! -d "$LATEST_RUN" ]; then
-  echo "[ERROR] No run found in $OUTPUT_DIR/ori/$MODEL"
+  echo "[ERROR] No run found in $RUN_ROOT"
   exit 1
 fi
 
@@ -819,11 +820,6 @@ TRANSFORM_FILE="$LATEST_RUN/dataparser_transforms.json"
 
 if [ ! -f "$TRANSFORM_FILE" ]; then
   echo "[ERROR] Transform file not found: $TRANSFORM_FILE"
-  exit 1
-fi
-
-if [[ ! -f "$TRANSFORM_FILE" ]]; then
-  echo "❌ transforms not found: $TRANSFORM_FILE"
   exit 1
 fi
 
