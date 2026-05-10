@@ -491,7 +491,7 @@ elif [ -f "$ORI_DIR/transforms.json" ]; then
 else
     echo ""
     echo ""
-    echo "🧭 Running PREPROCESS through NerfStudio..."
+    echo "🧭 Preprocessing $PREPROCESS_PROFILE through NerfStudio..."
     STEP_START=$(date +%s)
 
     DATA_DIR="$INPUT_DIR/images" \
