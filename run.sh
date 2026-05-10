@@ -582,8 +582,7 @@ if [ "${AUTOMASK:-false}" = true ]; then
     --model_type "vit_b" \
     --max_size 1024 \
     --points_per_side 8 \
-    --margin_ratio 0.30 \
-    --verbose
+    --margin_ratio 0.30
 
   if [ $? -ne 0 ]; then
     echo "❌ auto_image_masker failed"
@@ -597,7 +596,7 @@ if [ "${AUTOMASK:-false}" = true ]; then
 
     cp "$ORI_DIR/transforms.json" "$ORI_DIR/transforms_backup.json"
 
-    python $SCRIPT_DIR/masking/inject_masks.py \
+    python scripts/masking/inject_masks.py \
       --transforms "$ORI_DIR/transforms.json" \
       --outdir "$MASK_DIR" \
       --output "$ORI_DIR/transforms.json"
