@@ -598,7 +598,7 @@ if [ "${AUTOMASK:-false}" = true ]; then
 
     python scripts/masking/inject_masks_into_transforms.py \
       --transforms "$ORI_DIR/transforms.json" \
-      --outdir "$MASK_DIR" \
+      --masks "$MASK_DIR" \
       --output "$ORI_DIR/transforms.json"
 
     if [ $? -ne 0 ]; then
