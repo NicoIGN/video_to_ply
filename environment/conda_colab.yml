@@ -13,7 +13,6 @@ dependencies:
   - rclone
   - tree
   - tqdm
-  - ultralytics
   - matplotlib
 
   # Build tools
@@ -49,6 +48,7 @@ dependencies:
       - nerfstudio==1.1.5
       - gsplat==1.4.0
       - fpsample
+      - ultralytics
       - git+https://github.com/cvg/Hierarchical-Localization.git
       - git+https://github.com/facebookresearch/segment-anything.git
       - plyfile
