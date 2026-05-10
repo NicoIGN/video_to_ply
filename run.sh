@@ -458,6 +458,32 @@ print_step_time "INPUT PREPARATION" "$STEP_START"
 # ----------------------
 # 2. PREPROCESS
 # ----------------------
+
+# OPTIONAL COLMAP ARCHIVE RESTORE
+if [ -n "${COLMAP_ARCHIVE:-}" ]; then
+
+  echo ""
+  echo "📦 COLMAP_ARCHIVE detected:"
+  echo "   $COLMAP_ARCHIVE"
+
+  if [ ! -f "$COLMAP_ARCHIVE" ]; then
+    echo "❌ COLMAP archive not found: $COLMAP_ARCHIVE"
+    exit 1
+  fi
+
+  echo "📂 Extracting COLMAP archive into: $ORI_DIR"
+
+  unzip -o "$COLMAP_ARCHIVE" -d "$ORI_DIR"
+
+  if [ ! -d "$ORI_DIR/colmap" ]; then
+    echo "❌ Extraction failed: colmap directory not found after unzip"
+    exit 1
+  fi
+
+  echo "✅ COLMAP archive restored successfully"
+
+fi
+
 if [ "$SKIP_PREPROCESS" = true ]; then
   echo "⏩ Skipping PREPROCESS (config)"
 elif [ -f "$ORI_DIR/transforms.json" ]; then
