@@ -225,6 +225,10 @@ fi
 # AUTOMASK PIPELINE
 # ----------------------
 
+# ----------------------
+# AUTOMASK PIPELINE
+# ----------------------
+
 if [ "${AUTOMASK:-false}" = true ]; then
   echo ""
   echo "🧠 AUTOMASK enabled → generating foreground masks..."
@@ -232,16 +236,31 @@ if [ "${AUTOMASK:-false}" = true ]; then
   STEP_START=$(date +%s)
 
   MASK_DIR="$ORI_DIR/masks"
-
   mkdir -p "$MASK_DIR"
 
+  # ----------------------
   # 1. Generate masks
+  # ----------------------
   echo "🎯 Running auto_image_masker..."
+
   python masking/auto_image_masker.py \
     --input "$INPUT_DIR/images" \
-    --masks "$MASK_DIR"
+    --masks "$MASK_DIR" \
+    --sam_checkpoint "checkpoints/sam_vit_b.pth" \
+    --model_type "vit_b" \
+    --max_size 1024 \
+    --points_per_side 8 \
+    --margin_ratio 0.30 \
+    --verbose
 
-  # 2. Inject masks into transforms.json
+  if [ $? -ne 0 ]; then
+    echo "❌ auto_image_masker failed"
+    exit 1
+  fi
+
+  # ----------------------
+  # 2. Inject masks
+  # ----------------------
   if [ -f "$ORI_DIR/transforms.json" ]; then
     echo "🧩 Injecting masks into transforms.json..."
 
@@ -251,11 +270,20 @@ if [ "${AUTOMASK:-false}" = true ]; then
       --transforms "$ORI_DIR/transforms.json" \
       --masks "$MASK_DIR" \
       --output "$ORI_DIR/transforms.json"
+
+    if [ $? -ne 0 ]; then
+      echo "❌ mask injection failed"
+      exit 1
+    fi
+
   else
     echo "❌ transforms.json not found, skipping mask injection"
     exit 1
   fi
 
+  # ----------------------
+  # 3. Timing
+  # ----------------------
   print_step_time "AUTOMASK" "$STEP_START"
 fi
 
