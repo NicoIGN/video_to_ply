@@ -808,7 +808,7 @@ echo "📦 Source PLY: $PLY_FILE"
 STEP_START=$(date +%s)
 
 # ======================
-# RUN RESOLUTION (FIXED)
+# RUN RESOLUTION
 # ======================
 RUN_ROOT="$OUTPUT_DIR/$MODEL"
 
