@@ -807,7 +807,10 @@ echo "📦 Source PLY: $PLY_FILE"
 
 STEP_START=$(date +%s)
 
-RUN_ROOT="$OUTPUT_DIR/model3d/$MODEL"
+# ======================
+# RUN RESOLUTION (FIXED)
+# ======================
+RUN_ROOT="$OUTPUT_DIR/$MODEL"
 
 LATEST_RUN=$(find "$RUN_ROOT" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort | tail -n 1 || true)
 
@@ -823,19 +826,27 @@ if [ ! -f "$TRANSFORM_FILE" ]; then
   exit 1
 fi
 
+# ======================
+# INPUT VALIDATION
+# ======================
 if [[ ! -f "$PLY_FILE" ]]; then
   echo "❌ PLY not found: $PLY_FILE"
   exit 1
 fi
 
-if [[ ! -f "$ORI_DIR/colmap/sparse/0/points3D.bin" ]]; then
-  echo "❌ COLMAP points not found"
+COLMAP_POINTS="$ORI_DIR/colmap/sparse/0/points3D.bin"
+
+if [[ ! -f "$COLMAP_POINTS" ]]; then
+  echo "❌ COLMAP points not found: $COLMAP_POINTS"
   exit 1
 fi
 
+# ======================
+# CLEANING STEP
+# ======================
 python scripts/cleaning/clean-ply.py \
   --in-ply "$PLY_FILE" \
-  --points "$ORI_DIR/colmap/sparse/0/points3D.bin" \
+  --points "$COLMAP_POINTS" \
   --out-ply "$EXPORT_DIR/${BASENAME}.ply" \
   --transform "$TRANSFORM_FILE"
 
