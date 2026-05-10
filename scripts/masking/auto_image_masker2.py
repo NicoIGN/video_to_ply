@@ -20,6 +20,19 @@ SAM_URLS = {
 
 
 # -----------------------------
+# DEVICE HELPERS
+# -----------------------------
+def get_device():
+    if torch.cuda.is_available():
+        print("⚙️ CUDA detected -> GPU mode ON")
+        torch.backends.cudnn.benchmark = True
+        torch.backends.cuda.matmul.allow_tf32 = True
+        return torch.device("cuda")
+    print("⚙️ CPU mode")
+    return torch.device("cpu")
+
+
+# -----------------------------
 # DOWNLOAD CHECKPOINT
 # -----------------------------
 def download_checkpoint(model_type, path):
@@ -56,17 +69,14 @@ def resize(img, max_size):
 
 
 # -----------------------------
-# MASK VALIDATION (FIX 0 SEGMENTS)
+# MASK VALIDATION
 # -----------------------------
 def is_valid_mask(seg):
-    area = seg.sum()
-    if area <= 10:   # 👈 FIX: remove "0" / noise masks
-        return False
-    return True
+    return seg.sum() > 10
 
 
 # -----------------------------
-# MASK GEOMETRY
+# MASK GEOMETRY (CPU ONCE)
 # -----------------------------
 def build_center_mask(h, w, margin):
     m = int(min(h, w) * margin)
@@ -100,8 +110,7 @@ def build_indexed(masks, h, w):
 
 
 def colorize_indexed(seg_img):
-    h, w = seg_img.shape
-    vis = np.zeros((h, w, 3), dtype=np.uint8)
+    vis = np.zeros((*seg_img.shape, 3), dtype=np.uint8)
 
     ids = np.unique(seg_img)
     rng = np.random.default_rng(0)
@@ -121,14 +130,13 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--input", required=True)
-    parser.add_argument("--masks", required=True)
+    parser.add_argument("--outdir", required=True)
 
     parser.add_argument("--sam_checkpoint", default="checkpoints/sam.pth")
     parser.add_argument("--model_type", default="vit_b")
 
     parser.add_argument("--max_size", type=int, default=1024)
     parser.add_argument("--margin_ratio", type=float, default=0.30)
-
     parser.add_argument("--points_per_side", type=int, default=8)
 
     parser.add_argument("--verbose", action="store_true")
@@ -136,17 +144,12 @@ def main():
 
     args = parser.parse_args()
 
-    os.makedirs(args.masks, exist_ok=True)
+    os.makedirs(args.outdir, exist_ok=True)
 
     # -----------------------------
-    # DEVICE SETUP
+    # DEVICE
     # -----------------------------
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"⚙️ device: {device}")
-
-    if device == "cuda":
-        torch.backends.cudnn.benchmark = True
-        torch.backends.cuda.matmul.allow_tf32 = True
+    device = get_device()
 
     # -----------------------------
     # CHECKPOINT
@@ -178,8 +181,8 @@ def main():
     # -----------------------------
     for name in tqdm(images):
 
-        out_path = os.path.join(args.masks, name)
-        vis_path = os.path.join(args.masks, "seg_" + name)
+        out_path = os.path.join(args.outdir, name)
+        vis_path = os.path.join(args.outdir, "seg_" + name)
 
         if not args.override and os.path.exists(out_path):
             continue
@@ -191,17 +194,26 @@ def main():
         img = resize(img, args.max_size)
         h, w = img.shape[:2]
 
-        # RGB FIX (SAM requirement stable behavior)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         # -----------------------------
-        # SAM INFERENCE (GPU SAFE)
+        # SAM INFERENCE (GPU if available)
         # -----------------------------
         with torch.inference_mode():
             masks = mask_generator.generate(img)
 
         center_mask = build_center_mask(h, w, args.margin_ratio)
         border_mask = build_border_zones(h, w, 0.05)
+
+        # -----------------------------
+        # GLOBAL SAM COVERAGE (NEW FIX)
+        # -----------------------------
+        sam_union = np.zeros((h, w), dtype=bool)
+
+        for m in masks:
+            sam_union |= m["segmentation"].astype(bool)
+
+        zero_center = center_mask & (~sam_union)
 
         kept = []
 
@@ -215,7 +227,6 @@ def main():
 
             seg = m["segmentation"].astype(bool)
 
-            # FIX: remove empty / noise / "0 masks"
             if not is_valid_mask(seg):
                 continue
 
@@ -243,7 +254,10 @@ def main():
         for k in kept:
             final |= k
 
-        final = (final.astype(np.uint8) * 255)
+        # 🔥 ADD MISSING CENTER PIXELS (FIX)
+        final |= zero_center
+
+        final = final.astype(np.uint8) * 255
 
         kernel = np.ones((5, 5), np.uint8)
         final = cv2.morphologyEx(final, cv2.MORPH_CLOSE, kernel)

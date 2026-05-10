@@ -268,7 +268,7 @@ if [ "${AUTOMASK:-false}" = true ]; then
 
     python masking/inject_masks.py \
       --transforms "$ORI_DIR/transforms.json" \
-      --masks "$MASK_DIR" \
+      --outdir "$MASK_DIR" \
       --output "$ORI_DIR/transforms.json"
 
     if [ $? -ne 0 ]; then
