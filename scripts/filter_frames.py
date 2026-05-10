@@ -86,7 +86,7 @@ def main(tmp_dir, out_dir, num_frames):
     os.makedirs(out_dir, exist_ok=True)
 
     for i, f in enumerate(selected):
-        dst = os.path.join(out_dir, f"frame_{i:06d}.png")
+        dst = os.path.join(out_dir, f"frame_{i:05d}.png")
         shutil.copy2(f, dst)
 
     print(f"✅ Selected frames: {len(selected)}")
