@@ -460,8 +460,8 @@ print_step_time "INPUT PREPARATION" "$STEP_START"
 # ----------------------
 
 # OPTIONAL COLMAP ARCHIVE RESTORE
+echo COLMAP_ARCHIVE: $COLMAP_ARCHIVE
 if [ -n "${COLMAP_ARCHIVE:-}" ]; then
-
   echo ""
   echo "📦 COLMAP_ARCHIVE detected:"
   echo "   $COLMAP_ARCHIVE"
