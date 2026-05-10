@@ -1,4 +1,5 @@
 import os
+import re
 import cv2
 import argparse
 import numpy as np
@@ -148,89 +149,122 @@ def colorize_indexed(seg_img):
 
 
 # ---------------------------------------------------
-# DOWNSCALE HELPERS
+# DOWNSCALE DISCOVERY
 # ---------------------------------------------------
-def maybe_generate_downscaled_mask(
-    mask_path,
-    images2_dir,
-    masks2_dir,
-    name,
+def discover_downscale_dirs(input_dir):
+    """
+    Detect:
+        images_2
+        images_4
+        images_8
+        etc.
+
+    Returns:
+        [
+            (2, "/path/images_2", "/path/masks_2"),
+            (4, "/path/images_4", "/path/masks_4"),
+        ]
+    """
+
+    parent_dir = os.path.dirname(input_dir)
+    base_name = os.path.basename(input_dir)
+
+    results = []
+
+    for entry in sorted(os.listdir(parent_dir)):
+
+        full_path = os.path.join(parent_dir, entry)
+
+        if not os.path.isdir(full_path):
+            continue
+
+        m = re.fullmatch(rf"{re.escape(base_name)}_(\d+)", entry)
+
+        if not m:
+            continue
+
+        factor = int(m.group(1))
+
+        masks_dir = os.path.join(parent_dir, f"masks_{factor}")
+
+        results.append(
+            (
+                factor,
+                full_path,
+                masks_dir
+            )
+        )
+
+    return results
+
+
+# ---------------------------------------------------
+# GENERATE DOWNSCALED MASKS
+# ---------------------------------------------------
+def generate_downscaled_masks(
+    source_masks_dir,
+    downscale_targets,
     override=False
 ):
     """
-    Generate masks_2/<name>
-    from masks/<name>
-    using images_2 resolution.
+    Scan all masks in source_masks_dir
+    and generate masks_N for all discovered images_N dirs.
     """
 
-    print(f"\n🔎 checking masks_2 generation for: {name}")
+    total_generated = 0
 
-    print(f"   mask_path   : {mask_path}")
-    print(f"   images2_dir : {images2_dir}")
-    print(f"   masks2_dir  : {masks2_dir}")
-    print(f"   override    : {override}")
+    source_masks = list_images(source_masks_dir)
 
-    if not os.path.isdir(images2_dir):
-        print("   ❌ images_2 directory NOT found")
-        return
+    for factor, images_n_dir, masks_n_dir in downscale_targets:
 
-    print("   ✅ images_2 directory found")
+        os.makedirs(masks_n_dir, exist_ok=True)
 
-    image2_path = os.path.join(images2_dir, name)
+        generated_here = 0
 
-    print(f"   image2_path : {image2_path}")
+        for name in source_masks:
 
-    if not os.path.exists(image2_path):
-        print("   ❌ matching image not found in images_2")
-        return
+            src_mask_path = os.path.join(source_masks_dir, name)
 
-    print("   ✅ matching image found in images_2")
+            dst_mask_path = os.path.join(masks_n_dir, name)
 
-    os.makedirs(masks2_dir, exist_ok=True)
+            image_n_path = os.path.join(images_n_dir, name)
 
-    out2_path = os.path.join(masks2_dir, name)
+            if not os.path.exists(image_n_path):
+                continue
 
-    print(f"   out2_path   : {out2_path}")
+            if os.path.exists(dst_mask_path) and not override:
+                continue
 
-    if os.path.exists(out2_path) and not override:
-        print("   ⏩ masks_2 already exists -> skipping")
-        return
+            mask = cv2.imread(src_mask_path, cv2.IMREAD_GRAYSCALE)
 
-    mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+            if mask is None:
+                continue
 
-    if mask is None:
-        print("   ❌ failed loading source mask")
-        return
+            target_img = cv2.imread(image_n_path)
 
-    print(f"   ✅ source mask loaded : {mask.shape}")
+            if target_img is None:
+                continue
 
-    img2 = cv2.imread(image2_path)
+            h, w = target_img.shape[:2]
 
-    if img2 is None:
-        print("   ❌ failed loading images_2 image")
-        return
+            resized = cv2.resize(
+                mask,
+                (w, h),
+                interpolation=cv2.INTER_NEAREST
+            )
 
-    h2, w2 = img2.shape[:2]
+            ok = cv2.imwrite(dst_mask_path, resized)
 
-    print(f"   ✅ images_2 resolution : {w2}x{h2}")
+            if ok:
+                generated_here += 1
+                total_generated += 1
 
-    mask2 = cv2.resize(
-        mask,
-        (w2, h2),
-        interpolation=cv2.INTER_NEAREST
-    )
+        print(
+            f"🧩 masks_{factor} generated: "
+            f"{generated_here}"
+        )
 
-    ok = cv2.imwrite(out2_path, mask2)
-
-    if not ok:
-        print("   ❌ cv2.imwrite FAILED")
-        return
-
-    if not os.path.exists(out2_path):
-        print("   ❌ output file still missing after write")
-        return
-
-    print(f"   ✅ generated masks_2/{name}")
+    return total_generated
 
 
 # ---------------------------------------------------
@@ -285,52 +319,17 @@ def main():
     os.makedirs(args.outdir, exist_ok=True)
 
     # ---------------------------------------------------
-    # PARAMS LOG
+    # DOWNSCALE TARGETS
     # ---------------------------------------------------
-    print("\n" + "=" * 60)
-    print("🧠 AUTO MASK CONFIG")
-    print("=" * 60)
+    downscale_targets = discover_downscale_dirs(args.input)
 
-    print(f"INPUT             : {args.input}")
-    print(f"OUTDIR            : {args.outdir}")
-    print(f"MODEL TYPE        : {args.model_type}")
-    print(f"CHECKPOINT        : {args.sam_checkpoint}")
-    print(f"MAX SIZE          : {args.max_size}")
-    print(f"MARGIN RATIO      : {args.margin_ratio}")
-    print(f"POINTS PER SIDE   : {args.points_per_side}")
-    print(f"OVERRIDE          : {args.override}")
-    print(f"VERBOSE           : {args.verbose}")
+    if downscale_targets:
+        print("🧩 detected downscale directories:")
 
-    # ---------------------------------------------------
-    # images_2 / masks_2 detection
-    # ---------------------------------------------------
-    parent_dir = os.path.dirname(args.input)
-
-    images2_dir = os.path.join(parent_dir, "images_2")
-    masks2_dir = os.path.join(parent_dir, "masks_2")
-
-    print("\n" + "=" * 60)
-    print("🧩 DOWNSCALE DETECTION")
-    print("=" * 60)
-
-    print(f"PARENT DIR        : {parent_dir}")
-    print(f"IMAGES_2 DIR      : {images2_dir}")
-    print(f"MASKS_2 DIR       : {masks2_dir}")
-
-    has_images2 = os.path.isdir(images2_dir)
-
-    print(f"HAS IMAGES_2      : {has_images2}")
-
-    if has_images2:
-        try:
-            sample = sorted(os.listdir(images2_dir))[:5]
-
-            print("📂 images_2 sample:")
-            for s in sample:
-                print(f"   - {s}")
-
-        except Exception as e:
-            print(f"❌ failed listing images_2: {e}")
+        for factor, images_dir, masks_dir in downscale_targets:
+            print(
+                f"   images_{factor} -> masks_{factor}"
+            )
 
     # ---------------------------------------------------
     # DEVICE
@@ -374,83 +373,30 @@ def main():
     # ---------------------------------------------------
     for name in tqdm(images):
 
-        print("\n" + "-" * 60)
-        print(f"🖼️ PROCESSING : {name}")
-        print("-" * 60)
-
         out_path = os.path.join(args.outdir, name)
         vis_path = os.path.join(args.outdir, "seg_" + name)
 
-        print(f"MASK PATH : {out_path}")
-
-        # ---------------------------------------------------
-        # EXISTING MASK
-        # ---------------------------------------------------
         mask_exists = os.path.exists(out_path)
 
-        print(f"MASK EXISTS : {mask_exists}")
-
         # ---------------------------------------------------
-        # CHECK masks_2 STATUS
-        # ---------------------------------------------------
-        mask2_exists = False
-
-        if has_images2:
-
-            mask2_path = os.path.join(masks2_dir, name)
-
-            mask2_exists = os.path.exists(mask2_path)
-
-            print(f"MASKS_2 PATH   : {mask2_path}")
-            print(f"MASKS_2 EXISTS : {mask2_exists}")
-
-        # ---------------------------------------------------
-        # SKIP REGEN IF EXISTS
+        # SKIP EXISTING
         # ---------------------------------------------------
         if mask_exists and not args.override:
-
-            print("⏩ using existing mask")
-
-            # ensure masks_2 exists
-            if has_images2:
-
-                if not mask2_exists:
-
-                    print("🧩 masks_2 missing -> generating")
-
-                    maybe_generate_downscaled_mask(
-                        mask_path=out_path,
-                        images2_dir=images2_dir,
-                        masks2_dir=masks2_dir,
-                        name=name,
-                        override=True
-                    )
-
-                else:
-                    print("✅ masks_2 already exists")
-
             continue
-
-        print("🧠 generating SAM mask")
 
         # ---------------------------------------------------
         # LOAD IMAGE
         # ---------------------------------------------------
         img_path = os.path.join(args.input, name)
 
-        print(f"IMAGE PATH : {img_path}")
-
         img = cv2.imread(img_path)
 
         if img is None:
-            print("❌ failed loading image")
             continue
 
         img = resize(img, args.max_size)
 
         h, w = img.shape[:2]
-
-        print(f"IMAGE SIZE : {w}x{h}")
 
         img = cv2.cvtColor(
             img,
@@ -462,8 +408,6 @@ def main():
         # ---------------------------------------------------
         with torch.inference_mode():
             masks = mask_generator.generate(img)
-
-        print(f"RAW MASKS : {len(masks)}")
 
         center_mask = build_center_mask(
             h,
@@ -521,8 +465,6 @@ def main():
             if keep:
                 kept.append(seg)
 
-        print(f"KEPT MASKS : {len(kept)}")
-
         # ---------------------------------------------------
         # MERGE
         # ---------------------------------------------------
@@ -543,30 +485,7 @@ def main():
             kernel
         )
 
-        ok = cv2.imwrite(out_path, final)
-
-        print(f"MASK WRITE SUCCESS : {ok}")
-
-        if not os.path.exists(out_path):
-            print("❌ mask file missing after write")
-            continue
-
-        print(f"✅ mask written : {out_path}")
-
-        # ---------------------------------------------------
-        # GENERATE masks_2
-        # ---------------------------------------------------
-        if has_images2:
-
-            print("🧩 generating / verifying masks_2")
-
-            maybe_generate_downscaled_mask(
-                mask_path=out_path,
-                images2_dir=images2_dir,
-                masks2_dir=masks2_dir,
-                name=name,
-                override=True
-            )
+        cv2.imwrite(out_path, final)
 
         # ---------------------------------------------------
         # DEBUG VIS
@@ -578,7 +497,18 @@ def main():
 
             cv2.imwrite(vis_path, vis)
 
-    print("\n🏁 DONE")
+    # ---------------------------------------------------
+    # GENERATE masks_N
+    # ---------------------------------------------------
+    generated = generate_downscaled_masks(
+        source_masks_dir=args.outdir,
+        downscale_targets=downscale_targets,
+        override=args.override
+    )
+
+    print(f"🧩 total downscaled masks generated: {generated}")
+
+    print("🏁 DONE")
 
 
 if __name__ == "__main__":
