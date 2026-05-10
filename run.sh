@@ -805,14 +805,31 @@ fi
 
 echo "📦 Source PLY: $PLY_FILE"
 
-if [[ "$SKIP_FILTER" == "true" ]]; then
-  cp "$PLY_FILE" "$EXPORT_DIR/${BASENAME}.ply"
-else
-  STEP_START=$(date +%s)
-  PLY_FILE="$PLY_FILE" \
-  EXPORT_DIR="$EXPORT_DIR" \
-  BASENAME="$BASENAME" \
-  SKIP_FILTER="$SKIP_FILTER" \
-  bash "$SCRIPT_DIR/scripts/filter_ply.sh"
-  print_step_time "CLEAN PLY" "$STEP_START"
+
+STEP_START=$(date +%s)
+
+LATEST_RUN=$(ls -td "$OUTPUT_DIR"/ori/$MODEL/* 2>/dev/null | head -n 1 || true)
+TRANSFORM_FILE="$LATEST_RUN/dataparser_transforms.json"
+
+if [[ ! -f "$TRANSFORM_FILE" ]]; then
+  echo "❌ transforms not found: $TRANSFORM_FILE"
+  exit 1
 fi
+
+if [[ ! -f "$PLY_FILE" ]]; then
+  echo "❌ PLY not found: $PLY_FILE"
+  exit 1
+fi
+
+if [[ ! -f "$ORI_DIR/colmap/sparse/0/points3D.bin" ]]; then
+  echo "❌ COLMAP points not found"
+  exit 1
+fi
+
+python scripts/cleaning/clean-ply.py \
+  --in-ply "$PLY_FILE" \
+  --points "$ORI_DIR/colmap/sparse/0/points3D.bin" \
+  --out-ply "$EXPORT_DIR/${BASENAME}.ply" \
+  --transform "$TRANSFORM_FILE"
+
+print_step_time "CLEAN PLY" "$STEP_START"
