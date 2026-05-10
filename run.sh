@@ -530,7 +530,6 @@ else
     USE_SINGLE_CAMERA_MODE="$USE_SINGLE_CAMERA_MODE" \
     REFINE_INTRINSICS="$REFINE_INTRINSICS" \
     CROP_FACTOR="$CROP_FACTOR" \
-    AUTOMASK="$AUTOMASK" \
     bash scripts/preprocess_nerfstudio.sh
     
     ### ZIP COLMAP DATA
@@ -560,6 +559,62 @@ else
     print_step_time "PREPROCESS" "$STEP_START"
 fi
 
+# ----------------------
+# 2.5.AUTOMASK PIPELINE
+# ----------------------
+
+if [ "${AUTOMASK:-false}" = true ]; then
+  echo ""
+  echo "🧠 AUTOMASK enabled → generating foreground masks..."
+
+  STEP_START=$(date +%s)
+
+  MASK_DIR="$ORI_DIR/masks"
+  mkdir -p "$MASK_DIR"
+
+  # Generate masks
+  echo "🎯 Running auto_image_masker..."
+
+  python scripts/masking/auto_image_masker2.py \
+    --input "$INPUT_DIR/images" \
+    --masks "$MASK_DIR" \
+    --sam_checkpoint "checkpoints/sam_vit_b.pth" \
+    --model_type "vit_b" \
+    --max_size 1024 \
+    --points_per_side 8 \
+    --margin_ratio 0.30 \
+    --verbose
+
+  if [ $? -ne 0 ]; then
+    echo "❌ auto_image_masker failed"
+    exit 1
+  fi
+  
+  
+  #  Inject masks
+  if [ -f "$ORI_DIR/transforms.json" ]; then
+    echo "🧩 Injecting masks into transforms.json..."
+
+    cp "$ORI_DIR/transforms.json" "$ORI_DIR/transforms_backup.json"
+
+    python $SCRIPT_DIR/masking/inject_masks.py \
+      --transforms "$ORI_DIR/transforms.json" \
+      --outdir "$MASK_DIR" \
+      --output "$ORI_DIR/transforms.json"
+
+    if [ $? -ne 0 ]; then
+      echo "❌ mask injection failed"
+      exit 1
+    fi
+
+  else
+    echo "❌ transforms.json not found, skipping mask injection"
+    exit 1
+  fi
+
+  # Timing
+  print_step_time "AUTOMASK" "$STEP_START"
+fi
 
 # ----------------------
 # 3. TRAIN
