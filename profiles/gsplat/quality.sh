@@ -42,18 +42,18 @@ NUM_PROPOSAL_SAMPLES_PER_RAY="64 32"
 # GAUSSIAN SPLATTING (REDUCED SPLATS)
 ########################################
 
-# 🔥 DENSIFICATION (moins agressif)
-DENSIFY_GRAD_THRESH=0.00045   # ↑ moins de split
+# 🔥 DENSIFICATION (plus contrôlée sur long run)
+DENSIFY_GRAD_THRESH=0.0005   # ↑ un peu plus strict pour éviter sur-split tardif
 
-# 🧹 CLEANING (plus strict)
-CULL_ALPHA_THRESH=0.12        # ↑ supprime plus tôt les splats faibles
+# 🧹 CLEANING (plus agressif en fin de training)
+CULL_ALPHA_THRESH=0.14       # ↑ élimine plus tôt les splats instables
 
-# 📏 SPATIAL CONTROL (réduction explosion)
-CULL_SCREEN_SIZE=0.25         # ↑ plus agressif en screen-space
-SPLIT_SCREEN_SIZE=0.02        # ↑ moins de split fin
+# 📏 SPATIAL CONTROL (anti-explosion bords)
+CULL_SCREEN_SIZE=0.28        # ↑ réduit les micro-splats périphériques
+SPLIT_SCREEN_SIZE=0.025      # ↑ évite sur-fragmentation fine
 
 # ⚡ DENSIFICATION FREQUENCY (moins de croissance)
-REFINE_EVERY=300              # ↑ réduit création de nouveaux splats
+REFINE_EVERY=200              # ↑ réduit création de nouveaux splats
 
 
 # 🧠 STABILISATION (évite accumulation de bruit)
@@ -68,7 +68,7 @@ CULL_SCALE_THRESH=0.5         # ↓ supprime petits clusters instables
 USE_BILATERAL_GRID=true
 USE_SCALE_REGULARIZATION=true
 
-MAX_GAUSS_RATIO=6.0          # ↓ limite taille splats
+MAX_GAUSS_RATIO=4.0          # ↓ limite taille splats
 SSIM_LAMBDA=0.25             # léger boost stabilité image (optionnel)
 
 ########################################
