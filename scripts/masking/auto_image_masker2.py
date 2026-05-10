@@ -18,9 +18,9 @@ SAM_URLS = {
 }
 
 
-# ---------------------------------------------------------
+# ---------------------------------------------------
 # DEVICE
-# ---------------------------------------------------------
+# ---------------------------------------------------
 def get_device():
     if torch.cuda.is_available():
         print("⚙️ CUDA detected -> GPU mode ON")
@@ -32,28 +32,27 @@ def get_device():
     return torch.device("cpu")
 
 
-# ---------------------------------------------------------
-# DOWNLOAD CHECKPOINT
-# ---------------------------------------------------------
+# ---------------------------------------------------
+# CHECKPOINT
+# ---------------------------------------------------
 def download_checkpoint(model_type, path):
     if os.path.exists(path):
         return
 
     print(f"📥 downloading SAM {model_type}")
 
+    url = SAM_URLS[model_type]
+
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
-    urllib.request.urlretrieve(
-        SAM_URLS[model_type],
-        path
-    )
+    urllib.request.urlretrieve(url, path)
 
     print("✅ checkpoint ready")
 
 
-# ---------------------------------------------------------
+# ---------------------------------------------------
 # IO
-# ---------------------------------------------------------
+# ---------------------------------------------------
 def list_images(folder):
     if not os.path.isdir(folder):
         raise RuntimeError(f"Folder not found: {folder}")
@@ -83,18 +82,20 @@ def resize(img, max_size):
     return img
 
 
-# ---------------------------------------------------------
-# MASK HELPERS
-# ---------------------------------------------------------
+# ---------------------------------------------------
+# MASK VALIDATION
+# ---------------------------------------------------
 def is_valid_mask(seg):
     return seg.sum() > 10
 
 
+# ---------------------------------------------------
+# GEOMETRY
+# ---------------------------------------------------
 def build_center_mask(h, w, margin):
     m = int(min(h, w) * margin)
 
     mask = np.zeros((h, w), dtype=bool)
-
     mask[m:h - m, m:w - m] = True
 
     return mask
@@ -113,9 +114,9 @@ def build_border_zones(h, w, margin_ratio):
     return border
 
 
-# ---------------------------------------------------------
-# DEBUG VIS
-# ---------------------------------------------------------
+# ---------------------------------------------------
+# INDEXED VIS
+# ---------------------------------------------------
 def build_indexed(masks, h, w):
     seg_img = np.zeros((h, w), dtype=np.int32)
 
@@ -146,153 +147,64 @@ def colorize_indexed(seg_img):
     return vis
 
 
-# ---------------------------------------------------------
-# DETECT DOWNSCALES
-# ---------------------------------------------------------
-def detect_downscale_factors(input_dir):
+# ---------------------------------------------------
+# DOWNSCALE HELPERS
+# ---------------------------------------------------
+def maybe_generate_downscaled_mask(
+    mask_path,
+    images2_dir,
+    masks2_dir,
+    name,
+    override=False
+):
+    """
+    Generate masks_2/<name>
+    from masks/<name>
+    using images_2 resolution.
+    """
 
-    parent = os.path.dirname(
-        os.path.abspath(input_dir)
+    if not os.path.isdir(images2_dir):
+        return
+
+    image2_path = os.path.join(images2_dir, name)
+
+    if not os.path.exists(image2_path):
+        return
+
+    os.makedirs(masks2_dir, exist_ok=True)
+
+    out2_path = os.path.join(masks2_dir, name)
+
+    if os.path.exists(out2_path) and not override:
+        return
+
+    mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+
+    if mask is None:
+        return
+
+    img2 = cv2.imread(image2_path)
+
+    if img2 is None:
+        return
+
+    h2, w2 = img2.shape[:2]
+
+    mask2 = cv2.resize(
+        mask,
+        (w2, h2),
+        interpolation=cv2.INTER_NEAREST
     )
 
-    factors = []
+    cv2.imwrite(out2_path, mask2)
 
-    for name in os.listdir(parent):
-
-        if not name.startswith("images_"):
-            continue
-
-        suffix = name.split("_")[-1]
-
-        if suffix.isdigit():
-
-            factor = int(suffix)
-
-            if factor > 1:
-                factors.append(factor)
-
-    return sorted(list(set(factors)))
+    print(f"🧩 generated masks_2/{name}")
 
 
-# ---------------------------------------------------------
-# SAVE DOWNSCALED MASKS
-# ---------------------------------------------------------
-def save_downscaled_masks(mask, name, outdir, factors):
-
-    for factor in factors:
-
-        ds_dir = f"{outdir}_{factor}"
-
-        os.makedirs(ds_dir, exist_ok=True)
-
-        h, w = mask.shape[:2]
-
-        new_w = max(1, w // factor)
-        new_h = max(1, h // factor)
-
-        ds = cv2.resize(
-            mask,
-            (new_w, new_h),
-            interpolation=cv2.INTER_NEAREST
-        )
-
-        out_path = os.path.join(ds_dir, name)
-
-        cv2.imwrite(out_path, ds)
-
-
-# ---------------------------------------------------------
-# GENERATE MASK
-# ---------------------------------------------------------
-def generate_mask(img, mask_generator, margin_ratio):
-
-    h, w = img.shape[:2]
-
-    img_rgb = cv2.cvtColor(
-        img,
-        cv2.COLOR_BGR2RGB
-    )
-
-    with torch.inference_mode():
-        masks = mask_generator.generate(img_rgb)
-
-    center_mask = build_center_mask(
-        h,
-        w,
-        margin_ratio
-    )
-
-    border_mask = build_border_zones(
-        h,
-        w,
-        0.05
-    )
-
-    sam_union = np.zeros((h, w), dtype=bool)
-
-    for m in masks:
-        sam_union |= m["segmentation"].astype(bool)
-
-    zero_center = center_mask & (~sam_union)
-
-    kept = []
-
-    for m in masks:
-
-        seg = m["segmentation"].astype(bool)
-
-        if not is_valid_mask(seg):
-            continue
-
-        touches_border = np.any(seg & border_mask)
-
-        center_pixels = np.sum(seg & center_mask)
-
-        area = seg.sum()
-
-        center_ratio = center_pixels / (area + 1e-6)
-
-        border_density = (
-            np.sum(seg & border_mask)
-            / (area + 1e-6)
-        )
-
-        if not touches_border:
-            keep = True
-        else:
-            keep = (
-                center_ratio > 0.5
-                or border_density < 0.2
-            )
-
-        if keep:
-            kept.append(seg)
-
-    final = np.zeros((h, w), dtype=bool)
-
-    for k in kept:
-        final |= k
-
-    final |= zero_center
-
-    final = final.astype(np.uint8) * 255
-
-    kernel = np.ones((5, 5), np.uint8)
-
-    final = cv2.morphologyEx(
-        final,
-        cv2.MORPH_CLOSE,
-        kernel
-    )
-
-    return final, masks
-
-
-# ---------------------------------------------------------
+# ---------------------------------------------------
 # MAIN
-# ---------------------------------------------------------
+# ---------------------------------------------------
 def main():
-
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--input", required=True)
@@ -340,35 +252,35 @@ def main():
 
     os.makedirs(args.outdir, exist_ok=True)
 
-    # ---------------------------------------------------------
-    # DETECT DOWNSCALES
-    # ---------------------------------------------------------
-    downscale_factors = detect_downscale_factors(
-        args.input
-    )
+    # ---------------------------------------------------
+    # images_2 / masks_2 detection
+    # ---------------------------------------------------
+    parent_dir = os.path.dirname(args.input)
 
-    if len(downscale_factors) > 0:
-        print(
-            f"📉 Detected image downscales: "
-            f"{downscale_factors}"
-        )
+    images2_dir = os.path.join(parent_dir, "images_2")
+    masks2_dir = os.path.join(parent_dir, "masks_2")
 
-    # ---------------------------------------------------------
+    has_images2 = os.path.isdir(images2_dir)
+
+    if has_images2:
+        print(f"🧩 detected images_2: {images2_dir}")
+
+    # ---------------------------------------------------
     # DEVICE
-    # ---------------------------------------------------------
+    # ---------------------------------------------------
     device = get_device()
 
-    # ---------------------------------------------------------
+    # ---------------------------------------------------
     # CHECKPOINT
-    # ---------------------------------------------------------
+    # ---------------------------------------------------
     download_checkpoint(
         args.model_type,
         args.sam_checkpoint
     )
 
-    # ---------------------------------------------------------
+    # ---------------------------------------------------
     # LOAD SAM
-    # ---------------------------------------------------------
+    # ---------------------------------------------------
     print("🧠 loading SAM...")
 
     sam = sam_model_registry[args.model_type](
@@ -390,110 +302,163 @@ def main():
 
     print(f"📦 images: {len(images)}")
 
-    # ---------------------------------------------------------
+    # ---------------------------------------------------
     # LOOP
-    # ---------------------------------------------------------
+    # ---------------------------------------------------
     for name in tqdm(images):
 
-        out_path = os.path.join(
-            args.outdir,
-            name
-        )
+        out_path = os.path.join(args.outdir, name)
+        vis_path = os.path.join(args.outdir, "seg_" + name)
 
-        vis_path = os.path.join(
-            args.outdir,
-            "seg_" + name
-        )
+        # ---------------------------------------------------
+        # EXISTING MASK
+        # ---------------------------------------------------
+        mask_exists = os.path.exists(out_path)
 
-        # ---------------------------------------------------------
-        # USE EXISTING MASK
-        # ---------------------------------------------------------
-        if (
-            os.path.exists(out_path)
-            and not args.override
-        ):
+        # ---------------------------------------------------
+        # SKIP REGEN IF EXISTS
+        # ---------------------------------------------------
+        if mask_exists and not args.override:
 
-            mask = cv2.imread(
-                out_path,
-                cv2.IMREAD_GRAYSCALE
-            )
-
-            if mask is None:
-                print(f"⚠️ invalid existing mask: {name}")
-                continue
-
-            # generate masks_2 / masks_4 / ...
-            save_downscaled_masks(
-                mask,
-                name,
-                args.outdir,
-                downscale_factors
-            )
+            if has_images2:
+                maybe_generate_downscaled_mask(
+                    mask_path=out_path,
+                    images2_dir=images2_dir,
+                    masks2_dir=masks2_dir,
+                    name=name,
+                    override=args.override
+                )
 
             continue
 
-        # ---------------------------------------------------------
+        # ---------------------------------------------------
         # LOAD IMAGE
-        # ---------------------------------------------------------
-        img_path = os.path.join(
-            args.input,
-            name
-        )
+        # ---------------------------------------------------
+        img_path = os.path.join(args.input, name)
 
         img = cv2.imread(img_path)
 
         if img is None:
-            print(f"⚠️ failed: {img_path}")
             continue
 
-        img = resize(
+        img = resize(img, args.max_size)
+
+        h, w = img.shape[:2]
+
+        img = cv2.cvtColor(
             img,
-            args.max_size
+            cv2.COLOR_BGR2RGB
         )
 
-        # ---------------------------------------------------------
-        # GENERATE MASK
-        # ---------------------------------------------------------
-        final, masks = generate_mask(
-            img,
-            mask_generator,
+        # ---------------------------------------------------
+        # SAM INFERENCE
+        # ---------------------------------------------------
+        with torch.inference_mode():
+            masks = mask_generator.generate(img)
+
+        center_mask = build_center_mask(
+            h,
+            w,
             args.margin_ratio
         )
 
-        # ---------------------------------------------------------
-        # SAVE MAIN MASK
-        # ---------------------------------------------------------
-        cv2.imwrite(out_path, final)
-
-        # ---------------------------------------------------------
-        # SAVE DOWNSCALES
-        # ---------------------------------------------------------
-        save_downscaled_masks(
-            final,
-            name,
-            args.outdir,
-            downscale_factors
+        border_mask = build_border_zones(
+            h,
+            w,
+            0.05
         )
 
-        # ---------------------------------------------------------
-        # DEBUG VIS
-        # ---------------------------------------------------------
+        # ---------------------------------------------------
+        # GLOBAL SAM COVERAGE
+        # ---------------------------------------------------
+        sam_union = np.zeros((h, w), dtype=bool)
+
+        for m in masks:
+            sam_union |= m["segmentation"].astype(bool)
+
+        zero_center = center_mask & (~sam_union)
+
+        kept = []
+
         if args.verbose:
+            print(f"\n🖼️ {name} | raw masks={len(masks)}")
 
-            h, w = final.shape[:2]
+        # ---------------------------------------------------
+        # FILTERING
+        # ---------------------------------------------------
+        for m in masks:
 
-            seg_img = build_indexed(
-                masks,
-                h,
-                w
+            seg = m["segmentation"].astype(bool)
+
+            if not is_valid_mask(seg):
+                continue
+
+            touches_border = np.any(seg & border_mask)
+
+            center_pixels = np.sum(seg & center_mask)
+
+            area = seg.sum()
+
+            center_ratio = center_pixels / (area + 1e-6)
+
+            border_density = np.sum(seg & border_mask) / (area + 1e-6)
+
+            if not touches_border:
+                keep = True
+            else:
+                keep = (
+                    (center_ratio > 0.5)
+                    or
+                    (border_density < 0.2)
+                )
+
+            if keep:
+                kept.append(seg)
+
+        # ---------------------------------------------------
+        # MERGE
+        # ---------------------------------------------------
+        final = np.zeros((h, w), dtype=bool)
+
+        for k in kept:
+            final |= k
+
+        # add missing center pixels
+        final |= zero_center
+
+        final = final.astype(np.uint8) * 255
+
+        kernel = np.ones((5, 5), np.uint8)
+
+        final = cv2.morphologyEx(
+            final,
+            cv2.MORPH_CLOSE,
+            kernel
+        )
+
+        cv2.imwrite(out_path, final)
+
+        # ---------------------------------------------------
+        # GENERATE masks_2
+        # ---------------------------------------------------
+        if has_images2:
+            maybe_generate_downscaled_mask(
+                mask_path=out_path,
+                images2_dir=images2_dir,
+                masks2_dir=masks2_dir,
+                name=name,
+                override=True
             )
+
+        # ---------------------------------------------------
+        # DEBUG VIS
+        # ---------------------------------------------------
+        if args.verbose:
+            seg_img = build_indexed(masks, h, w)
 
             vis = colorize_indexed(seg_img)
 
-            cv2.imwrite(
-                vis_path,
-                vis
-            )
+            cv2.imwrite(vis_path, vis)
 
     print("🏁 DONE")
 
