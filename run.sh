@@ -577,7 +577,7 @@ if [ "${AUTOMASK:-false}" = true ]; then
 
   python scripts/masking/auto_image_masker2.py \
     --input "$INPUT_DIR/images" \
-    --masks "$MASK_DIR" \
+    --outdir "$MASK_DIR" \
     --sam_checkpoint "checkpoints/sam_vit_b.pth" \
     --model_type "vit_b" \
     --max_size 1024 \
