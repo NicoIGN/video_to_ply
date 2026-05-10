@@ -596,7 +596,7 @@ if [ "${AUTOMASK:-false}" = true ]; then
 
     cp "$ORI_DIR/transforms.json" "$ORI_DIR/transforms_backup.json"
 
-    python scripts/masking/inject_masks.py \
+    python scripts/masking/inject_masks_into_transforms.py \
       --transforms "$ORI_DIR/transforms.json" \
       --outdir "$MASK_DIR" \
       --output "$ORI_DIR/transforms.json"
