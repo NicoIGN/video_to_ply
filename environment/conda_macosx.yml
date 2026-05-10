@@ -16,6 +16,7 @@ dependencies:
   - tree
   - tqdm
   - ultralytics
+  - matplotlib
 
   # Build tools
   - cmake
@@ -50,4 +51,5 @@ dependencies:
       - pycolmap==3.12.5
       - fpsample
       - git+https://github.com/cvg/Hierarchical-Localization.git@v1.4
+      - git+https://github.com/facebookresearch/segment-anything.git
       - plyfile
