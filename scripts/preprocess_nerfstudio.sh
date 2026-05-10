@@ -18,6 +18,9 @@ for arg in "$@"; do
   esac
 done
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+
 # ======================
 # CHECK INPUT
 # ======================
@@ -266,7 +269,7 @@ if [ "${AUTOMASK:-false}" = true ]; then
 
     cp "$ORI_DIR/transforms.json" "$ORI_DIR/transforms_backup.json"
 
-    python masking/inject_masks.py \
+    python $SCRIPT_DIR/masking/inject_masks.py \
       --transforms "$ORI_DIR/transforms.json" \
       --outdir "$MASK_DIR" \
       --output "$ORI_DIR/transforms.json"
