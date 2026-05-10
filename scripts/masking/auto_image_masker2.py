@@ -1,6 +1,5 @@
 import os
 import cv2
-import json
 import argparse
 import numpy as np
 from tqdm import tqdm
@@ -65,6 +64,7 @@ def list_images(folder):
     ]
 
     files.sort()
+
     return files
 
 
@@ -94,6 +94,7 @@ def build_center_mask(h, w, margin):
     m = int(min(h, w) * margin)
 
     mask = np.zeros((h, w), dtype=bool)
+
     mask[m:h - m, m:w - m] = True
 
     return mask
@@ -146,10 +147,13 @@ def colorize_indexed(seg_img):
 
 
 # ---------------------------------------------------------
-# DOWNSCALE DETECTION
+# DETECT DOWNSCALES
 # ---------------------------------------------------------
 def detect_downscale_factors(input_dir):
-    parent = os.path.dirname(os.path.abspath(input_dir))
+
+    parent = os.path.dirname(
+        os.path.abspath(input_dir)
+    )
 
     factors = []
 
@@ -161,14 +165,13 @@ def detect_downscale_factors(input_dir):
         suffix = name.split("_")[-1]
 
         if suffix.isdigit():
+
             factor = int(suffix)
 
             if factor > 1:
                 factors.append(factor)
 
-    factors = sorted(list(set(factors)))
-
-    return factors
+    return sorted(list(set(factors)))
 
 
 # ---------------------------------------------------------
@@ -193,10 +196,96 @@ def save_downscaled_masks(mask, name, outdir, factors):
             interpolation=cv2.INTER_NEAREST
         )
 
-        cv2.imwrite(
-            os.path.join(ds_dir, name),
-            ds
+        out_path = os.path.join(ds_dir, name)
+
+        cv2.imwrite(out_path, ds)
+
+
+# ---------------------------------------------------------
+# GENERATE MASK
+# ---------------------------------------------------------
+def generate_mask(img, mask_generator, margin_ratio):
+
+    h, w = img.shape[:2]
+
+    img_rgb = cv2.cvtColor(
+        img,
+        cv2.COLOR_BGR2RGB
+    )
+
+    with torch.inference_mode():
+        masks = mask_generator.generate(img_rgb)
+
+    center_mask = build_center_mask(
+        h,
+        w,
+        margin_ratio
+    )
+
+    border_mask = build_border_zones(
+        h,
+        w,
+        0.05
+    )
+
+    sam_union = np.zeros((h, w), dtype=bool)
+
+    for m in masks:
+        sam_union |= m["segmentation"].astype(bool)
+
+    zero_center = center_mask & (~sam_union)
+
+    kept = []
+
+    for m in masks:
+
+        seg = m["segmentation"].astype(bool)
+
+        if not is_valid_mask(seg):
+            continue
+
+        touches_border = np.any(seg & border_mask)
+
+        center_pixels = np.sum(seg & center_mask)
+
+        area = seg.sum()
+
+        center_ratio = center_pixels / (area + 1e-6)
+
+        border_density = (
+            np.sum(seg & border_mask)
+            / (area + 1e-6)
         )
+
+        if not touches_border:
+            keep = True
+        else:
+            keep = (
+                center_ratio > 0.5
+                or border_density < 0.2
+            )
+
+        if keep:
+            kept.append(seg)
+
+    final = np.zeros((h, w), dtype=bool)
+
+    for k in kept:
+        final |= k
+
+    final |= zero_center
+
+    final = final.astype(np.uint8) * 255
+
+    kernel = np.ones((5, 5), np.uint8)
+
+    final = cv2.morphologyEx(
+        final,
+        cv2.MORPH_CLOSE,
+        kernel
+    )
+
+    return final, masks
 
 
 # ---------------------------------------------------------
@@ -252,12 +341,17 @@ def main():
     os.makedirs(args.outdir, exist_ok=True)
 
     # ---------------------------------------------------------
-    # DETECT DOWNSCALED DATASETS
+    # DETECT DOWNSCALES
     # ---------------------------------------------------------
-    downscale_factors = detect_downscale_factors(args.input)
+    downscale_factors = detect_downscale_factors(
+        args.input
+    )
 
     if len(downscale_factors) > 0:
-        print(f"📉 Detected image downscales: {downscale_factors}")
+        print(
+            f"📉 Detected image downscales: "
+            f"{downscale_factors}"
+        )
 
     # ---------------------------------------------------------
     # DEVICE
@@ -301,7 +395,10 @@ def main():
     # ---------------------------------------------------------
     for name in tqdm(images):
 
-        out_path = os.path.join(args.outdir, name)
+        out_path = os.path.join(
+            args.outdir,
+            name
+        )
 
         vis_path = os.path.join(
             args.outdir,
@@ -309,31 +406,39 @@ def main():
         )
 
         # ---------------------------------------------------------
-        # EXISTING MASK
+        # USE EXISTING MASK
         # ---------------------------------------------------------
-        if os.path.exists(out_path) and not args.override:
+        if (
+            os.path.exists(out_path)
+            and not args.override
+        ):
 
-            existing = cv2.imread(
+            mask = cv2.imread(
                 out_path,
                 cv2.IMREAD_GRAYSCALE
             )
 
-            if existing is not None:
-
-                # only generate missing downscales
-                save_downscaled_masks(
-                    existing,
-                    name,
-                    args.outdir,
-                    downscale_factors
-                )
-
+            if mask is None:
+                print(f"⚠️ invalid existing mask: {name}")
                 continue
+
+            # generate masks_2 / masks_4 / ...
+            save_downscaled_masks(
+                mask,
+                name,
+                args.outdir,
+                downscale_factors
+            )
+
+            continue
 
         # ---------------------------------------------------------
         # LOAD IMAGE
         # ---------------------------------------------------------
-        img_path = os.path.join(args.input, name)
+        img_path = os.path.join(
+            args.input,
+            name
+        )
 
         img = cv2.imread(img_path)
 
@@ -341,102 +446,22 @@ def main():
             print(f"⚠️ failed: {img_path}")
             continue
 
-        img = resize(img, args.max_size)
-
-        h, w = img.shape[:2]
-
-        img_rgb = cv2.cvtColor(
+        img = resize(
             img,
-            cv2.COLOR_BGR2RGB
+            args.max_size
         )
 
         # ---------------------------------------------------------
-        # SAM INFERENCE
+        # GENERATE MASK
         # ---------------------------------------------------------
-        with torch.inference_mode():
-            masks = mask_generator.generate(img_rgb)
-
-        center_mask = build_center_mask(
-            h,
-            w,
+        final, masks = generate_mask(
+            img,
+            mask_generator,
             args.margin_ratio
         )
 
-        border_mask = build_border_zones(
-            h,
-            w,
-            0.05
-        )
-
         # ---------------------------------------------------------
-        # GLOBAL COVERAGE
-        # ---------------------------------------------------------
-        sam_union = np.zeros((h, w), dtype=bool)
-
-        for m in masks:
-            sam_union |= m["segmentation"].astype(bool)
-
-        zero_center = center_mask & (~sam_union)
-
-        kept = []
-
-        # ---------------------------------------------------------
-        # FILTER
-        # ---------------------------------------------------------
-        for m in masks:
-
-            seg = m["segmentation"].astype(bool)
-
-            if not is_valid_mask(seg):
-                continue
-
-            touches_border = np.any(seg & border_mask)
-
-            center_pixels = np.sum(seg & center_mask)
-
-            area = seg.sum()
-
-            center_ratio = center_pixels / (area + 1e-6)
-
-            border_density = (
-                np.sum(seg & border_mask)
-                / (area + 1e-6)
-            )
-
-            if not touches_border:
-                keep = True
-            else:
-                keep = (
-                    center_ratio > 0.5
-                    or border_density < 0.2
-                )
-
-            if keep:
-                kept.append(seg)
-
-        # ---------------------------------------------------------
-        # MERGE
-        # ---------------------------------------------------------
-        final = np.zeros((h, w), dtype=bool)
-
-        for k in kept:
-            final |= k
-
-        # add missing center pixels
-        final |= zero_center
-
-        final = final.astype(np.uint8) * 255
-
-        kernel = np.ones((5, 5), np.uint8)
-
-        final = cv2.morphologyEx(
-            final,
-            cv2.MORPH_CLOSE,
-            kernel
-        )
-
-        # ---------------------------------------------------------
-        # SAVE FULL RES
+        # SAVE MAIN MASK
         # ---------------------------------------------------------
         cv2.imwrite(out_path, final)
 
@@ -454,6 +479,8 @@ def main():
         # DEBUG VIS
         # ---------------------------------------------------------
         if args.verbose:
+
+            h, w = final.shape[:2]
 
             seg_img = build_indexed(
                 masks,
