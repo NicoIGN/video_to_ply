@@ -576,7 +576,7 @@ if [ "${AUTOMASK:-false}" = true ]; then
   echo "🎯 Running auto_image_masker..."
 
   python scripts/masking/auto_image_masker2.py \
-    --input "$INPUT_DIR/images" \
+    --input "$ORI_DIR/images" \
     --outdir "$MASK_DIR" \
     --sam_checkpoint "checkpoints/sam_vit_b.pth" \
     --model_type "vit_b" \
