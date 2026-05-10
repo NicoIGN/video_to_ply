@@ -149,21 +149,17 @@ def colorize_indexed(seg_img):
 
 
 # ---------------------------------------------------
-# DOWNSCALE DISCOVERY
+# FIND INPUT_N DIRECTORIES
 # ---------------------------------------------------
-def discover_downscale_dirs(input_dir):
+def find_downscale_dirs(input_dir):
     """
-    Detect:
-        images_2
-        images_4
-        images_8
-        etc.
+    Example:
+        input_dir = /foo/images
 
-    Returns:
-        [
-            (2, "/path/images_2", "/path/masks_2"),
-            (4, "/path/images_4", "/path/masks_4"),
-        ]
+    detects:
+        /foo/images_2
+        /foo/images_4
+        /foo/images_8
     """
 
     parent_dir = os.path.dirname(input_dir)
@@ -171,65 +167,77 @@ def discover_downscale_dirs(input_dir):
 
     results = []
 
-    for entry in sorted(os.listdir(parent_dir)):
+    pattern = re.compile(rf"^{re.escape(base_name)}_(\d+)$")
 
-        full_path = os.path.join(parent_dir, entry)
+    for name in sorted(os.listdir(parent_dir)):
 
-        if not os.path.isdir(full_path):
+        full = os.path.join(parent_dir, name)
+
+        if not os.path.isdir(full):
             continue
 
-        m = re.fullmatch(rf"{re.escape(base_name)}_(\d+)", entry)
+        m = pattern.match(name)
 
         if not m:
             continue
 
         factor = int(m.group(1))
 
-        masks_dir = os.path.join(parent_dir, f"masks_{factor}")
-
-        results.append(
-            (
-                factor,
-                full_path,
-                masks_dir
-            )
-        )
+        results.append({
+            "factor": factor,
+            "images_dir": full,
+            "masks_dir": os.path.join(parent_dir, f"masks_{factor}")
+        })
 
     return results
 
 
 # ---------------------------------------------------
-# GENERATE DOWNSCALED MASKS
+# DOWNSCALE MASKS
 # ---------------------------------------------------
 def generate_downscaled_masks(
-    source_masks_dir,
-    downscale_targets,
+    masks_dir,
+    scale_infos,
     override=False
 ):
-    """
-    Scan all masks in source_masks_dir
-    and generate masks_N for all discovered images_N dirs.
-    """
-
     total_generated = 0
 
-    source_masks = list_images(source_masks_dir)
+    if not scale_infos:
+        print("\n🧩 No downscale directories detected")
+        return
 
-    for factor, images_n_dir, masks_n_dir in downscale_targets:
+    mask_files = list_images(masks_dir)
 
-        os.makedirs(masks_n_dir, exist_ok=True)
+    print("\n" + "=" * 60)
+    print("🧩 DOWNSCALE MASK GENERATION")
+    print("=" * 60)
+
+    print(f"INPUT MASKS DIR : {masks_dir}")
+    print(f"MASK FILES      : {len(mask_files)}")
+
+    for info in scale_infos:
+
+        factor = info["factor"]
+        images_dir = info["images_dir"]
+        masks_out_dir = info["masks_dir"]
+
+        os.makedirs(masks_out_dir, exist_ok=True)
+
+        print("\n--------------------------------------------")
+        print(f"🔻 SCALE FACTOR x{factor}")
+        print("--------------------------------------------")
+        print(f"IMAGES DIR : {images_dir}")
+        print(f"OUTPUT DIR : {masks_out_dir}")
 
         generated_here = 0
 
-        for name in source_masks:
+        for name in mask_files:
 
-            src_mask_path = os.path.join(source_masks_dir, name)
+            src_mask_path = os.path.join(masks_dir, name)
+            dst_mask_path = os.path.join(masks_out_dir, name)
+            ref_img_path = os.path.join(images_dir, name)
 
-            dst_mask_path = os.path.join(masks_n_dir, name)
-
-            image_n_path = os.path.join(images_n_dir, name)
-
-            if not os.path.exists(image_n_path):
+            if not os.path.exists(ref_img_path):
                 continue
 
             if os.path.exists(dst_mask_path) and not override:
@@ -240,12 +248,12 @@ def generate_downscaled_masks(
             if mask is None:
                 continue
 
-            target_img = cv2.imread(image_n_path)
+            ref = cv2.imread(ref_img_path)
 
-            if target_img is None:
+            if ref is None:
                 continue
 
-            h, w = target_img.shape[:2]
+            h, w = ref.shape[:2]
 
             resized = cv2.resize(
                 mask,
@@ -259,12 +267,12 @@ def generate_downscaled_masks(
                 generated_here += 1
                 total_generated += 1
 
-        print(
-            f"🧩 masks_{factor} generated: "
-            f"{generated_here}"
-        )
+        print(f"✅ generated masks : {generated_here}")
 
-    return total_generated
+    print("\n" + "=" * 60)
+    print("🧩 DOWNSCALE SUMMARY")
+    print("=" * 60)
+    print(f"TOTAL GENERATED : {total_generated}")
 
 
 # ---------------------------------------------------
@@ -318,18 +326,34 @@ def main():
 
     os.makedirs(args.outdir, exist_ok=True)
 
-    # ---------------------------------------------------
-    # DOWNSCALE TARGETS
-    # ---------------------------------------------------
-    downscale_targets = discover_downscale_dirs(args.input)
+    print("\n" + "=" * 60)
+    print("🧠 AUTO MASK CONFIG")
+    print("=" * 60)
 
-    if downscale_targets:
-        print("🧩 detected downscale directories:")
+    print(f"INPUT DIR        : {args.input}")
+    print(f"OUTPUT DIR       : {args.outdir}")
+    print(f"MODEL TYPE       : {args.model_type}")
+    print(f"CHECKPOINT       : {args.sam_checkpoint}")
+    print(f"OVERRIDE         : {args.override}")
 
-        for factor, images_dir, masks_dir in downscale_targets:
-            print(
-                f"   images_{factor} -> masks_{factor}"
-            )
+    # ---------------------------------------------------
+    # DETECT images_N
+    # ---------------------------------------------------
+    scale_infos = find_downscale_dirs(args.input)
+
+    print("\n" + "=" * 60)
+    print("🧩 DETECTED DOWNSCALE DIRECTORIES")
+    print("=" * 60)
+
+    if not scale_infos:
+        print("No images_N directories found")
+
+    for info in scale_infos:
+
+        print("\n--------------------------------------------")
+        print(f"FACTOR     : x{info['factor']}")
+        print(f"INPUT DIR  : {info['images_dir']}")
+        print(f"OUTPUT DIR : {info['masks_dir']}")
 
     # ---------------------------------------------------
     # DEVICE
@@ -369,24 +393,15 @@ def main():
     print(f"📦 images: {len(images)}")
 
     # ---------------------------------------------------
-    # LOOP
+    # MAIN LOOP
     # ---------------------------------------------------
     for name in tqdm(images):
 
         out_path = os.path.join(args.outdir, name)
-        vis_path = os.path.join(args.outdir, "seg_" + name)
 
-        mask_exists = os.path.exists(out_path)
-
-        # ---------------------------------------------------
-        # SKIP EXISTING
-        # ---------------------------------------------------
-        if mask_exists and not args.override:
+        if os.path.exists(out_path) and not args.override:
             continue
 
-        # ---------------------------------------------------
-        # LOAD IMAGE
-        # ---------------------------------------------------
         img_path = os.path.join(args.input, name)
 
         img = cv2.imread(img_path)
@@ -404,7 +419,7 @@ def main():
         )
 
         # ---------------------------------------------------
-        # SAM INFERENCE
+        # SAM
         # ---------------------------------------------------
         with torch.inference_mode():
             masks = mask_generator.generate(img)
@@ -421,9 +436,6 @@ def main():
             0.05
         )
 
-        # ---------------------------------------------------
-        # GLOBAL SAM COVERAGE
-        # ---------------------------------------------------
         sam_union = np.zeros((h, w), dtype=bool)
 
         for m in masks:
@@ -433,9 +445,6 @@ def main():
 
         kept = []
 
-        # ---------------------------------------------------
-        # FILTERING
-        # ---------------------------------------------------
         for m in masks:
 
             seg = m["segmentation"].astype(bool)
@@ -465,9 +474,6 @@ def main():
             if keep:
                 kept.append(seg)
 
-        # ---------------------------------------------------
-        # MERGE
-        # ---------------------------------------------------
         final = np.zeros((h, w), dtype=bool)
 
         for k in kept:
@@ -491,6 +497,12 @@ def main():
         # DEBUG VIS
         # ---------------------------------------------------
         if args.verbose:
+
+            vis_path = os.path.join(
+                args.outdir,
+                "seg_" + name
+            )
+
             seg_img = build_indexed(masks, h, w)
 
             vis = colorize_indexed(seg_img)
@@ -498,17 +510,15 @@ def main():
             cv2.imwrite(vis_path, vis)
 
     # ---------------------------------------------------
-    # GENERATE masks_N
+    # GENERATE ALL DOWNSCALED MASKS
     # ---------------------------------------------------
-    generated = generate_downscaled_masks(
-        source_masks_dir=args.outdir,
-        downscale_targets=downscale_targets,
+    generate_downscaled_masks(
+        masks_dir=args.outdir,
+        scale_infos=scale_infos,
         override=args.override
     )
 
-    print(f"🧩 total downscaled masks generated: {generated}")
-
-    print("🏁 DONE")
+    print("\n🏁 DONE")
 
 
 if __name__ == "__main__":
