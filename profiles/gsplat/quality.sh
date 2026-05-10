@@ -14,7 +14,7 @@ TRAIN_VIS_MODE="tensorboard"
 ########################################
 
 # ⚠️ CRITIQUE pour débloquer la densification
-CAMERA_RES_SCALE_FACTOR=1
+CAMERA_RES_SCALE_FACTOR=0.75
 MAX_RES=1280
 
 NUM_DOWNSCALES=1
@@ -26,9 +26,9 @@ MAX_JOBS=2
 ########################################
 
 # ⚠️ CRITIQUE (temps de densification)
-MAX_ITER=15000
+MAX_ITER=12000
 # 🛑 STOP SPLIT PLUS TÔT
-STOP_SPLIT_AT=15000
+STOP_SPLIT_AT=12000
 
 
 # ⚠️ CRITIQUE (qualité du gradient)

@@ -51,7 +51,6 @@ SKIP_FRAME_EXTRACTION=false
 SKIP_PREPROCESS=false
 SKIP_TRAINING=false
 SKIP_EXPORT=false
-SKIP_FILTER=false
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -108,7 +107,6 @@ Options:
   --skip-preprocess
   --skip-training
   --skip-export
-  --skip-filter
 
 Optional environment variables:
   COLMAP_ARCHIVE=<file>      Path to COLMAP zip archive
@@ -152,7 +150,6 @@ while [[ $# -gt 0 ]]; do
     --skip-preprocess) SKIP_PREPROCESS=true; shift ;;
     --skip-training) SKIP_TRAINING=true; shift ;;
     --skip-export) SKIP_EXPORT=true; shift ;;
-    --skip-filter) SKIP_FILTER=true; shift ;;
 
     --help) show_help; exit 0 ;;
     *) echo "❌ Unknown param: $1"; show_help; exit 1 ;;
