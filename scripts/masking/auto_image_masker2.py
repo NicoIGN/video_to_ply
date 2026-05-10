@@ -314,7 +314,8 @@ def main():
 
     parser.add_argument(
         "--verbose",
-        action="store_true"
+        action="store_true",
+        default=False
     )
 
     parser.add_argument(
