@@ -391,20 +391,43 @@ def main():
         print(f"MASK EXISTS : {mask_exists}")
 
         # ---------------------------------------------------
+        # CHECK masks_2 STATUS
+        # ---------------------------------------------------
+        mask2_exists = False
+
+        if has_images2:
+
+            mask2_path = os.path.join(masks2_dir, name)
+
+            mask2_exists = os.path.exists(mask2_path)
+
+            print(f"MASKS_2 PATH   : {mask2_path}")
+            print(f"MASKS_2 EXISTS : {mask2_exists}")
+
+        # ---------------------------------------------------
         # SKIP REGEN IF EXISTS
         # ---------------------------------------------------
         if mask_exists and not args.override:
 
             print("⏩ using existing mask")
 
+            # ensure masks_2 exists
             if has_images2:
-                maybe_generate_downscaled_mask(
-                    mask_path=out_path,
-                    images2_dir=images2_dir,
-                    masks2_dir=masks2_dir,
-                    name=name,
-                    override=args.override
-                )
+
+                if not mask2_exists:
+
+                    print("🧩 masks_2 missing -> generating")
+
+                    maybe_generate_downscaled_mask(
+                        mask_path=out_path,
+                        images2_dir=images2_dir,
+                        masks2_dir=masks2_dir,
+                        name=name,
+                        override=True
+                    )
+
+                else:
+                    print("✅ masks_2 already exists")
 
             continue
 
@@ -534,12 +557,15 @@ def main():
         # GENERATE masks_2
         # ---------------------------------------------------
         if has_images2:
+
+            print("🧩 generating / verifying masks_2")
+
             maybe_generate_downscaled_mask(
                 mask_path=out_path,
                 images2_dir=images2_dir,
                 masks2_dir=masks2_dir,
                 name=name,
-                override=args.override
+                override=True
             )
 
         # ---------------------------------------------------
