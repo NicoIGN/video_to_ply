@@ -26,10 +26,10 @@ MAX_JOBS=2
 ########################################
 
 # ⚠️ CRITIQUE (temps de densification)
-MAX_ITER=9000
+MAX_ITER=6000
 
 # 🛑 STOP SPLIT PLUS TÔT
-#STOP_SPLIT_AT=6000            # ↓ stop plus tôt
+# STOP_SPLIT_AT=6000            # ↓ stop plus tôt (important)
 
 # ⚠️ CRITIQUE (qualité du gradient)
 TRAIN_RAYS_PER_BATCH=512
@@ -53,7 +53,8 @@ CULL_SCREEN_SIZE=0.25         # ↑ plus agressif en screen-space
 SPLIT_SCREEN_SIZE=0.02        # ↑ moins de split fin
 
 # ⚡ DENSIFICATION FREQUENCY (moins de croissance)
-REFINE_EVERY=250              # ↑ réduit création de nouveaux splats
+REFINE_EVERY=300              # ↑ réduit création de nouveaux splats
+
 
 # 🧠 STABILISATION (évite accumulation de bruit)
 RESET_ALPHA_EVERY=40          # ↑ nettoyage plus fréquent

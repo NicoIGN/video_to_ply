@@ -2,7 +2,7 @@
 # PERFORMANCE PROFILE
 ########################################
 
-TRAINING_PROFILE="gpu/high-quality"
+TRAINING_PROFILE="gpu/quality"
 
 DEVICE="gpu"
 MODEL="splatfacto"
@@ -13,9 +13,9 @@ TRAIN_VIS_MODE="tensorboard"
 # IMAGE / PREPROCESSING
 ########################################
 
-# ton vrai sweet spot qualité/stabilité
+# ⚠️ CRITIQUE pour débloquer la densification
 CAMERA_RES_SCALE_FACTOR=0.75
-MAX_RES=1152
+MAX_RES=1024
 
 NUM_DOWNSCALES=1
 SKIP_IMAGE_PROCESSING=true
@@ -25,58 +25,56 @@ MAX_JOBS=2
 # TRAINING
 ########################################
 
-MAX_ITER=15000
+# ⚠️ CRITIQUE (temps de densification)
+MAX_ITER=9000
 
-# IMPORTANT :
-# ne pas override le comportement naturel
-# du scheduler Splatfacto
-# STOP_SPLIT_AT supprimé volontairement
+# 🛑 STOP SPLIT PLUS TÔT
+# STOP_SPLIT_AT=6000            # ↓ stop plus tôt (important)
 
+# ⚠️ CRITIQUE (qualité du gradient)
 TRAIN_RAYS_PER_BATCH=512
 
-# reste sur ton meilleur équilibre actuel
-NUM_NERF_SAMPLES_PER_RAY=32
-NUM_PROPOSAL_SAMPLES_PER_RAY="64 32"
+# 🧠 Meilleur signal pour split
+NUM_NERF_SAMPLES_PER_RAY=48
+NUM_PROPOSAL_SAMPLES_PER_RAY="128 64"
 
 ########################################
-# GAUSSIAN SPLATTING
+# GAUSSIAN SPLATTING (REDUCED SPLATS)
 ########################################
 
-# légèrement conservateur pour éviter
-# l'explosion tardive des splats
-DENSIFY_GRAD_THRESH=0.00048
+# 🔥 DENSIFICATION (moins agressif)
+DENSIFY_GRAD_THRESH=0.0005   # ↑ moins de split
 
-# nettoyage modéré
-# surtout ne pas trop monter
-CULL_ALPHA_THRESH=0.11
+# 🧹 CLEANING (plus strict)
+CULL_ALPHA_THRESH=0.12        # ↑ supprime plus tôt les splats faibles
 
-# garde-fou contre les bavures bords
-CULL_SCREEN_SIZE=0.26
+# 📏 SPATIAL CONTROL (réduction explosion)
+CULL_SCREEN_SIZE=0.25         # ↑ plus agressif en screen-space
+SPLIT_SCREEN_SIZE=0.02        # ↑ moins de split fin
 
-# très important :
-# 0.02 semble être ton vrai sweet spot
-SPLIT_SCREEN_SIZE=0.02
+# ⚡ DENSIFICATION FREQUENCY (moins de croissance)
+REFINE_EVERY=250              # ↑ réduit création de nouveaux splats
 
-# stabilité générale
-RESET_ALPHA_EVERY=40
-CULL_SCALE_THRESH=0.5
+
+# 🧠 STABILISATION (évite accumulation de bruit)
+RESET_ALPHA_EVERY=40          # ↑ nettoyage plus fréquent
+CULL_SCALE_THRESH=0.5         # ↓ supprime petits clusters instables
 
 ########################################
 # QUALITY / REGULARIZATION
 ########################################
 
+
 USE_BILATERAL_GRID=true
 USE_SCALE_REGULARIZATION=true
 
-# évite les splats géants / étirés
-MAX_GAUSS_RATIO=4.0
-
-# meilleur compromis observé chez toi
-SSIM_LAMBDA=0.25
+MAX_GAUSS_RATIO=4.0          # ↓ limite taille splats
+SSIM_LAMBDA=0.25             # léger boost stabilité image (optionnel)
 
 ########################################
-# EXPORT
+# EXPORT BALANCED
 ########################################
 
-EXPORT_NUM_POINTS=800000
+# adapté au nouveau volume
+EXPORT_NUM_POINTS=600000
 EXPORT_DOWNSAMPLE=1
