@@ -57,23 +57,44 @@ HEARTBEAT_PID=$!
 # ======================
 # SUMMARY
 # ======================
-echo "────────────────────────────────────"
-echo "📁 INPUT                 : $DATA_DIR"
-echo "📁 OUTPUT                : $OUTPUT_DIR"
-echo "⚙️ DEVICE                : $DEVICE"
-echo "📷 CAMERA TYPE           : $CAMERA_TYPE"
-echo "🔀 MATCHING METHOD       : $MATCHING_METHOD"
-echo "🧠 SFM TOOL             : $SFMT_TOOL"
-echo "🧬 FEATURE TYPE          : $FEATURE_TYPE"
-echo "🔗 MATCHER TYPE          : $MATCHER_TYPE"
-echo "📉 NUM DOWNSCALES        : $NUM_DOWNSCALES"
-echo "✂️ CROP FACTOR           : ${CROP_FACTOR:-none}"
-echo "🎯 RADIUS CROP           : $PERCENT_RADIUS_CROP"
-echo "📐 SCALE FACTOR          : $CAMERA_RES_SCALE_FACTOR"
-echo "📷 SINGLE CAMERA MODE    : $USE_SINGLE_CAMERA_MODE"
-echo "🔧 REFINE INTRINSICS     : $REFINE_INTRINSICS"
+
 echo "────────────────────────────────────"
 
+echo "📁 INPUT                 : $DATA_DIR"
+echo "📁 OUTPUT                : $OUTPUT_DIR"
+
+echo "⚙️ DEVICE                : $DEVICE"
+echo "🔇 VERBOSE               : $VERBOSE"
+
+echo "📷 CAMERA TYPE           : $CAMERA_TYPE"
+echo "🧩 SAME DIMENSIONS       : $SAME_DIMENSIONS"
+
+echo "🔀 MATCHING METHOD       : $MATCHING_METHOD"
+echo "🧠 SFM TOOL              : $SFMT_TOOL"
+
+echo "🧬 FEATURE TYPE          : $FEATURE_TYPE"
+echo "🔗 MATCHER TYPE          : $MATCHER_TYPE"
+
+echo "📉 NUM DOWNSCALES        : $NUM_DOWNSCALES"
+
+echo "✂️ CROP FACTOR           : ${CROP_FACTOR:-none}"
+echo "🎯 RADIUS CROP           : ${PERCENT_RADIUS_CROP:-1.0}"
+
+echo "📷 SINGLE CAMERA MODE    : $USE_SINGLE_CAMERA_MODE"
+
+echo "🔧 REFINE INTRINSICS     : $REFINE_INTRINSICS"
+echo "🔬 REFINE PIXSFM         : $REFINE_PIXSFM"
+
+echo "📦 USE SFM DEPTH         : $USE_SFM_DEPTH"
+echo "🐞 DEPTH DEBUG           : $INCLUDE_DEPTH_DEBUG"
+
+echo "⏭️ SKIP COLMAP           : $SKIP_COLMAP"
+echo "⚡ SKIP IMAGE PROCESSING : $SKIP_IMAGE_PROCESSING"
+
+echo "🗂️ COLMAP MODEL PATH     : ${COLMAP_MODEL_PATH:-default}"
+echo "🛠️ COLMAP CMD           : ${COLMAP_CMD:-colmap}"
+
+echo "────────────────────────────────────"
 # ======================
 # ENV DEBUG (NEW)
 # ======================
