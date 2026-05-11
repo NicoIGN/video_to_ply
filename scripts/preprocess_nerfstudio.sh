@@ -231,6 +231,11 @@ fi
 # EXEC WITH FULL STREAM LOGGING
 # ======================
 
+ 
+echo HTTP_PROXY: $HTTP_PROXY
+echo HTTPS_PROXY: $HTTPS_PROXY
+echo NO_PROXY: $NO_PROXY
+
 python - << 'EOF'
 import os
 
