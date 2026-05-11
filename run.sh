@@ -60,8 +60,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PREPROCESS_PROFILE=""
 GSPLAT_PROFILE=""
 
-source $SCRIPT_DIR/config/config.sh
-
 cd $SCRIPT_DIR
 # ======================
 # INPUT MODE
@@ -158,6 +156,10 @@ while [[ $# -gt 0 ]]; do
     *) echo "❌ Unknown param: $1"; show_help; exit 1 ;;
   esac
 done
+
+NO_PROXY="$IGNORE_PROXY" \
+source $SCRIPT_DIR/config/config.sh
+
 
 
 # ======================

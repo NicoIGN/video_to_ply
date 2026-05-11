@@ -8,7 +8,7 @@ SKIP_COLMAP=false
 SKIP_TRAINING=false
 SKIP_EXPORT=false
 
-NO_PROXY=true
+#NO_PROXY=true
 
 
 ############################
