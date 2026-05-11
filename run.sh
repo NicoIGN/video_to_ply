@@ -2,8 +2,6 @@
 set -e
 
 
-echo HTTP_PROXY in run 1: $HTTP_PROXY\n\n
-
 # ======================
 # TIMING UTILS
 # ======================
@@ -251,13 +249,13 @@ else
       if [ -n "$HTTP_PROXY" ]; then
         export HTTP_PROXY="$HTTP_PROXY"
         export http_proxy="$HTTP_PROXY"
-        echo "🌐 HTTP proxy enabled (1)"
+        echo "🌐 HTTP proxy enabled"
       fi
 
       if [ -n "$HTTPS_PROXY" ]; then
         export HTTPS_PROXY="$HTTPS_PROXY"
         export https_proxy="$HTTPS_PROXY"
-        echo "🌐 HTTPS proxy enabled (2)"
+        echo "🌐 HTTPS proxy enabled"
       fi
 
       ### CONDA PROXY CONFIG
@@ -518,7 +516,6 @@ else
     echo "🧭 Preprocessing $PREPROCESS_PROFILE through NerfStudio..."
     STEP_START=$(date +%s)
 
-echo HTTP_PROXY in run: $HTTP_PROXY\n\n
 
     HTTP_PROXY="$HTTP_PROXY" \
     HTTPS_PROXY="$HTTPS_PROXY" \

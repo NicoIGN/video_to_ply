@@ -29,7 +29,7 @@ if [ "$NO_PROXY" != true ]; then
   export http_proxy="$HTTP_PROXY"
   export https_proxy="$HTTPS_PROXY"
 
-  echo "🌐 Proxy enabled (3)"
+  echo "🌐 Proxy enabled"
 else
   echo "🚫 Proxy disabled (NO_PROXY=true)"
   unset HTTP_PROXY
