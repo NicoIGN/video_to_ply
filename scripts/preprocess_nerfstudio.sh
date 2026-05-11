@@ -114,25 +114,98 @@ fi
 
 ARGS=()
 ARGS+=($GPU_FLAG)
+
+# ======================
+# REQUIRED
+# ======================
+
 ARGS+=(--data "$DATA_DIR")
 ARGS+=(--output-dir "$OUTPUT_DIR")
-ARGS+=(--camera-type "$CAMERA_TYPE")
-ARGS+=(--matching-method "$MATCHING_METHOD")
-ARGS+=(--feature-type "$FEATURE_TYPE")
-ARGS+=(--matcher-type "$MATCHER_TYPE")
-ARGS+=(--num-downscales "$NUM_DOWNSCALES")
-ARGS+=(--percent-radius-crop "$PERCENT_RADIUS_CROP")
-ARGS+=(--refine-intrinsics)
-ARGS+=(--sfm-tool "$SFMT_TOOL")
 
-if [[ "$SFMT_TOOL" == "colmap" && "$USE_SINGLE_CAMERA_MODE" == "true" ]]; then
+# ======================
+# OPTIONAL SCALAR PARAMS
+# ======================
+
+[[ -n "$CAMERA_TYPE" ]] && \
+  ARGS+=(--camera-type "$CAMERA_TYPE")
+
+[[ -n "$MATCHING_METHOD" ]] && \
+  ARGS+=(--matching-method "$MATCHING_METHOD")
+
+[[ -n "$FEATURE_TYPE" ]] && \
+  ARGS+=(--feature-type "$FEATURE_TYPE")
+
+[[ -n "$MATCHER_TYPE" ]] && \
+  ARGS+=(--matcher-type "$MATCHER_TYPE")
+
+[[ -n "$NUM_DOWNSCALES" ]] && \
+  ARGS+=(--num-downscales "$NUM_DOWNSCALES")
+
+[[ -n "$SFMT_TOOL" ]] && \
+  ARGS+=(--sfm-tool "$SFMT_TOOL")
+
+[[ -n "$PERCENT_RADIUS_CROP" ]] && \
+  ARGS+=(--percent-radius-crop "$PERCENT_RADIUS_CROP")
+
+[[ -n "$COLMAP_MODEL_PATH" ]] && \
+  ARGS+=(--colmap-model-path "$COLMAP_MODEL_PATH")
+
+[[ -n "$COLMAP_CMD" ]] && \
+  ARGS+=(--colmap-cmd "$COLMAP_CMD")
+
+[[ -n "$IMAGES_PER_EQUIRECT" ]] && \
+  ARGS+=(--images-per-equirect "$IMAGES_PER_EQUIRECT")
+
+[[ -n "$CROP_BOTTOM" ]] && \
+  ARGS+=(--crop-bottom "$CROP_BOTTOM")
+
+# ======================
+# BOOLEAN FLAGS
+# ======================
+
+[[ "$REFINE_INTRINSICS" == "true" ]] && \
+  ARGS+=(--refine-intrinsics)
+
+[[ "$REFINE_PIXSFM" == "true" ]] && \
+  ARGS+=(--refine-pixsfm)
+
+[[ "$USE_SINGLE_CAMERA_MODE" == "true" ]] && \
   ARGS+=(--use-single-camera-mode)
-fi
+
+[[ "$SKIP_COLMAP" == "true" ]] && \
+  ARGS+=(--skip-colmap)
+
+[[ "$SKIP_IMAGE_PROCESSING" == "true" ]] && \
+  ARGS+=(--skip-image-processing)
+
+[[ "$USE_SFM_DEPTH" == "true" ]] && \
+  ARGS+=(--use-sfm-depth)
+
+[[ "$INCLUDE_DEPTH_DEBUG" == "true" ]] && \
+  ARGS+=(--include-depth-debug)
+
+[[ "$VERBOSE" == "true" ]] && \
+  ARGS+=(--verbose)
+
+# default = true → only add flag if explicitly false
+[[ "$SAME_DIMENSIONS" == "false" ]] && \
+  ARGS+=(--no-same-dimensions)
+
+# ======================
+# VECTOR PARAMS
+# ======================
 
 if [[ -n "$CROP_FACTOR" ]]; then
-  ARGS+=(--crop-factor $CROP_FACTOR)
-fi
+  read -r TOP BOTTOM LEFT RIGHT <<< "$CROP_FACTOR"
 
+  ARGS+=(
+    --crop-factor
+    "$TOP"
+    "$BOTTOM"
+    "$LEFT"
+    "$RIGHT"
+  )
+fi
 # ======================
 # EXEC WITH FULL STREAM LOGGING (NEW)
 # ======================
