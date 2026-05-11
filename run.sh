@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+
+echo HTTP_PROXY in run (1): $HTTP_PROXY\n\n
+
 # ======================
 # TIMING UTILS
 # ======================
