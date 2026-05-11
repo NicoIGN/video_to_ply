@@ -228,8 +228,19 @@ if [[ -n "$CROP_FACTOR" ]]; then
   )
 fi
 # ======================
-# EXEC WITH FULL STREAM LOGGING (NEW)
+# EXEC WITH FULL STREAM LOGGING
 # ======================
+
+python - << 'EOF'
+import os
+
+keys = ["HTTP_PROXY","HTTPS_PROXY","http_proxy","https_proxy","NO_PROXY"]
+
+print("\n=== ENV IN PYTHON PROCESS ===")
+for k in keys:
+    print(k, "=", os.getenv(k))
+EOF
+
 ns-process-data images "${ARGS[@]}" \
   > >(tee -a "$PROCESS_LOG") \
   2> >(tee -a "$PROCESS_LOG" >&2)
