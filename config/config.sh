@@ -321,9 +321,9 @@ fi
 
 # Stoppe la croissance des splats après une phase stable
 # → empêche explosion tardive (> 4M)
-if [ -z "${STOP_SPLIT_AT+x}" ]; then
-  STOP_SPLIT_AT=8000
-fi
+#if [ -z "${STOP_SPLIT_AT+x}" ]; then
+#  STOP_SPLIT_AT=8000
+#fi
 
 # Réinitialisation périodique des alphas
 # → évite accumulation de splats semi-actifs parasites
