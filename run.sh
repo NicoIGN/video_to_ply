@@ -41,7 +41,7 @@ print_step_time() {
 DEVICE="cpu"
 ROOT_DIR="runs/default"
 SKIP_CONDA=false
-NO_PROXY=false
+IGNORE_PROXY=false
 AUTOMASK=false
 
 # ======================
@@ -141,7 +141,7 @@ while [[ $# -gt 0 ]]; do
     --name) BASENAME="$2"; shift 2 ;;
     --root) ROOT_DIR="$2"; shift 2 ;;
     --skip-conda) SKIP_CONDA=true; shift ;;
-    --no-proxy) NO_PROXY=true; shift ;;
+    --no-proxy) IGNORE_PROXY=true; shift ;;
     --automask) AUTOMASK=true; shift ;;
     # ======================
     # PIPELINE OVERRIDES
@@ -240,8 +240,8 @@ else
     source "$(conda info --base)/etc/profile.d/conda.sh"
 
     ### PROXY SETUP (RUNTIME FIRST)
-    if [ "$NO_PROXY" != true ]; then
-      echo NO_PROXY: $NO_PROXY
+    if [ "$IGNORE_PROXY" != true ]; then
+      echo IGNORE_PROXY: $IGNORE_PROXY
       
       if [ -n "$HTTP_PROXY" ]; then
         export HTTP_PROXY="$HTTP_PROXY"
@@ -260,7 +260,7 @@ else
       conda config --set proxy_servers.https "$HTTPS_PROXY" 2>/dev/null || true
 
     else
-      echo "🚫 Proxy disabled via NO_PROXY=true"
+      echo "🚫 Proxy disabled via IGNORE_PROXY=true"
       # 🔥 clean conda config
       conda config --remove-key proxy_servers.http 2>/dev/null || true
       conda config --remove-key proxy_servers.https 2>/dev/null || true
