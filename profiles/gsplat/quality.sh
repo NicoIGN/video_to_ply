@@ -1,4 +1,28 @@
 ########################################
+# PERFORMANCE PROFILE
+########################################
+
+TRAINING_PROFILE="gpu/balanced"
+
+DEVICE="gpu"
+MODEL="splatfacto"
+MODEL_IMPLEMENTATION="tcnn"
+TRAIN_VIS_MODE="tensorboard"
+
+########################################
+# IMAGE / PREPROCESSING
+########################################
+
+# ⚠️ CRITIQUE pour débloquer la densification
+CAMERA_RES_SCALE_FACTOR=0.75
+MAX_RES=1280
+
+NUM_DOWNSCALES=1
+SKIP_IMAGE_PROCESSING=true
+MAX_JOBS=2
+
+
+########################################
 # TRAINING
 ########################################
 
@@ -35,12 +59,15 @@ CULL_SCALE_THRESH=0.55
 # QUALITY
 ########################################
 
+USE_BILATERAL_GRID=true
+USE_SCALE_REGULARIZATION=true
 MAX_GAUSS_RATIO=4.5
 SSIM_LAMBDA=0.20
 
 ########################################
-# IMAGE
+# EXPORT BALANCED
 ########################################
 
-CAMERA_RES_SCALE_FACTOR=0.75
-MAX_RES=1280
+# adapté au nouveau volume
+EXPORT_NUM_POINTS=600000
+EXPORT_DOWNSAMPLE=1
