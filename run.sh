@@ -513,6 +513,11 @@ else
     echo "🧭 Preprocessing $PREPROCESS_PROFILE through NerfStudio..."
     STEP_START=$(date +%s)
 
+
+    HTTP_PROXY="$HTTP_PROXY" \
+    http_proxy="$HTTP_PROXY" \
+    HTTPS_PROXY="$HTTPS_PROXY" \
+    https_proxy="$HTTPS_PROXY" \
     DATA_DIR="$INPUT_DIR/images" \
     OUTPUT_DIR="$ORI_DIR" \
     DEVICE="$DEVICE" \
@@ -674,6 +679,10 @@ else
 
         STEP_START=$(date +%s)
 
+        HTTP_PROXY="$HTTP_PROXY" \
+        http_proxy="$HTTP_PROXY" \
+        HTTPS_PROXY="$HTTPS_PROXY" \
+        https_proxy="$HTTPS_PROXY" \
         MODEL="$MODEL" \
         MODEL_IMPLEMENTATION="$MODEL_IMPLEMENTATION" \
         DEVICE="$DEVICE" \
