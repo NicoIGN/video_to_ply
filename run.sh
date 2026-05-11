@@ -513,7 +513,7 @@ else
     echo "🧭 Preprocessing $PREPROCESS_PROFILE through NerfStudio..."
     STEP_START=$(date +%s)
 
-
+echo HTTP_PROXY in run: $HTTP_PROXY
     HTTP_PROXY="$HTTP_PROXY" \
     http_proxy="$HTTP_PROXY" \
     HTTPS_PROXY="$HTTPS_PROXY" \
