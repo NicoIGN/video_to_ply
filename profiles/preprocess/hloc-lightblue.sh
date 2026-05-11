@@ -46,11 +46,11 @@ MATCHER_TYPE="superpoint+lightglue"
 # CAMERA / STRUCTURE OPTIONS
 ############################
 
-USE_SFM_DEPTH=false
+USE_SFM_DEPTH=true
 # true | false
 # → depth SfM utile pour densification mais plus lourd
 
-REFINE_INTRINSICS=false
+REFINE_INTRINSICS=true
 # true | false
 # → améliore calibration caméra (bundle adjustment)
 
