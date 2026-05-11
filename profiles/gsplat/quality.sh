@@ -2,7 +2,7 @@
 # PERFORMANCE PROFILE
 ########################################
 
-TRAINING_PROFILE="gpu/quality"
+TRAINING_PROFILE="gpu/high-quality"
 
 DEVICE="gpu"
 MODEL="splatfacto"
@@ -13,7 +13,7 @@ TRAIN_VIS_MODE="tensorboard"
 # IMAGE / PREPROCESSING
 ########################################
 
-# garde le sweet spot trouvé
+# ton vrai sweet spot qualité/stabilité
 CAMERA_RES_SCALE_FACTOR=0.75
 MAX_RES=1152
 
@@ -25,17 +25,16 @@ MAX_JOBS=2
 # TRAINING
 ########################################
 
-# longue phase d’optimisation
 MAX_ITER=15000
 
 # IMPORTANT :
-# on arrête la croissance géométrique tôt
-# puis on laisse optimiser couleurs/opacités/SH
-#STOP_SPLIT_AT=5000
+# ne pas override le comportement naturel
+# du scheduler Splatfacto
+# STOP_SPLIT_AT supprimé volontairement
 
 TRAIN_RAYS_PER_BATCH=512
 
-# ton sweet spot actuel
+# reste sur ton meilleur équilibre actuel
 NUM_NERF_SAMPLES_PER_RAY=32
 NUM_PROPOSAL_SAMPLES_PER_RAY="64 32"
 
@@ -43,19 +42,22 @@ NUM_PROPOSAL_SAMPLES_PER_RAY="64 32"
 # GAUSSIAN SPLATTING
 ########################################
 
-# garde le comportement stable du balanced
-DENSIFY_GRAD_THRESH=0.00045
+# légèrement conservateur pour éviter
+# l'explosion tardive des splats
+DENSIFY_GRAD_THRESH=0.00048
 
-# légèrement moins agressif pour préserver les détails
+# nettoyage modéré
+# surtout ne pas trop monter
 CULL_ALPHA_THRESH=0.11
 
-# évite les bavures périphériques
-CULL_SCREEN_SIZE=0.25
+# garde-fou contre les bavures bords
+CULL_SCREEN_SIZE=0.26
 
-# ton meilleur compromis actuel
+# très important :
+# 0.02 semble être ton vrai sweet spot
 SPLIT_SCREEN_SIZE=0.02
 
-# stabilité
+# stabilité générale
 RESET_ALPHA_EVERY=40
 CULL_SCALE_THRESH=0.5
 
@@ -66,15 +68,15 @@ CULL_SCALE_THRESH=0.5
 USE_BILATERAL_GRID=true
 USE_SCALE_REGULARIZATION=true
 
-# évite les splats étirés
+# évite les splats géants / étirés
 MAX_GAUSS_RATIO=4.0
 
-# bon équilibre texture / stabilité
+# meilleur compromis observé chez toi
 SSIM_LAMBDA=0.25
 
 ########################################
 # EXPORT
 ########################################
 
-EXPORT_NUM_POINTS=700000
+EXPORT_NUM_POINTS=800000
 EXPORT_DOWNSAMPLE=1
