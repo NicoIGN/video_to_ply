@@ -4,14 +4,28 @@ set -e
 
 srun \
   --gres=gpu:1 \
-  --cpus-per-task=4 \
+  --cpus-per-task=1 \
   --mem=2G \
   --time=00:15:00 \
   bash -lc '
 
+set -e
+
 echo "========================"
 echo "🧪 SLURM ENV CHECK"
 echo "========================"
+
+# -------------------------
+# CONDA AUTO DETECT
+# -------------------------
+CONDA_BASE=$(conda info --base 2>/dev/null || echo "")
+if [ -z "$CONDA_BASE" ]; then
+    echo "❌ conda not found"
+    exit 1
+fi
+
+source "$CONDA_BASE/etc/profile.d/conda.sh"
+conda activate gsplat
 
 echo ""
 echo "📍 Host:"
