@@ -9,52 +9,38 @@ dependencies:
   - python=3.10
   - pip
 
-  # Utilities
-  - rclone
-  - tree
-  - tqdm
-  - matplotlib
-
-  # Build tools
+  # Build
   - cmake
   - ninja
   - gcc_linux-64=11
   - gxx_linux-64=11
 
-  # PyTorch + CUDA
+  # PyTorch CUDA 12.1
   - pytorch=2.3.1
   - torchvision=0.18.1
   - torchaudio=2.3.1
   - pytorch-cuda=12.1
+
+  # CUDA COMPONENTS ONLY
   - cuda-nvcc=12.1
-  - uda-cudart=12.1
-  - cuda-compiler=12.1
-  - cuda-toolkit=12.1
+  - cuda-cudart-dev=12.1
+  - cuda-runtime=12.1
 
-  # Scientific stack
-  - "numpy<2"
+  # Utils
+  - numpy<2
   - scipy
-
-  # IO / Media
-  - openimageio
+  - matplotlib
+  - tqdm
   - ffmpeg
   - imageio
   - imageio-ffmpeg
-
-  # Geometry / SfM
+  - plyfile
   - colmap=3.8
   - faiss-cpu
-  - plyfile
-
-  # Graphics
-  # - glew
-  #- qt-main
 
   - pip:
       - nerfstudio==1.1.5
       - fpsample
       - ultralytics
-      - plyfile
       - git+https://github.com/cvg/Hierarchical-Localization.git
       - git+https://github.com/facebookresearch/segment-anything.git
-      - git+https://github.com/nerfstudio-project/gsplat.git@v1.4.0
