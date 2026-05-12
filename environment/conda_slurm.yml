@@ -42,8 +42,8 @@ dependencies:
   - plyfile
 
   # Graphics
-  - glew
-  - qt-main
+  # - glew
+  #- qt-main
 
   - pip:
       - nerfstudio==1.1.5
