@@ -26,6 +26,9 @@ dependencies:
   - torchvision=0.18.1
   - torchaudio=2.3.1
   - pytorch-cuda=12.1
+  - cuda-nvcc=12.1
+  - uda-cudart=12.1
+  - cuda-compiler=12.1
   - cuda-toolkit=12.1
 
   # Scientific stack
