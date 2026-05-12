@@ -5,8 +5,6 @@ channels:
   - nvidia
   - conda-forge
 
-channel_priority: strict
-
 dependencies:
   - python=3.10
   - pip
