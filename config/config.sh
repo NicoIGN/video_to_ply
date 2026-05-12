@@ -42,8 +42,9 @@ fi
 ############################
 # PIPELINE EXECUTION ENV
 ############################
-
-ROOT_DIR="runs/default"
+if [ -z "${ROOT_DIR+x}" ]; then
+    ROOT_DIR="runs/default"
+fi
 
 export SCENE_NAME="scene3d"
 

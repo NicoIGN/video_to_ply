@@ -42,7 +42,7 @@ srun \
   --gres=gpu:1 \
   --cpus-per-task=4 \
   --mem=16G \
-  --time=02:00:00 \
+  --time=04:00:00 \
   bash -lc "
     export HTTP_PROXY=$HTTP_PROXY
     export HTTPS_PROXY=$HTTPS_PROXY

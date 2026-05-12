@@ -96,15 +96,15 @@ echo "🛠️ COLMAP CMD           : ${COLMAP_CMD:-colmap}"
 
 echo "────────────────────────────────────"
 # ======================
-# ENV DEBUG (NEW)
+# ENV DEBUG
 # ======================
 export LOGLEVEL=DEBUG
 export COLMAP_LOG_LEVEL=2
+export QT_QPA_PLATFORM=offscreen
 
 if [[ "$DEVICE" == "cpu" ]]; then
   echo "🧠 CPU MODE"
   export LIBGL_ALWAYS_SOFTWARE=1
-  export QT_QPA_PLATFORM=offscreen
   export MPLBACKEND=Agg
   export CUDA_VISIBLE_DEVICES=""
   export OMP_NUM_THREADS=1
