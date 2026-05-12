@@ -447,7 +447,7 @@ case "$INPUT_MODE" in
       fi
 
       env \
-        IMAGE_DIR="$INPUT_DIR/images" \
+        IMAGE_DIR="$IIMAGE_DIR" \
         VIDEO="$VIDEO" \
         "${EXTRA_ENV[@]}" \
         bash scripts/extract_frames.sh
@@ -467,7 +467,7 @@ case "$INPUT_MODE" in
       echo "⏩ Skipping image preparation"
     else
       echo "🖼️ Preparing images → $INPUT_DIR/images"
-      bash scripts/prepare_images.sh "$IMAGES" "$INPUT_DIR/images"
+      bash scripts/prepare_images.sh "$IMAGES" "$IMAGE_DIR"
     fi
     ;;
 
