@@ -111,8 +111,9 @@ fi
 # VIDEO PIPELINE
 ############################
 
-VIDEO_NAME="video.mov"
-if [ -z "${FPS+x}" ]; then
+VIDEO_NAME="${VIDEO_NAME:-video.mov}"
+
+if [[ -z "${FPS+x}" && -z "${NUM_FRAMES+x}" ]]; then
     FPS=10
 fi
 
