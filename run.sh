@@ -447,7 +447,7 @@ case "$INPUT_MODE" in
       fi
 
       env \
-        IMAGE_DIR="$IIMAGE_DIR" \
+        IMAGE_DIR="$IMAGE_DIR" \
         VIDEO="$VIDEO" \
         "${EXTRA_ENV[@]}" \
         bash scripts/extract_frames.sh
