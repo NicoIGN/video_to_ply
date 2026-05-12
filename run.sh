@@ -425,7 +425,7 @@ case "$INPUT_MODE" in
     if [ "$SKIP_FRAME_EXTRACTION" = true ]; then
       echo "⏩ Skipping frame extraction (config)"
 
-    elif [ -d "$INPUT_DIR/images" ] && [ "$(ls -A "$INPUT_DIR/images" 2>/dev/null)" ]; then
+    elif [ -d "$IMAGE_DIR" ] && [ "$(ls -A "$IMAGE_DIR" 2>/dev/null)" ]; then
       echo "⏩ Skipping frame extraction"
 
     else
@@ -463,10 +463,10 @@ case "$INPUT_MODE" in
 
     if [ "$SKIP_FRAME_EXTRACTION" = true ]; then
       echo "⏩ Skipping image preparation (config)"
-    elif [ -d "$INPUT_DIR/images" ] && [ "$(ls -A "$INPUT_DIR/images" 2>/dev/null)" ]; then
+    elif [ -d "$IMAGE_DIR" ] && [ "$(ls -A "$IMAGE_DIR" 2>/dev/null)" ]; then
       echo "⏩ Skipping image preparation"
     else
-      echo "🖼️ Preparing images → $INPUT_DIR/images"
+      echo "🖼️ Preparing images → $IMAGE_DIR"
       bash scripts/prepare_images.sh "$IMAGES" "$IMAGE_DIR"
     fi
     ;;
