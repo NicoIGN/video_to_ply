@@ -13,8 +13,10 @@ TRAIN_VIS_MODE="tensorboard"
 # IMAGE / PREPROCESSING
 ########################################
 
-# ⚠️ CRITIQUE pour débloquer la densification
-CAMERA_RES_SCALE_FACTOR=1
+# Stable full-res training
+CAMERA_RES_SCALE_FACTOR=1.0
+
+# Garde une résolution raisonnable
 MAX_RES=1280
 
 NUM_DOWNSCALES=1
@@ -24,56 +26,70 @@ SKIP_IMAGE_PROCESSING=true
 # TRAINING
 ########################################
 
-# ⚠️ CRITIQUE (temps de densification)
+# Stable long training
 MAX_ITER=15000
 
-# 🛑 STOP SPLIT
-#STOP_SPLIT_AT=$MAX_ITER
+# IMPORTANT :
+# évite la densification tardive explosive
+STOP_SPLIT_AT=9000
 
-# ⚠️ CRITIQUE (qualité du gradient)
+# Stable gradients
 TRAIN_RAYS_PER_BATCH=1024
 
-# 🧠 Meilleur signal pour split
+# Bon compromis qualité/stabilité
 NUM_NERF_SAMPLES_PER_RAY=48
 NUM_PROPOSAL_SAMPLES_PER_RAY="128 128"
 
 ########################################
-# GAUSSIAN SPLATTING (REDUCED SPLATS)
+# GAUSSIAN SPLATTING
 ########################################
 
-# 🔥 DENSIFICATION
-DENSIFY_GRAD_THRESH=0.0004
+# Densification plus conservative
+DENSIFY_GRAD_THRESH=0.00045
 
-# 🧹 CLEANING
-CULL_ALPHA_THRESH=0.1        # ↑ supprime les splats faibles
+########################################
+# CLEANING
+########################################
 
-# 📏 SPATIAL CONTROL (réduction explosion)
-CULL_SCREEN_SIZE=0.25         # ↑ plus agressif en screen-space
-SPLIT_SCREEN_SIZE=0.03
+# Nettoyage alpha un peu plus agressif
+CULL_ALPHA_THRESH=0.12
 
-# ⚡ DENSIFICATION FREQUENCY (moins de croissance)
-REFINE_EVERY=200              # ↑ réduit création de nouveaux splats
+# Évite gros splats écran
+CULL_SCREEN_SIZE=0.25
+SPLIT_SCREEN_SIZE=0.02
 
+########################################
+# DENSIFICATION CONTROL
+########################################
 
-# 🧠 STABILISATION (évite accumulation de bruit)
-RESET_ALPHA_EVERY=200
-CULL_SCALE_THRESH=0.4         # ↓ supprime petits clusters instables
+# Beaucoup plus stable à long terme
+REFINE_EVERY=300
+
+# PARAMÈTRE CRITIQUE
+# évite saturation alpha / écran blanc
+RESET_ALPHA_EVERY=40
+
+# Supprime davantage de gros splats instables
+CULL_SCALE_THRESH=0.5
 
 ########################################
 # QUALITY / REGULARIZATION
 ########################################
 
+# Très utile pour stabilité visuelle
+USE_BILATERAL_GRID=true
 
-USE_BILATERAL_GRID=false
 USE_SCALE_REGULARIZATION=true
 
-MAX_GAUSS_RATIO=5.0          # ↓ limite taille splats
-SSIM_LAMBDA=0.25             # léger boost stabilité image (optionnel)
+# Évite covariance géante
+MAX_GAUSS_RATIO=4.0
+
+# Stable sans trop lisser
+SSIM_LAMBDA=0.2
 
 ########################################
-# EXPORT BALANCED
+# EXPORT
 ########################################
 
-# adapté au nouveau volume
 EXPORT_NUM_POINTS=600000
 EXPORT_DOWNSAMPLE=1
