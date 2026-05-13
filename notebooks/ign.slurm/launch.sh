@@ -19,7 +19,7 @@ export MAX_JOBS
 # RUN SLURM
 # -----------------------------
 srun \
-  --gres=gpu:2 \
+  --gres=gpu:1 \
   --cpus-per-task=12 \
   --mem=16G \
   --time=04:00:00 \
