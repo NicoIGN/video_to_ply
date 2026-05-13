@@ -48,11 +48,11 @@ DENSIFY_GRAD_THRESH=0.0003
 CULL_ALPHA_THRESH=0.1        # ↑ supprime les splats faibles
 
 # 📏 SPATIAL CONTROL (réduction explosion)
-CULL_SCREEN_SIZE=0.25         # ↑ plus agressif en screen-space
-SPLIT_SCREEN_SIZE=0.02        # ↑ moins de split fin
+CULL_SCREEN_SIZE=0.15         # ↑ plus agressif en screen-space
+SPLIT_SCREEN_SIZE=0.01        # ↑ moins de split fin
 
 # ⚡ DENSIFICATION FREQUENCY (moins de croissance)
-REFINE_EVERY=500              # ↑ réduit création de nouveaux splats
+REFINE_EVERY=100              # ↑ réduit création de nouveaux splats
 
 
 # 🧠 STABILISATION (évite accumulation de bruit)
