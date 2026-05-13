@@ -19,7 +19,6 @@ MAX_RES=1024
 
 NUM_DOWNSCALES=1
 SKIP_IMAGE_PROCESSING=true
-MAX_JOBS=2
 
 ########################################
 # TRAINING

@@ -319,8 +319,6 @@ fi
 
 echo "✅ Using python: $PY_VER "
 
-echo MAX_JOBS - 2c: $MAX_JOBS
-
 # ======================
 # MODEL VALIDATION
 # ======================
@@ -419,8 +417,6 @@ esac
 
 echo "📦 ROOT: $ROOT_DIR"
 
-echo MAX_JOBS - 2d: $MAX_JOBS
-
 # ----------------------
 # 1. INPUT PREPARATION
 # ----------------------
@@ -488,7 +484,6 @@ print_step_time "INPUT PREPARATION" "$STEP_START"
 # ----------------------
 # 2. PREPROCESS
 # ----------------------
-echo MAX_JOBS - 2e: $MAX_JOBS
 
 # OPTIONAL COLMAP ARCHIVE RESTORE
 if [ -n "${COLMAP_ARCHIVE:-}" ]; then
@@ -632,8 +627,6 @@ if [ "${AUTOMASK:-false}" = true ]; then
   print_step_time "AUTOMASK" "$STEP_START"
 fi
 
-echo MAX_JOBS - 2f: $MAX_JOBS
-
 # ----------------------
 # 3. TRAIN
 # ----------------------
@@ -689,9 +682,6 @@ else
         echo "🧠 Training..."
 
         STEP_START=$(date +%s)
-
-
-echo MAX_JOBS - 2f: $MAX_JOBS
 
         HTTP_PROXY="$HTTP_PROXY" \
         HTTPS_PROXY="$HTTPS_PROXY" \
