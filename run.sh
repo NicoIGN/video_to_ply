@@ -159,8 +159,6 @@ NO_PROXY="$IGNORE_PROXY" \
 MAX_JOBS="$MAX_JOBS" \
 source $SCRIPT_DIR/config/config.sh
 
-echo MAX_JOBS - 2a: $MAX_JOBS
-
 # ======================
 # SETUP VALIDATION
 # ======================
@@ -233,8 +231,6 @@ else
     exit 1
   fi
 fi
-
-echo MAX_JOBS - 2b: $MAX_JOBS
 
 # ======================
 # CONDA ENVIRONMENT

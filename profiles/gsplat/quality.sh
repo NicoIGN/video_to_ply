@@ -28,7 +28,7 @@ SKIP_IMAGE_PROCESSING=true
 MAX_ITER=9000
 
 # 🛑 STOP SPLIT
-STOP_SPLIT_AT=$MAX_ITER 
+#STOP_SPLIT_AT=$MAX_ITER
 
 # ⚠️ CRITIQUE (qualité du gradient)
 TRAIN_RAYS_PER_BATCH=512
@@ -42,10 +42,10 @@ NUM_PROPOSAL_SAMPLES_PER_RAY="128 64"
 ########################################
 
 # 🔥 DENSIFICATION
-DENSIFY_GRAD_THRESH=0.0006
+DENSIFY_GRAD_THRESH=0.0003
 
-# 🧹 CLEANING (plus strict)
-CULL_ALPHA_THRESH=0.05        # ↑ supprime les splats faibles
+# 🧹 CLEANING
+CULL_ALPHA_THRESH=0.1        # ↑ supprime les splats faibles
 
 # 📏 SPATIAL CONTROL (réduction explosion)
 CULL_SCREEN_SIZE=0.25         # ↑ plus agressif en screen-space
