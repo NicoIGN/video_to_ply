@@ -53,7 +53,7 @@ echo "========================"
 echo "python: $(which python)"
 python -c "import torch; print(torch.__version__); print(torch.cuda.is_available())"
 
-echo MAX_JOBS: $MAX_JOBS
+echo MAX_JOBS - 1: $MAX_JOBS
 bash run.sh \
   --root "'"$ROOTDIR"'" \
   --name "'"$BASENAME"'" \

@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+echo MAX_JOBS - 2: $MAX_JOBS
 
 # ======================
 # TIMING UTILS
@@ -156,8 +157,11 @@ while [[ $# -gt 0 ]]; do
 done
 
 NO_PROXY="$IGNORE_PROXY" \
+echo MAX_JOBS - 3: $MAX_JOBS
+
 source $SCRIPT_DIR/config/config.sh
 
+echo MAX_JOBS - 4: $MAX_JOBS
 
 
 # ======================
