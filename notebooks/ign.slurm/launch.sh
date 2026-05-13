@@ -14,6 +14,7 @@ export HTTPS_PROXY
 export http_proxy
 export https_proxy
 export NO_PROXY
+export MAX_JOBS
 
 # RUN SLURM
 # -----------------------------
@@ -52,9 +53,7 @@ echo "========================"
 echo "python: $(which python)"
 python -c "import torch; print(torch.__version__); print(torch.cuda.is_available())"
 
-# -----------------------------
-# RUN PIPELINE
-# -----------------------------
+echo MAX_JOBS: $MAX_JOBS
 bash run.sh \
   --root "'"$ROOTDIR"'" \
   --name "'"$BASENAME"'" \
