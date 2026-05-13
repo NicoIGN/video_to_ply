@@ -7,7 +7,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-#source "$SCRIPT_DIR/../config/config.sh"
+echo MAX_JOBS - 3: $MAX_JOBS
 
 # ======================
 # UTILS
@@ -144,6 +144,8 @@ fi
 # ======================
 # SUMMARY
 # ======================
+
+echo MAX_JOBS - 4: $MAX_JOBS
 
 echo "────────────────────────────────────────────"
 echo "🚀 TRAINING CONFIG SUMMARY"
