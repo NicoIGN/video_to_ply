@@ -19,8 +19,8 @@ export MAX_JOBS
 # RUN SLURM
 # -----------------------------
 srun \
-  --gres=gpu:1 \
-  --cpus-per-task=4 \
+  --gres=gpu:2 \
+  --cpus-per-task=12 \
   --mem=16G \
   --time=04:00:00 \
   bash -lc '
@@ -33,7 +33,7 @@ export http_proxy=$http_proxy
 export https_proxy=$https_proxy
 export NO_PROXY=$NO_PROXY
 export MAX_JOBS=$MAX_JOBS
-
+export CUDA_VISIBLE_DEVICES=0,1
 # -----------------------------
 # CONDA AUTO INIT (GSPLAT ENV)
 # -----------------------------
@@ -53,7 +53,6 @@ echo "========================"
 echo "python: $(which python)"
 python -c "import torch; print(torch.__version__); print(torch.cuda.is_available())"
 
-echo MAX_JOBS - 1: $MAX_JOBS
 bash run.sh \
   --root "'"$ROOTDIR"'" \
   --name "'"$BASENAME"'" \

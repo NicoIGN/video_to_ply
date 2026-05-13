@@ -103,7 +103,8 @@ fi
 export MACHINE_DEVICE_TYPE
 export MODEL_IMPLEMENTATION
 export MAX_JOBS
-export NUM_DEVICES=${MAX_JOBS:-1}
+export NUM_DEVICES=2
+export NUM_MACHINES=1
 export CMAKE_BUILD_PARALLEL_LEVEL="$MAX_JOBS"
 
 export TORCH_DISABLE_ADDR2LINE=1
@@ -263,6 +264,7 @@ add_arg COMMON_ARGS --output-dir "$OUTPUTDIR"
 add_arg COMMON_ARGS --experiment-name "$EXPERIMENT_NAME"
 add_arg COMMON_ARGS --machine.device-type "$MACHINE_DEVICE_TYPE"
 add_arg COMMON_ARGS --machine.num-devices "${NUM_DEVICES:-1}"
+add_arg COMMON_ARGS --machine.num-machines "${NUM_MACHINES:-1}"
 add_arg COMMON_ARGS --max-num-iterations "$MAX_ITER"
 add_arg COMMON_ARGS --steps-per-save "$STEPS_PER_SAVE"
 add_arg COMMON_ARGS --steps-per-eval-all-images "$STEPS_PER_EVAL_ALL_IMAGES"
