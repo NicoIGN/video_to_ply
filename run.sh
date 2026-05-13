@@ -154,9 +154,13 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+echo MAX_JOBS - 2b: $MAX_JOBS
+
 NO_PROXY="$IGNORE_PROXY" \
+MAX_JOBS="$MAX_JOBS" \
 source $SCRIPT_DIR/config/config.sh
 
+echo MAX_JOBS - 2c: $MAX_JOBS
 
 # ======================
 # SETUP VALIDATION
@@ -480,6 +484,7 @@ print_step_time "INPUT PREPARATION" "$STEP_START"
 # ----------------------
 # 2. PREPROCESS
 # ----------------------
+echo MAX_JOBS - 2d: $MAX_JOBS
 
 # OPTIONAL COLMAP ARCHIVE RESTORE
 if [ -n "${COLMAP_ARCHIVE:-}" ]; then
@@ -623,6 +628,8 @@ if [ "${AUTOMASK:-false}" = true ]; then
   print_step_time "AUTOMASK" "$STEP_START"
 fi
 
+echo MAX_JOBS - 2e: $MAX_JOBS
+
 # ----------------------
 # 3. TRAIN
 # ----------------------
@@ -680,7 +687,7 @@ else
         STEP_START=$(date +%s)
 
 
-echo MAX_JOBS - 2: $MAX_JOBS
+echo MAX_JOBS - 2f: $MAX_JOBS
 
         HTTP_PROXY="$HTTP_PROXY" \
         HTTPS_PROXY="$HTTPS_PROXY" \
