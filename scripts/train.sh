@@ -292,35 +292,39 @@ DEVICE_ARGS=()
   
 if [[ "$DEVICE" == "gpu" ]]; then
 
-    add_arg DEVICE_ARGS       --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
-    add_arg DEVICE_ARGS       --pipeline.datamanager.cache-images gpu
-    add_bool_arg DEVICE_ARGS  --pipeline.datamanager.images-on-gpu True
-    add_bool_arg DEVICE_ARGS  --pipeline.datamanager.masks-on-gpu False
-    add_arg DEVICE_ARGS       --pipeline.model.densify-grad-thresh "$DENSIFY_GRAD_THRESH"
-    add_arg DEVICE_ARGS       --pipeline.model.cull-alpha-thresh "$CULL_ALPHA_THRESH"
-    add_arg DEVICE_ARGS       --pipeline.model.cull-screen-size "$CULL_SCREEN_SIZE"
-    add_arg DEVICE_ARGS       --pipeline.model.split-screen-size "$SPLIT_SCREEN_SIZE"
-    add_arg DEVICE_ARGS       --pipeline.model.refine-every "$REFINE_EVERY"
-    add_bool_arg DEVICE_ARGS  --pipeline.model.use-bilateral-grid "$USE_BILATERAL_GRID"
-    add_bool_arg DEVICE_ARGS  --pipeline.model.use-scale-regularization "$USE_SCALE_REGULARIZATION"
-    add_arg DEVICE_ARGS       --pipeline.model.max-gauss-ratio "$MAX_GAUSS_RATIO"
-    add_arg DEVICE_ARGS       --pipeline.model.stop-split-at "$STOP_SPLIT_AT"
-    add_arg DEVICE_ARGS       --pipeline.model.cull-scale-thresh "$CULL_SCALE_THRESH"
-    add_arg DEVICE_ARGS       --pipeline.model.reset-alpha-every "$RESET_ALPHA_EVERY"
-    add_arg DEVICE_ARGS       --pipeline.model.ssim-lambda "$SSIM_LAMBDA"
-    add_bool_arg DEVICE_ARGS  --pipeline.model.enable-collider "$ENABLE_COLLIDER"
+    if [[ "$DEVICE" != "deactivate" ]]; then  # debug
+        echo "deactivating custmized params"
+    else
+        add_arg DEVICE_ARGS       --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
+        add_arg DEVICE_ARGS       --pipeline.datamanager.cache-images gpu
+        add_bool_arg DEVICE_ARGS  --pipeline.datamanager.images-on-gpu True
+        add_bool_arg DEVICE_ARGS  --pipeline.datamanager.masks-on-gpu False
+        add_arg DEVICE_ARGS       --pipeline.model.densify-grad-thresh "$DENSIFY_GRAD_THRESH"
+        add_arg DEVICE_ARGS       --pipeline.model.cull-alpha-thresh "$CULL_ALPHA_THRESH"
+        add_arg DEVICE_ARGS       --pipeline.model.cull-screen-size "$CULL_SCREEN_SIZE"
+        add_arg DEVICE_ARGS       --pipeline.model.split-screen-size "$SPLIT_SCREEN_SIZE"
+        add_arg DEVICE_ARGS       --pipeline.model.refine-every "$REFINE_EVERY"
+        add_bool_arg DEVICE_ARGS  --pipeline.model.use-bilateral-grid "$USE_BILATERAL_GRID"
+        add_bool_arg DEVICE_ARGS  --pipeline.model.use-scale-regularization "$USE_SCALE_REGULARIZATION"
+        add_arg DEVICE_ARGS       --pipeline.model.max-gauss-ratio "$MAX_GAUSS_RATIO"
+        add_arg DEVICE_ARGS       --pipeline.model.stop-split-at "$STOP_SPLIT_AT"
+        add_arg DEVICE_ARGS       --pipeline.model.cull-scale-thresh "$CULL_SCALE_THRESH"
+        add_arg DEVICE_ARGS       --pipeline.model.reset-alpha-every "$RESET_ALPHA_EVERY"
+        add_arg DEVICE_ARGS       --pipeline.model.ssim-lambda "$SSIM_LAMBDA"
+        add_bool_arg DEVICE_ARGS  --pipeline.model.enable-collider "$ENABLE_COLLIDER"
 
-    if [[ "$ENABLE_COLLIDER" == "True" ]]; then
+        if [[ "$ENABLE_COLLIDER" == "True" ]]; then
 
-      ARGS=()
+          ARGS=()
 
-      [[ -n "${COLLIDER_NEAR:-}" ]] && ARGS+=("near_plane" "$COLLIDER_NEAR")
-      [[ -n "${COLLIDER_FAR:-}"  ]] && ARGS+=("far_plane"  "$COLLIDER_FAR")
+          [[ -n "${COLLIDER_NEAR:-}" ]] && ARGS+=("near_plane" "$COLLIDER_NEAR")
+          [[ -n "${COLLIDER_FAR:-}"  ]] && ARGS+=("far_plane"  "$COLLIDER_FAR")
 
-      if [[ ${#ARGS[@]} -gt 0 ]]; then
-        add_multi_arg DEVICE_ARGS --pipeline.model.collider-params "${ARGS[@]}"
-      fi
+          if [[ ${#ARGS[@]} -gt 0 ]]; then
+            add_multi_arg DEVICE_ARGS --pipeline.model.collider-params "${ARGS[@]}"
+          fi
 
+        fi
     fi
 
 elif [[ "$DEVICE" == "cpu" ]]; then

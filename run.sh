@@ -730,7 +730,7 @@ else
   PLY_FOUND=$(find "$OUTPUT_DIR" -type f -name "*.ply" | head -n 1)
 
   if [[ -n "$PLY_FOUND" ]]; then
-    echo "📦 Existing PLY found: $PLY_FOUND"
+    echo "📦 Existing PLY found: $PLY_FOUND, backing it up into ${PLY_FOUND}.bkp"
     # echo "⏩ Skipping export (PLY already exists)"
     cp $PLY_FOUND ${PLY_FOUND}.bkp
   fi
