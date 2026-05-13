@@ -15,9 +15,9 @@ TRAIN_VIS_MODE="tensorboard"
 
 # ⚠️ CRITIQUE pour débloquer la densification
 CAMERA_RES_SCALE_FACTOR=0.9
-MAX_RES=1024
+MAX_RES=1280
 
-NUM_DOWNSCALES=1
+NUM_DOWNSCALES=0
 SKIP_IMAGE_PROCESSING=true
 
 ########################################
@@ -31,28 +31,28 @@ MAX_ITER=9000
 #STOP_SPLIT_AT=$MAX_ITER
 
 # ⚠️ CRITIQUE (qualité du gradient)
-TRAIN_RAYS_PER_BATCH=512
+TRAIN_RAYS_PER_BATCH=1024
 
 # 🧠 Meilleur signal pour split
 NUM_NERF_SAMPLES_PER_RAY=48
-NUM_PROPOSAL_SAMPLES_PER_RAY="128 64"
+NUM_PROPOSAL_SAMPLES_PER_RAY="128 128"
 
 ########################################
 # GAUSSIAN SPLATTING (REDUCED SPLATS)
 ########################################
 
 # 🔥 DENSIFICATION
-DENSIFY_GRAD_THRESH=0.0003
+DENSIFY_GRAD_THRESH=0.0004
 
 # 🧹 CLEANING
 CULL_ALPHA_THRESH=0.1        # ↑ supprime les splats faibles
 
 # 📏 SPATIAL CONTROL (réduction explosion)
-CULL_SCREEN_SIZE=0.15         # ↑ plus agressif en screen-space
-SPLIT_SCREEN_SIZE=0.01        # ↑ moins de split fin
+CULL_SCREEN_SIZE=0.25         # ↑ plus agressif en screen-space
+SPLIT_SCREEN_SIZE=0.03
 
 # ⚡ DENSIFICATION FREQUENCY (moins de croissance)
-REFINE_EVERY=100              # ↑ réduit création de nouveaux splats
+REFINE_EVERY=300              # ↑ réduit création de nouveaux splats
 
 
 # 🧠 STABILISATION (évite accumulation de bruit)
