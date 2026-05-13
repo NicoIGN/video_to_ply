@@ -292,7 +292,7 @@ DEVICE_ARGS=()
   
 if [[ "$DEVICE" == "gpu" ]]; then
 
-    if [[ "$DEVICE" != "deactivate" ]]; then  # debug
+    if [[ "$DEVICE" != "gpu" ]]; then  # debug
         echo "deactivating custmized params"
     else
         add_arg DEVICE_ARGS       --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"

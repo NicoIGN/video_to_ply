@@ -54,6 +54,7 @@ dependencies:
   - imageio
   - imageio-ffmpeg
   - plyfile
+  - openh264
 
   ########################################
   # GEOMETRY / SFM
