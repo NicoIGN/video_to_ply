@@ -31,6 +31,7 @@ export HTTPS_PROXY=$HTTPS_PROXY
 export http_proxy=$http_proxy
 export https_proxy=$https_proxy
 export NO_PROXY=$NO_PROXY
+export MAX_JOBS=$MAX_JOBS
 
 # -----------------------------
 # CONDA AUTO INIT (GSPLAT ENV)
