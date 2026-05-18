@@ -55,19 +55,19 @@ DENSIFY_GRAD_THRESH=0.00045
 CULL_ALPHA_THRESH=0.005
 
 # Évite gros splats écran
-CULL_SCREEN_SIZE=0.25
-SPLIT_SCREEN_SIZE=0.02
+CULL_SCREEN_SIZE=0.15
+SPLIT_SCREEN_SIZE=0.05
 
 ########################################
 # DENSIFICATION CONTROL
 ########################################
 
 # Beaucoup plus stable à long terme
-REFINE_EVERY=300
+REFINE_EVERY=100
 
 # PARAMÈTRE CRITIQUE
 # évite saturation alpha / écran blanc
-RESET_ALPHA_EVERY=40
+RESET_ALPHA_EVERY=30
 
 # Supprime davantage de gros splats instables
 CULL_SCALE_THRESH=0.5
@@ -76,16 +76,27 @@ CULL_SCALE_THRESH=0.5
 # QUALITY / REGULARIZATION
 ########################################
 
-# Très utile pour stabilité visuelle
-USE_BILATERAL_GRID=true
+# Améliore la stabilité visuelle en corrigeant les variations de couleur locales
+USE_BILATERAL_GRID=false
 
-USE_SCALE_REGULARIZATION=true
+# Désactive la régularisation des échelles des gaussiennes (plus de liberté mais moins de contraintes)
+USE_SCALE_REGULARIZATION=false
 
-# Évite covariance géante
-MAX_GAUSS_RATIO=4.0
+# Limite la taille des covariances pour éviter des splats trop étalés
+MAX_GAUSS_RATIO=10.0
 
-# Stable sans trop lisser
+# Équilibre entre fidélité visuelle et préservation de la structure de l’image
 SSIM_LAMBDA=0.2
+
+########################################
+TRAINING STABILITY (GPU OPTIMIZATION DISABLED)
+########################################
+
+#Désactive la précision mixte (FP16), entraînement plus lent mais plus stable numériquement
+MIXED_PRECISION=False
+
+#Désactive le scaling des gradients utilisé avec la précision mixte
+USE_GRAD_SCALER=False
 
 ########################################
 # EXPORT
