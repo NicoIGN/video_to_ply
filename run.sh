@@ -679,6 +679,9 @@ else
 
         STEP_START=$(date +%s)
 
+        echo MAX_JOBS: $MAX_JOBS
+
+
         HTTP_PROXY="$HTTP_PROXY" \
         HTTPS_PROXY="$HTTPS_PROXY" \
         NO_PROXY="$NO_PROXY" \
