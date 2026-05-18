@@ -89,7 +89,7 @@ MAX_GAUSS_RATIO=10.0
 SSIM_LAMBDA=0.2
 
 ########################################
-TRAINING STABILITY (GPU OPTIMIZATION DISABLED)
+# TRAINING STABILITY (GPU OPTIMIZATION DISABLED)
 ########################################
 
 #Désactive la précision mixte (FP16), entraînement plus lent mais plus stable numériquement
