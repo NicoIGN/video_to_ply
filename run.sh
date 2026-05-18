@@ -97,6 +97,7 @@ Options:
   --preprocess-profile <name> colmap | hloc | hloc-lightblue
   --gsplat-profile <name>     fast | balanced | quality | quality_plus
   --automask                  Enable automatic masking (default: false)
+  --max-jobs                  number of parallizable jobs
 
 
   # Pipeline skips
@@ -680,9 +681,6 @@ else
         echo "🧠 Training..."
 
         STEP_START=$(date +%s)
-
-        echo MAX_JOBS: $MAX_JOBS
-
 
         HTTP_PROXY="$HTTP_PROXY" \
         HTTPS_PROXY="$HTTPS_PROXY" \
