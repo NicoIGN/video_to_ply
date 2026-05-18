@@ -204,7 +204,13 @@ echo "────────────────────────�
 
 LOAD_DIR=""
 
-BASE_DIR="$OUTPUTDIR/$EXPERIMENT_NAME/$MODEL"
+if [[ "$MODEL" == *splat* ]]; then
+  MODEL_DIR="splatfacto"
+else
+  MODEL_DIR="nerfacto"
+fi
+
+BASE_DIR="$OUTPUTDIR/$EXPERIMENT_NAME/$MODEL_DIR"
 
 echo "📂 BASE_DIR : $BASE_DIR"
 
@@ -371,6 +377,13 @@ HEARTBEAT_PID=$!
 export LOGLEVEL=DEBUG
 
 export TORCH_SHOW_CPP_STACKTRACES=1
+
+USE_DEFAULTS=${USE_DEFAULTS:-False}
+
+if [[ "$USE_DEFAULTS" == "True" ]]; then
+  DEVICE_ARGS=()
+  COMMON_ARGS=()
+fi
 
 set +e
 
