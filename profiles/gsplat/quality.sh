@@ -5,7 +5,7 @@
 TRAINING_PROFILE="gpu/quality"
 
 DEVICE="gpu"
-MODEL="splatfacto"
+MODEL="splatfacto-big"
 MODEL_IMPLEMENTATION="tcnn"
 TRAIN_VIS_MODE="tensorboard"
 
@@ -52,7 +52,7 @@ DENSIFY_GRAD_THRESH=0.00045
 ########################################
 
 # Nettoyage alpha un peu plus agressif
-CULL_ALPHA_THRESH=0.12
+CULL_ALPHA_THRESH=0.005
 
 # Évite gros splats écran
 CULL_SCREEN_SIZE=0.25

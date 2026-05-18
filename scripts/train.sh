@@ -312,6 +312,7 @@ if [[ "$DEVICE" == "gpu" ]]; then
         add_arg DEVICE_ARGS       --pipeline.model.reset-alpha-every "$RESET_ALPHA_EVERY"
         add_arg DEVICE_ARGS       --pipeline.model.ssim-lambda "$SSIM_LAMBDA"
         add_bool_arg DEVICE_ARGS  --pipeline.model.enable-collider "$ENABLE_COLLIDER"
+        add_bool_arg DEVICE_ARGS  --pipeline.model.continue_cull_post_densification "False"
 
         if [[ "$ENABLE_COLLIDER" == "True" ]]; then
 
