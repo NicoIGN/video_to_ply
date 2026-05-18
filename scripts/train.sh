@@ -385,6 +385,7 @@ if [[ "$USE_DEFAULTS" == "True" ]]; then
   COMMON_ARGS=()
   echo "USE_DEFAULTS: $USE_DEFAULTS"
   echo "*** Reset parameters to defaults ***"
+  add_arg COMMON_ARGS --vis "$TRAIN_VIS_MODE"
 fi
 
 set +e
