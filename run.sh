@@ -160,6 +160,7 @@ done
 
 NO_PROXY="$IGNORE_PROXY" \
 MAX_JOBS="$MAX_JOBS" \
+SKIP_TRAINING="$SKIP_TRAINING" \
 source $SCRIPT_DIR/config/config.sh
 
 # ======================
