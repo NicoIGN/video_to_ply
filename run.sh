@@ -43,6 +43,7 @@ ROOT_DIR="runs/default"
 SKIP_CONDA=false
 IGNORE_PROXY=false
 AUTOMASK=false
+MAX_JOBS=2
 
 # ======================
 # PIPELINE SKIP DEFAULTS (from config.sh, overridable by CLI)
@@ -136,6 +137,7 @@ while [[ $# -gt 0 ]]; do
     --fps) FPS="$2"; shift 2 ;;
     --preprocess-profile) PREPROCESS_PROFILE="$2"; shift 2 ;;
     --gsplat-profile) GSPLAT_PROFILE="$2"; shift 2 ;;
+    --max-jobs) MAX_JOBS="$2"; shift 2 ;;
     --name) BASENAME="$2"; shift 2 ;;
     --root) ROOT_DIR="$2"; shift 2 ;;
     --skip-conda) SKIP_CONDA=true; shift ;;
