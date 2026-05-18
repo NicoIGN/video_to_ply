@@ -383,6 +383,8 @@ USE_DEFAULTS=${USE_DEFAULTS:-False}
 if [[ "$USE_DEFAULTS" == "True" ]]; then
   DEVICE_ARGS=()
   COMMON_ARGS=()
+  echo "USE_DEFAULTS: $USE_DEFAULTS"
+  echo "*** Reset parameters to defaults ***"
 fi
 
 set +e
