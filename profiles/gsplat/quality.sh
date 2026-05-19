@@ -44,7 +44,7 @@ MAX_ITER=8000
 # GAUSSIAN SPLATTING
 ########################################
 
-# Densification plus conservative
+# Densification
 DENSIFY_GRAD_THRESH=0.0008
 
 ########################################

@@ -273,6 +273,8 @@ add_arg COMMON_ARGS --vis "$TRAIN_VIS_MODE"
 add_arg COMMON_ARGS --logging.steps-per-log "$STEPS_PER_LOG"
 
 add_bool_arg COMMON_ARGS --save-only-latest-checkpoint True
+add_bool_arg COMMON_ARGS --mixed_precision "$MIXED_PRECISION"
+add_bool_arg COMMON_ARGS --use_grad_scaler "$USE_GRAD_SCALER"
 add_bool_arg COMMON_ARGS --logging.local-writer.enable True
 add_bool_arg COMMON_ARGS --viewer.quit-on-train-completion True
 

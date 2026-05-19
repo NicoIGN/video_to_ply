@@ -27,66 +27,66 @@ SKIP_IMAGE_PROCESSING=true
 ########################################
 
 # Stable long training
-MAX_ITER=15000
+MAX_ITER=8000
 
 # IMPORTANT :
 # évite la densification tardive explosive
-STOP_SPLIT_AT=9000
+# STOP_SPLIT_AT=9000
 
 # Stable gradients
-TRAIN_RAYS_PER_BATCH=1024
+# TRAIN_RAYS_PER_BATCH=1024
 
 # Bon compromis qualité/stabilité
-NUM_NERF_SAMPLES_PER_RAY=48
-NUM_PROPOSAL_SAMPLES_PER_RAY="128 128"
+# NUM_NERF_SAMPLES_PER_RAY=48
+# NUM_PROPOSAL_SAMPLES_PER_RAY="128 128"
 
 ########################################
 # GAUSSIAN SPLATTING
 ########################################
 
 # Densification plus conservative
-DENSIFY_GRAD_THRESH=0.0005
+# DENSIFY_GRAD_THRESH=0.0005
 
 ########################################
 # CLEANING
 ########################################
 
 # Nettoyage alpha un peu plus agressif
-CULL_ALPHA_THRESH=0.005
+# CULL_ALPHA_THRESH=0.005
 
 # Évite gros splats écran
-CULL_SCREEN_SIZE=0.15
-SPLIT_SCREEN_SIZE=0.05
+# CULL_SCREEN_SIZE=0.15
+# SPLIT_SCREEN_SIZE=0.05
 
 ########################################
 # DENSIFICATION CONTROL
 ########################################
 
 # Beaucoup plus stable à long terme
-REFINE_EVERY=100
+# REFINE_EVERY=100
 
 # PARAMÈTRE CRITIQUE
 # évite saturation alpha / écran blanc
-RESET_ALPHA_EVERY=30
+# RESET_ALPHA_EVERY=30
 
 # Supprime davantage de gros splats instables
-CULL_SCALE_THRESH=0.5
+# CULL_SCALE_THRESH=0.5
 
 ########################################
 # QUALITY / REGULARIZATION
 ########################################
 
 # Améliore la stabilité visuelle en corrigeant les variations de couleur locales
-USE_BILATERAL_GRID=false
+# USE_BILATERAL_GRID=false
 
 # Désactive la régularisation des échelles des gaussiennes (plus de liberté mais moins de contraintes)
-USE_SCALE_REGULARIZATION=false
+# USE_SCALE_REGULARIZATION=false
 
 # Limite la taille des covariances pour éviter des splats trop étalés
-MAX_GAUSS_RATIO=10.0
+MAX_GAUSS_RATIO=5.0
 
 # Équilibre entre fidélité visuelle et préservation de la structure de l’image
-SSIM_LAMBDA=0.2
+# SSIM_LAMBDA=0.2
 
 ########################################
 # TRAINING STABILITY (GPU OPTIMIZATION DISABLED)
@@ -96,7 +96,7 @@ SSIM_LAMBDA=0.2
 MIXED_PRECISION=False
 
 #Désactive le scaling des gradients utilisé avec la précision mixte
-USE_GRAD_SCALER=False
+# USE_GRAD_SCALER=False
 
 ########################################
 # EXPORT
