@@ -348,7 +348,7 @@ fi
 
 if [ "$DEVICE" == "gpu" ]; then
   case "$MODEL" in
-    splatfacto|splatfacto-w|instant-ngp|zip-nerf|pynerf|feature-splatting)
+    splatfacto|splatfacto-big|splatfacto-w|instant-ngp|zip-nerf|pynerf|feature-splatting)
       echo "🚀 GPU model OK: $MODEL"
       ;;
     *)
@@ -826,7 +826,12 @@ STEP_START=$(date +%s)
 # ======================
 # RUN RESOLUTION
 # ======================
-RUN_ROOT="$OUTPUT_DIR/$MODEL"
+if [[ "$MODEL" == *splat* ]]; then
+  MODEL_DIR="splatfacto"
+else
+  MODEL_DIR="nerfacto"
+fi
+RUN_ROOT="$OUTPUT_DIR/$MODEL_DIR"
 
 LATEST_RUN=$(find "$RUN_ROOT" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort | tail -n 1 || true)
 
