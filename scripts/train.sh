@@ -268,28 +268,35 @@ COMMON_ARGS=()
 
 add_arg COMMON_ARGS --output-dir "$OUTPUTDIR"
 add_arg COMMON_ARGS --experiment-name "$EXPERIMENT_NAME"
-add_arg COMMON_ARGS --machine.device-type "$MACHINE_DEVICE_TYPE"
-add_arg COMMON_ARGS --machine.num-devices "${NUM_DEVICES:-1}"
-add_arg COMMON_ARGS --machine.num-machines "${NUM_MACHINES:-1}"
-add_arg COMMON_ARGS --max-num-iterations "$MAX_ITER"
 add_arg COMMON_ARGS --steps-per-save "$STEPS_PER_SAVE"
-add_arg COMMON_ARGS --steps-per-eval-all-images "$STEPS_PER_EVAL_ALL_IMAGES"
 add_arg COMMON_ARGS --vis "$TRAIN_VIS_MODE"
 add_arg COMMON_ARGS --logging.steps-per-log "$STEPS_PER_LOG"
 
 add_bool_arg COMMON_ARGS --save-only-latest-checkpoint True
 add_bool_arg COMMON_ARGS --logging.local-writer.enable True
 add_bool_arg COMMON_ARGS --viewer.quit-on-train-completion True
-add_bool_arg COMMON_ARGS --mixed-precision True
-add_bool_arg COMMON_ARGS --use-grad-scaler True
 
 add_arg COMMON_ARGS --load-dir "$LOAD_DIR"
 
 # ======================
-# DEVICE ARGS
+# PERFORMANCE ARGS
 # ======================
 
-DEVICE_ARGS=()
+PERF_ARGS=()
+
+add_arg PERF_ARGS --machine.device-type "$MACHINE_DEVICE_TYPE"
+add_arg PERF_ARGS --machine.num-devices "${NUM_DEVICES:-1}"
+add_arg PERF_ARGS --machine.num-machines "${NUM_MACHINES:-1}"
+add_arg PERF_ARGS --max-num-iterations "$MAX_ITER"
+add_arg PERF_ARGS --steps-per-eval-all-images "$STEPS_PER_EVAL_ALL_IMAGES"
+add_bool_arg PERF_ARGS --mixed-precision True
+add_bool_arg PERF_ARGS --use-grad-scaler True
+
+# ======================
+# MODEL ARGS
+# ======================
+
+MODEL_ARGS=()
 
 #unset DENSIFY_GRAD_THRESH
 #unset CULL_ALPHA_THRESH
@@ -301,24 +308,24 @@ if [[ "$DEVICE" == "gpu" ]]; then
     if [[ "$DEVICE" != "gpu" ]]; then  # debug
         echo "deactivating custmized params"
     else
-        add_arg DEVICE_ARGS       --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
-        add_arg DEVICE_ARGS       --pipeline.datamanager.cache-images gpu
-        add_bool_arg DEVICE_ARGS  --pipeline.datamanager.images-on-gpu True
-        add_bool_arg DEVICE_ARGS  --pipeline.datamanager.masks-on-gpu False
-        add_arg DEVICE_ARGS       --pipeline.model.densify-grad-thresh "$DENSIFY_GRAD_THRESH"
-        add_arg DEVICE_ARGS       --pipeline.model.cull-alpha-thresh "$CULL_ALPHA_THRESH"
-        add_arg DEVICE_ARGS       --pipeline.model.cull-screen-size "$CULL_SCREEN_SIZE"
-        add_arg DEVICE_ARGS       --pipeline.model.split-screen-size "$SPLIT_SCREEN_SIZE"
-        add_arg DEVICE_ARGS       --pipeline.model.refine-every "$REFINE_EVERY"
-        add_bool_arg DEVICE_ARGS  --pipeline.model.use-bilateral-grid "$USE_BILATERAL_GRID"
-        add_bool_arg DEVICE_ARGS  --pipeline.model.use-scale-regularization "$USE_SCALE_REGULARIZATION"
-        add_arg DEVICE_ARGS       --pipeline.model.max-gauss-ratio "$MAX_GAUSS_RATIO"
-        add_arg DEVICE_ARGS       --pipeline.model.stop-split-at "$STOP_SPLIT_AT"
-        add_arg DEVICE_ARGS       --pipeline.model.cull-scale-thresh "$CULL_SCALE_THRESH"
-        add_arg DEVICE_ARGS       --pipeline.model.reset-alpha-every "$RESET_ALPHA_EVERY"
-        add_arg DEVICE_ARGS       --pipeline.model.ssim-lambda "$SSIM_LAMBDA"
-        add_bool_arg DEVICE_ARGS  --pipeline.model.enable-collider "$ENABLE_COLLIDER"
-#        add_bool_arg DEVICE_ARGS  --pipeline.model.continue_cull_post_densification "False"
+        add_arg MODEL_ARGS       --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
+        add_arg MODEL_ARGS       --pipeline.datamanager.cache-images gpu
+        add_bool_arg MODEL_ARGS  --pipeline.datamanager.images-on-gpu True
+        add_bool_arg MODEL_ARGS  --pipeline.datamanager.masks-on-gpu False
+        add_arg MODEL_ARGS       --pipeline.model.densify-grad-thresh "$DENSIFY_GRAD_THRESH"
+        add_arg MODEL_ARGS       --pipeline.model.cull-alpha-thresh "$CULL_ALPHA_THRESH"
+        add_arg MODEL_ARGS       --pipeline.model.cull-screen-size "$CULL_SCREEN_SIZE"
+        add_arg MODEL_ARGS       --pipeline.model.split-screen-size "$SPLIT_SCREEN_SIZE"
+        add_arg MODEL_ARGS       --pipeline.model.refine-every "$REFINE_EVERY"
+        add_bool_arg MODEL_ARGS  --pipeline.model.use-bilateral-grid "$USE_BILATERAL_GRID"
+        add_bool_arg MODEL_ARGS  --pipeline.model.use-scale-regularization "$USE_SCALE_REGULARIZATION"
+        add_arg MODEL_ARGS       --pipeline.model.max-gauss-ratio "$MAX_GAUSS_RATIO"
+        add_arg MODEL_ARGS       --pipeline.model.stop-split-at "$STOP_SPLIT_AT"
+        add_arg MODEL_ARGS       --pipeline.model.cull-scale-thresh "$CULL_SCALE_THRESH"
+        add_arg MODEL_ARGS       --pipeline.model.reset-alpha-every "$RESET_ALPHA_EVERY"
+        add_arg MODEL_ARGS       --pipeline.model.ssim-lambda "$SSIM_LAMBDA"
+        add_bool_arg MODEL_ARGS  --pipeline.model.enable-collider "$ENABLE_COLLIDER"
+#        add_bool_arg MODEL_ARGS  --pipeline.model.continue_cull_post_densification "False"
 
         if [[ "$ENABLE_COLLIDER" == "True" ]]; then
 
@@ -328,21 +335,21 @@ if [[ "$DEVICE" == "gpu" ]]; then
           [[ -n "${COLLIDER_FAR:-}"  ]] && ARGS+=("far_plane"  "$COLLIDER_FAR")
 
           if [[ ${#ARGS[@]} -gt 0 ]]; then
-            add_multi_arg DEVICE_ARGS --pipeline.model.collider-params "${ARGS[@]}"
+            add_multi_arg MODEL_ARGS --pipeline.model.collider-params "${ARGS[@]}"
           fi
 
         fi
     fi
 
 elif [[ "$DEVICE" == "cpu" ]]; then
-    add_arg DEVICE_ARGS --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
-    add_arg DEVICE_ARGS --pipeline.model.implementation "$MODEL_IMPLEMENTATION"
-    add_arg DEVICE_ARGS --pipeline.model.num-nerf-samples-per-ray "$NUM_NERF_SAMPLES_PER_RAY"
-    add_arg DEVICE_ARGS --pipeline.model.max-res "$MAX_RES"
-    add_bool_arg DEVICE_ARGS --pipeline.model.predict-normals True
+    add_arg MODEL_ARGS --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
+    add_arg MODEL_ARGS --pipeline.model.implementation "$MODEL_IMPLEMENTATION"
+    add_arg MODEL_ARGS --pipeline.model.num-nerf-samples-per-ray "$NUM_NERF_SAMPLES_PER_RAY"
+    add_arg MODEL_ARGS --pipeline.model.max-res "$MAX_RES"
+    add_bool_arg MODEL_ARGS --pipeline.model.predict-normals True
 
     if [[ -n "${NUM_PROPOSAL_SAMPLES_PER_RAY:-}" ]]; then
-        add_multi_arg DEVICE_ARGS --pipeline.model.num-proposal-samples-per-ray $NUM_PROPOSAL_SAMPLES_PER_RAY
+        add_multi_arg MODEL_ARGS --pipeline.model.num-proposal-samples-per-ray $NUM_PROPOSAL_SAMPLES_PER_RAY
     fi
 fi
 
@@ -381,11 +388,10 @@ export TORCH_SHOW_CPP_STACKTRACES=1
 USE_DEFAULTS=${USE_DEFAULTS:-False}
 
 if [[ "$USE_DEFAULTS" == "True" ]]; then
-  DEVICE_ARGS=()
-  COMMON_ARGS=()
+  MODEL_ARGS=()
+  PERF_ARGS=()
   echo "USE_DEFAULTS: $USE_DEFAULTS"
   echo "*** Reset parameters to defaults ***"
-  add_arg COMMON_ARGS --vis "$TRAIN_VIS_MODE"
 fi
 
 set +e
@@ -393,7 +399,8 @@ set +e
 ns-train \
   "$MODEL" \
   "${COMMON_ARGS[@]}" \
-  "${DEVICE_ARGS[@]}" \
+  "${PERF_ARGS[@]}" \
+  "${MODEL_ARGS[@]}" \
   nerfstudio-data \
   --data "$DATA" \
   > >(tee -a "$TRAIN_LOG") \
