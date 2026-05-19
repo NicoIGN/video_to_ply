@@ -1,11 +1,11 @@
 ########################################
-# PERFORMANCE PROFILE - QUALITY PLUS
+# PERFORMANCE PROFILE
 ########################################
 
-TRAINING_PROFILE="gpu/quality_plus"
+TRAINING_PROFILE="splat/quality_plus"
 
 DEVICE="gpu"
-MODEL="splatfacto"
+MODEL="splatfacto-big"
 MODEL_IMPLEMENTATION="tcnn"
 TRAIN_VIS_MODE="tensorboard"
 
@@ -13,80 +13,94 @@ TRAIN_VIS_MODE="tensorboard"
 # IMAGE / PREPROCESSING
 ########################################
 
-# pleine résolution utile
+# Stable full-res training
 CAMERA_RES_SCALE_FACTOR=1.0
 
-# qualité élevée sans instabilité extrême
-MAX_RES=2048
+# Garde une résolution raisonnable
+MAX_RES=1280
 
-# conserve tous les détails source
-NUM_DOWNSCALES=0
-
+NUM_DOWNSCALES=1
 SKIP_IMAGE_PROCESSING=true
-MAX_JOBS=2
 
 ########################################
 # TRAINING
 ########################################
 
-# convergence longue
-MAX_ITER=18000
+# Stable long training
+MAX_ITER=15000
 
-# critique pour stabilité à haute densité
+# IMPORTANT :
+# évite la densification tardive explosive
+STOP_SPLIT_AT=9000
+
+# Stable gradients
 TRAIN_RAYS_PER_BATCH=1024
 
-# meilleur signal géométrique
-NUM_NERF_SAMPLES_PER_RAY=64
-NUM_PROPOSAL_SAMPLES_PER_RAY="128 64"
+# Bon compromis qualité/stabilité
+NUM_NERF_SAMPLES_PER_RAY=48
+NUM_PROPOSAL_SAMPLES_PER_RAY="128 128"
 
 ########################################
 # GAUSSIAN SPLATTING
 ########################################
 
-# densification fine et agressive
-DENSIFY_GRAD_THRESH=0.0003
+# Densification plus conservative
+DENSIFY_GRAD_THRESH=0.0005
 
-# garde davantage de petits détails
-CULL_ALPHA_THRESH=0.07
+########################################
+# CLEANING
+########################################
 
-# évite blobs géants
-CULL_SCREEN_SIZE=0.16
+# Nettoyage alpha un peu plus agressif
+CULL_ALPHA_THRESH=0.005
 
-# split plus fin
-SPLIT_SCREEN_SIZE=0.016
+# Évite gros splats écran
+CULL_SCREEN_SIZE=0.15
+SPLIT_SCREEN_SIZE=0.05
 
 ########################################
 # DENSIFICATION CONTROL
 ########################################
 
-# densification soutenue mais stable
-REFINE_EVERY=180
+# Beaucoup plus stable à long terme
+REFINE_EVERY=100
 
-# laisse vivre la densification longtemps
-STOP_SPLIT_AT=17000
-
-# évite dérive alpha / saturation
+# PARAMÈTRE CRITIQUE
+# évite saturation alpha / écran blanc
 RESET_ALPHA_EVERY=30
 
-########################################
-# REGULARIZATION / STABILITY
-########################################
-
-USE_BILATERAL_GRID=true
-USE_SCALE_REGULARIZATION=true
-
-# contrôle anisotropie
-MAX_GAUSS_RATIO=4.0
-
-# nettoie clusters dégénérés
-CULL_SCALE_THRESH=0.45
-
-# meilleur rendu perceptuel
-SSIM_LAMBDA=0.30
+# Supprime davantage de gros splats instables
+CULL_SCALE_THRESH=0.5
 
 ########################################
-# EXPORT QUALITY
+# QUALITY / REGULARIZATION
 ########################################
 
-EXPORT_NUM_POINTS=4000000
+# Améliore la stabilité visuelle en corrigeant les variations de couleur locales
+USE_BILATERAL_GRID=false
+
+# Désactive la régularisation des échelles des gaussiennes (plus de liberté mais moins de contraintes)
+USE_SCALE_REGULARIZATION=false
+
+# Limite la taille des covariances pour éviter des splats trop étalés
+MAX_GAUSS_RATIO=10.0
+
+# Équilibre entre fidélité visuelle et préservation de la structure de l’image
+SSIM_LAMBDA=0.2
+
+########################################
+# TRAINING STABILITY (GPU OPTIMIZATION DISABLED)
+########################################
+
+#Désactive la précision mixte (FP16), entraînement plus lent mais plus stable numériquement
+MIXED_PRECISION=False
+
+#Désactive le scaling des gradients utilisé avec la précision mixte
+USE_GRAD_SCALER=False
+
+########################################
+# EXPORT
+########################################
+
+EXPORT_NUM_POINTS=600000
 EXPORT_DOWNSAMPLE=1

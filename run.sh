@@ -717,7 +717,7 @@ else
         COLLIDER_FAR="$COLLIDER_FAR" \
         ENABLE_COLLIDER="$ENABLE_COLLIDER" \
         USE_BILATERAL_GRID="$USE_BILATERAL_GRID" \
-        USE_DEFAULTS="True" \
+        USE_DEFAULTS="False" \
         bash scripts/train.sh
 
         print_step_time "TRAINING" "$STEP_START"
