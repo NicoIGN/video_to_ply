@@ -256,7 +256,7 @@ fi
 if [ -z "${TRAIN_RAYS_PER_BATCH+x}" ]; then
     # TRAIN_RAYS_PER_BATCH=1024
     # TRAIN_RAYS_PER_BATCH=512
-    TRAIN_RAYS_PER_BATCH=256
+    # TRAIN_RAYS_PER_BATCH=256
 fi
 
 
@@ -268,7 +268,7 @@ fi
 # → chaque rayon est "découpé" en 3D pour estimer couleur + densité
 # ↑ plus élevé = détails plus fins mais calcul plus lourd
 if [ -z "${NUM_NERF_SAMPLES_PER_RAY+x}" ]; then
-    NUM_NERF_SAMPLES_PER_RAY=32
+    # NUM_NERF_SAMPLES_PER_RAY=32
 fi
 
 # Échantillonnage en 2 étapes (proposal network)
@@ -277,7 +277,7 @@ fi
 # → améliore qualité et efficacité du rendu
 if [ -z "${NUM_PROPOSAL_SAMPLES_PER_RAY+x}" ]; then
     # NUM_PROPOSAL_SAMPLES_PER_RAY="160 64"
-    NUM_PROPOSAL_SAMPLES_PER_RAY="64 32"
+    # NUM_PROPOSAL_SAMPLES_PER_RAY="64 32"
 fi
 
 
@@ -289,28 +289,28 @@ fi
 # → contrôle quand de nouvelles gaussiennes sont ajoutées
 # ↑ plus bas = plus de détails, mais plus de bruit et mémoire
 if [ -z "${DENSIFY_GRAD_THRESH+x}" ]; then
-  DENSIFY_GRAD_THRESH=0.0004
+ #  DENSIFY_GRAD_THRESH=0.0004
 fi
 
 # Seuil alpha pour supprimer les gaussiennes faibles
 # → enlève les éléments peu visibles / inutiles
 # ↑ plus haut = scène plus propre mais perte de détails fins
 if [ -z "${CULL_ALPHA_THRESH+x}" ]; then
-  CULL_ALPHA_THRESH=0.05
+  # CULL_ALPHA_THRESH=0.05
 fi
 
 # Taille écran pour culling (élimination des petites contributions)
 # → supprime les splats trop petits à l’écran
 # ↑ plus grand = plus agressif, moins de détails éloignés
 if [ -z "${CULL_SCREEN_SIZE+x}" ]; then
-  CULL_SCREEN_SIZE=0.3
+  # CULL_SCREEN_SIZE=0.3
 fi
 
 # Taille écran pour split (division des gaussiennes)
 # → contrôle quand une gaussienne est divisée en plusieurs
 # ↑ plus bas = plus de précision locale, mais plus de splats
 if [ -z "${SPLIT_SCREEN_SIZE+x}" ]; then
-  SPLIT_SCREEN_SIZE=0.02
+  # SPLIT_SCREEN_SIZE=0.02
 fi
 
 # Ratio max entre les axes d’un gaussien (anisotropie)
@@ -318,7 +318,7 @@ fi
 # ↓ plus bas = formes plus compactes, meilleure stabilité géométrique
 # ↑ plus haut = plus flexible mais risque de “spaghettis” et artefacts
 if [ -z "${MAX_GAUSS_RATIO+x}" ]; then
-  MAX_GAUSS_RATIO=5
+  # MAX_GAUSS_RATIO=5
 fi
 
 # Stoppe la croissance des splats après une phase stable
@@ -330,29 +330,29 @@ fi
 # Réinitialisation périodique des alphas
 # → évite accumulation de splats semi-actifs parasites
 if [ -z "${RESET_ALPHA_EVERY+x}" ]; then
-  RESET_ALPHA_EVERY=30
+  # RESET_ALPHA_EVERY=30
 fi
 
 # Régularisation des scales (évite blobs et étirements)
 # → rend les gaussiennes plus homogènes et stables
 if [ -z "${USE_SCALE_REGULARIZATION+x}" ]; then
-  USE_SCALE_REGULARIZATION=true
+  # USE_SCALE_REGULARIZATION=true
 fi
 
 if [ -z "${USE_BILATERAL_GRID+x}" ]; then
-      USE_BILATERAL_GRID=True
+  # USE_BILATERAL_GRID=True
 fi
 
 # Limite la taille relative des gaussiennes
 # → évite structures trop dominantes instables
 if [ -z "${CULL_SCALE_THRESH+x}" ]; then
-  CULL_SCALE_THRESH=0.5
+ # CULL_SCALE_THRESH=0.5
 fi
 
 # SSIM loss (stabilité perceptuelle + réduction bruit)
 # → améliore cohérence visuelle globale
 if [ -z "${SSIM_LAMBDA+x}" ]; then
-  SSIM_LAMBDA=0.2
+  # SSIM_LAMBDA=0.2
 fi
 
 ############################
@@ -364,7 +364,7 @@ fi
 # ↑ plus élevé = plus de détails mais plus lent et plus gourmand
 if [ -z "${MAX_RES+x}" ]; then
     # MAX_RES=1024
-    MAX_RES=512
+    # MAX_RES=512
 fi
 
 ############################
@@ -394,7 +394,7 @@ CAMERA_MODE="off"
 # - "tensorboard" pour mode headless réel (batch / scripts)
 if [ -z "${TRAIN_VIS_MODE+x}" ]; then
     TRAIN_VIS_MODE="tensorboard"
-    #TRAIN_VIS_MODE="viewer"
+    # TRAIN_VIS_MODE="viewer"
 fi
 
 ############################

@@ -27,18 +27,18 @@ SKIP_IMAGE_PROCESSING=true
 ########################################
 
 # Stable long training
-MAX_ITER=15000
+MAX_ITER=8000
 
 # IMPORTANT :
 # évite la densification tardive explosive
-STOP_SPLIT_AT=9000
+#STOP_SPLIT_AT=9000
 
 # Stable gradients
-TRAIN_RAYS_PER_BATCH=1024
+# TRAIN_RAYS_PER_BATCH=1024
 
 # Bon compromis qualité/stabilité
-NUM_NERF_SAMPLES_PER_RAY=48
-NUM_PROPOSAL_SAMPLES_PER_RAY="128 128"
+#NUM_NERF_SAMPLES_PER_RAY=48
+#NUM_PROPOSAL_SAMPLES_PER_RAY="128 128"
 
 ########################################
 # GAUSSIAN SPLATTING
