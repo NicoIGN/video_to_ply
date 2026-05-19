@@ -257,6 +257,7 @@ if [ -z "${TRAIN_RAYS_PER_BATCH+x}" ]; then
     # TRAIN_RAYS_PER_BATCH=1024
     # TRAIN_RAYS_PER_BATCH=512
     # TRAIN_RAYS_PER_BATCH=256
+    unset TRAIN_RAYS_PER_BATCH
 fi
 
 
@@ -269,6 +270,7 @@ fi
 # ↑ plus élevé = détails plus fins mais calcul plus lourd
 if [ -z "${NUM_NERF_SAMPLES_PER_RAY+x}" ]; then
     # NUM_NERF_SAMPLES_PER_RAY=32
+    unset NUM_NERF_SAMPLES_PER_RAY
 fi
 
 # Échantillonnage en 2 étapes (proposal network)
@@ -278,6 +280,7 @@ fi
 if [ -z "${NUM_PROPOSAL_SAMPLES_PER_RAY+x}" ]; then
     # NUM_PROPOSAL_SAMPLES_PER_RAY="160 64"
     # NUM_PROPOSAL_SAMPLES_PER_RAY="64 32"
+    unset NUM_PROPOSAL_SAMPLES_PER_RAY
 fi
 
 
@@ -290,6 +293,7 @@ fi
 # ↑ plus bas = plus de détails, mais plus de bruit et mémoire
 if [ -z "${DENSIFY_GRAD_THRESH+x}" ]; then
  #  DENSIFY_GRAD_THRESH=0.0004
+    unset DENSIFY_GRAD_THRESH
 fi
 
 # Seuil alpha pour supprimer les gaussiennes faibles
@@ -297,6 +301,7 @@ fi
 # ↑ plus haut = scène plus propre mais perte de détails fins
 if [ -z "${CULL_ALPHA_THRESH+x}" ]; then
   # CULL_ALPHA_THRESH=0.05
+    unset CULL_ALPHA_THRESH
 fi
 
 # Taille écran pour culling (élimination des petites contributions)
@@ -304,6 +309,7 @@ fi
 # ↑ plus grand = plus agressif, moins de détails éloignés
 if [ -z "${CULL_SCREEN_SIZE+x}" ]; then
   # CULL_SCREEN_SIZE=0.3
+    unset CULL_SCREEN_SIZE
 fi
 
 # Taille écran pour split (division des gaussiennes)
@@ -311,6 +317,7 @@ fi
 # ↑ plus bas = plus de précision locale, mais plus de splats
 if [ -z "${SPLIT_SCREEN_SIZE+x}" ]; then
   # SPLIT_SCREEN_SIZE=0.02
+    unset SPLIT_SCREEN_SIZE
 fi
 
 # Ratio max entre les axes d’un gaussien (anisotropie)
@@ -319,6 +326,7 @@ fi
 # ↑ plus haut = plus flexible mais risque de “spaghettis” et artefacts
 if [ -z "${MAX_GAUSS_RATIO+x}" ]; then
   # MAX_GAUSS_RATIO=5
+    unset MAX_GAUSS_RATIO
 fi
 
 # Stoppe la croissance des splats après une phase stable
@@ -331,28 +339,33 @@ fi
 # → évite accumulation de splats semi-actifs parasites
 if [ -z "${RESET_ALPHA_EVERY+x}" ]; then
   # RESET_ALPHA_EVERY=30
+    unset RESET_ALPHA_EVERY
 fi
 
 # Régularisation des scales (évite blobs et étirements)
 # → rend les gaussiennes plus homogènes et stables
 if [ -z "${USE_SCALE_REGULARIZATION+x}" ]; then
   # USE_SCALE_REGULARIZATION=true
+    unset USE_SCALE_REGULARIZATION
 fi
 
 if [ -z "${USE_BILATERAL_GRID+x}" ]; then
   # USE_BILATERAL_GRID=True
+    unset USE_BILATERAL_GRID
 fi
 
 # Limite la taille relative des gaussiennes
 # → évite structures trop dominantes instables
 if [ -z "${CULL_SCALE_THRESH+x}" ]; then
  # CULL_SCALE_THRESH=0.5
+    unset CULL_SCALE_THRESH
 fi
 
 # SSIM loss (stabilité perceptuelle + réduction bruit)
 # → améliore cohérence visuelle globale
 if [ -z "${SSIM_LAMBDA+x}" ]; then
   # SSIM_LAMBDA=0.2
+    unset SSIM_LAMBDA
 fi
 
 ############################
@@ -365,6 +378,7 @@ fi
 if [ -z "${MAX_RES+x}" ]; then
     # MAX_RES=1024
     # MAX_RES=512
+    unset MAX_RES
 fi
 
 ############################
