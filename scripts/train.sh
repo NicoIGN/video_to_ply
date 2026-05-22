@@ -153,13 +153,19 @@ echo "📁 OUTPUTDIR                : $OUTPUTDIR"
 echo "🧪 MODEL                    : $MODEL"
 echo "🧪 MODEL_IMPLEMENTATION     : $MODEL_IMPLEMENTATION"
 echo "🧪 EXPERIMENT_NAME          : $EXPERIMENT_NAME"
+
 echo "⚙️ DEVICE                   : $DEVICE"
+echo "⚙️ MIXED PRECISION          : $MIXED_PRECISION"
+echo "⚙️ USE GRAD SCALER          : $USE_GRAD_SCALER"
+echo "⚙️ USE DEFAULTS             : $USE_DEFAULTS"
+
 echo "🔁 MAX ITERATIONS           : $MAX_ITER"
 echo "🔁 MAX JOBS                 : $MAX_JOBS"
-echo "📊 VIS MODE                 : $TRAIN_VIS_MODE"
 echo "💾 STEPS PER SAVE           : $STEPS_PER_SAVE"
 echo "🖼️ STEPS PER EVAL ALL IMG   : $STEPS_PER_EVAL_ALL_IMAGES"
 echo "🧪 REFINE EVERY             : $REFINE_EVERY"
+
+echo "📊 VIS MODE                 : $TRAIN_VIS_MODE"
 
 echo "────────────────────────────────────────────"
 echo "🧠 DATA PIPELINE"
@@ -170,25 +176,45 @@ echo "  - camera resolution scale : $CAMERA_RES_SCALE_FACTOR"
 echo "────────────────────────────────────────────"
 echo "🧠 MODEL CONFIG"
 
+echo "  - implementation          : $MODEL_IMPLEMENTATION"
+echo "  - max iterations          : $MAX_ITER"
+
 echo "  - NeRF samples per ray    : $NUM_NERF_SAMPLES_PER_RAY"
 echo "  - proposal samples/ray    : $NUM_PROPOSAL_SAMPLES_PER_RAY"
+
 echo "  - max resolution          : $MAX_RES"
-echo "  - implementation          : $MODEL_IMPLEMENTATION"
+echo "  - max gaussians           : $MAX_GAUSSIANS"
 
 echo "────────────────────────────────────────────"
 echo "✨ GAUSSIAN SPLATTING"
 
+echo "  - refine every            : $REFINE_EVERY"
+
 echo "  - densify grad threshold  : $DENSIFY_GRAD_THRESH"
+
 echo "  - cull alpha threshold    : $CULL_ALPHA_THRESH"
+echo "  - cull scale threshold    : $CULL_SCALE_THRESH"
 echo "  - cull screen size        : $CULL_SCREEN_SIZE"
+
 echo "  - split screen size       : $SPLIT_SCREEN_SIZE"
+echo "  - stop split at           : $STOP_SPLIT_AT"
+
+echo "  - reset alpha every       : $RESET_ALPHA_EVERY"
+
+echo "  - max gauss ratio         : $MAX_GAUSS_RATIO"
+
+echo "  - scale regularization    : $USE_SCALE_REGULARIZATION"
+
+echo "  - bilateral grid          : $USE_BILATERAL_GRID"
+
+echo "  - ssim lambda             : $SSIM_LAMBDA"
 
 echo "────────────────────────────────────────────"
 echo "🧱 COLLIDER"
 
+echo "  - enable collider         : $ENABLE_COLLIDER"
 echo "  - near plane              : $COLLIDER_NEAR"
 echo "  - far plane               : $COLLIDER_FAR"
-echo "  - enable collider         : $ENABLE_COLLIDER"
 
 echo "────────────────────────────────────────────"
 echo "🔥 STARTING TRAINING..."
@@ -311,6 +337,7 @@ if [[ "$DEVICE" == "gpu" ]]; then
         echo "deactivating custmized params"
     else
         add_arg MODEL_ARGS       --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
+        add_arg MODEL_ARGS       --pipeline.datamanager.dataparser.downscale-factor "$DOWNSCALE_FACTOR"
         add_arg MODEL_ARGS       --pipeline.datamanager.cache-images gpu
         add_bool_arg MODEL_ARGS  --pipeline.datamanager.images-on-gpu True
         add_bool_arg MODEL_ARGS  --pipeline.datamanager.masks-on-gpu False
