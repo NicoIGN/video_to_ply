@@ -74,7 +74,7 @@ TRAIN_VIS_MODE=${TRAIN_VIS_MODE:-tensorboard}
 
 STEPS_PER_SAVE=${STEPS_PER_SAVE:-2000}
 
-STEPS_PER_EVAL_ALL_IMAGES=${STEPS_PER_EVAL_ALL_IMAGES:-2000}
+STEPS_PER_EVAL_ALL_IMAGES=${STEPS_PER_EVAL_ALL_IMAGES:-1000}
 
 REFINE_EVERY=${REFINE_EVERY:-500}
 
@@ -291,8 +291,8 @@ add_arg PERF_ARGS --machine.num-devices "${NUM_DEVICES:-1}"
 add_arg PERF_ARGS --machine.num-machines "${NUM_MACHINES:-1}"
 add_arg PERF_ARGS --max-num-iterations "$MAX_ITER"
 add_arg PERF_ARGS --steps-per-eval-all-images "$STEPS_PER_EVAL_ALL_IMAGES"
-add_bool_arg PERF_ARGS --mixed-precision True
-add_bool_arg PERF_ARGS --use-grad-scaler True
+add_bool_arg PERF_ARGS --mixed-precision "$MIXED_PRECISION"
+add_bool_arg PERF_ARGS --use-grad-scaler "$USE_GRAD_SCALER"
 
 # ======================
 # MODEL ARGS

@@ -80,7 +80,7 @@ RESET_ALPHA_EVERY=30
 USE_BILATERAL_GRID=False
 
 # Désactive la régularisation des échelles des gaussiennes (plus de liberté mais moins de contraintes)
-USE_SCALE_REGULARIZATION=True
+USE_SCALE_REGULARIZATION=False
 
 # Limite la taille des covariances pour éviter des splats trop étalés
 MAX_GAUSS_RATIO=10.0
