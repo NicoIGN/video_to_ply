@@ -718,6 +718,8 @@ else
         ENABLE_COLLIDER="$ENABLE_COLLIDER" \
         USE_BILATERAL_GRID="$USE_BILATERAL_GRID" \
         USE_DEFAULTS="False" \
+        MIXED_PRECISION="$MIXED_PRECISION" \
+        USE_GRAD_SCALER="$USE_GRAD_SCALER" \
         bash scripts/train.sh
 
         print_step_time "TRAINING" "$STEP_START"

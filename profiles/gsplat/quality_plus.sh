@@ -27,7 +27,7 @@ SKIP_IMAGE_PROCESSING=true
 ########################################
 
 # Stable long training
-MAX_ITER=8000
+MAX_ITER=15000
 
 # IMPORTANT :
 # évite la densification tardive explosive
@@ -45,17 +45,17 @@ MAX_ITER=8000
 ########################################
 
 # Densification plus conservative
-# DENSIFY_GRAD_THRESH=0.0005
+DENSIFY_GRAD_THRESH=0.0008
 
 ########################################
 # CLEANING
 ########################################
 
 # Nettoyage alpha un peu plus agressif
-# CULL_ALPHA_THRESH=0.005
+CULL_ALPHA_THRESH=0.1
 
 # Évite gros splats écran
-# CULL_SCREEN_SIZE=0.15
+CULL_SCREEN_SIZE=0.15
 # SPLIT_SCREEN_SIZE=0.05
 
 ########################################
@@ -63,11 +63,11 @@ MAX_ITER=8000
 ########################################
 
 # Beaucoup plus stable à long terme
-# REFINE_EVERY=100
+REFINE_EVERY=100
 
 # PARAMÈTRE CRITIQUE
 # évite saturation alpha / écran blanc
-# RESET_ALPHA_EVERY=30
+RESET_ALPHA_EVERY=30
 
 # Supprime davantage de gros splats instables
 # CULL_SCALE_THRESH=0.5
@@ -77,13 +77,13 @@ MAX_ITER=8000
 ########################################
 
 # Améliore la stabilité visuelle en corrigeant les variations de couleur locales
-# USE_BILATERAL_GRID=false
+USE_BILATERAL_GRID=False
 
 # Désactive la régularisation des échelles des gaussiennes (plus de liberté mais moins de contraintes)
-# USE_SCALE_REGULARIZATION=false
+USE_SCALE_REGULARIZATION=Flse
 
 # Limite la taille des covariances pour éviter des splats trop étalés
-MAX_GAUSS_RATIO=5.0
+MAX_GAUSS_RATIO=6.0
 
 # Équilibre entre fidélité visuelle et préservation de la structure de l’image
 # SSIM_LAMBDA=0.2
@@ -93,10 +93,10 @@ MAX_GAUSS_RATIO=5.0
 ########################################
 
 #Désactive la précision mixte (FP16), entraînement plus lent mais plus stable numériquement
-MIXED_PRECISION=False
+MIXED_PRECISION=True
 
 #Désactive le scaling des gradients utilisé avec la précision mixte
-# USE_GRAD_SCALER=False
+USE_GRAD_SCALER=False
 
 ########################################
 # EXPORT
