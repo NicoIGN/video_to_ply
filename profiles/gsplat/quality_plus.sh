@@ -27,11 +27,11 @@ SKIP_IMAGE_PROCESSING=true
 ########################################
 
 # Stable long training
-MAX_ITER=15000
+MAX_ITER=30000
 
 # IMPORTANT :
 # évite la densification tardive explosive
-# STOP_SPLIT_AT=9000
+STOP_SPLIT_AT=15000
 
 # Stable gradients
 # TRAIN_RAYS_PER_BATCH=1024
@@ -80,10 +80,10 @@ RESET_ALPHA_EVERY=30
 USE_BILATERAL_GRID=False
 
 # Désactive la régularisation des échelles des gaussiennes (plus de liberté mais moins de contraintes)
-USE_SCALE_REGULARIZATION=Flse
+USE_SCALE_REGULARIZATION=True
 
 # Limite la taille des covariances pour éviter des splats trop étalés
-MAX_GAUSS_RATIO=6.0
+MAX_GAUSS_RATIO=10.0
 
 # Équilibre entre fidélité visuelle et préservation de la structure de l’image
 # SSIM_LAMBDA=0.2
@@ -93,7 +93,7 @@ MAX_GAUSS_RATIO=6.0
 ########################################
 
 #Désactive la précision mixte (FP16), entraînement plus lent mais plus stable numériquement
-MIXED_PRECISION=True
+MIXED_PRECISION=False
 
 #Désactive le scaling des gradients utilisé avec la précision mixte
 USE_GRAD_SCALER=False
