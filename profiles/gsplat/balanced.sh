@@ -65,7 +65,7 @@ CULL_SCALE_THRESH=0.5         # ↓ supprime petits clusters instables
 
 
 USE_BILATERAL_GRID=true
-USE_SCALE_REGULARIZATION=true
+USE_SCALE_REGULARIZATION=False
 
 MAX_GAUSS_RATIO=4.0          # ↓ limite taille splats
 SSIM_LAMBDA=0.25             # léger boost stabilité image (optionnel)

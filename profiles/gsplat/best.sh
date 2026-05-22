@@ -66,7 +66,7 @@ MAX_GAUSS_RATIO=4.0
 ########################################
 
 SSIM_LAMBDA=0.28
-USE_SCALE_REGULARIZATION=true
+USE_SCALE_REGULARIZATION=False
 
 ########################################
 # EXPORT
