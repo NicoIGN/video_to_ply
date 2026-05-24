@@ -2,10 +2,10 @@
 # PERFORMANCE PROFILE
 ########################################
 
-TRAINING_PROFILE="gpu/experiment"
+TRAINING_PROFILE="splat/quality_plus"
 
 DEVICE="gpu"
-MODEL="splatfacto"
+MODEL="splatfacto-big"
 MODEL_IMPLEMENTATION="tcnn"
 TRAIN_VIS_MODE="tensorboard"
 
@@ -13,67 +13,94 @@ TRAIN_VIS_MODE="tensorboard"
 # IMAGE / PREPROCESSING
 ########################################
 
-# ⚠️ CRITIQUE pour débloquer la densification
-CAMERA_RES_SCALE_FACTOR=0.75
-MAX_RES=1024
+# Stable full-res training
+CAMERA_RES_SCALE_FACTOR=1.0
+
+# Garde une résolution raisonnable
+MAX_RES=1280
 
 NUM_DOWNSCALES=1
 SKIP_IMAGE_PROCESSING=true
-MAX_JOBS=2
 
 ########################################
 # TRAINING
 ########################################
 
-# ⚠️ CRITIQUE (temps de densification)
-MAX_ITER=6000
+# Stable long training
+MAX_ITER=8000
 
-# ⚠️ CRITIQUE (qualité du gradient)
-TRAIN_RAYS_PER_BATCH=512
+# IMPORTANT :
+# évite la densification tardive explosive
+STOP_SPLIT_AT=6000
 
-# 🧠 Meilleur signal pour split
-NUM_NERF_SAMPLES_PER_RAY=32
-NUM_PROPOSAL_SAMPLES_PER_RAY="64 32"
+# Stable gradients
+# TRAIN_RAYS_PER_BATCH=1024
+
+# Bon compromis qualité/stabilité
+# NUM_NERF_SAMPLES_PER_RAY=48
+# NUM_PROPOSAL_SAMPLES_PER_RAY="128 128"
 
 ########################################
-# GAUSSIAN SPLATTING (REDUCED SPLATS)
+# GAUSSIAN SPLATTING
 ########################################
 
-# 🔥 DENSIFICATION (moins agressif)
-DENSIFY_GRAD_THRESH=0.00045   # ↑ moins de split
+# Densification plus conservative
+DENSIFY_GRAD_THRESH=0.0008
 
-# 🧹 CLEANING (plus strict)
-CULL_ALPHA_THRESH=0.12        # ↑ supprime plus tôt les splats faibles
+########################################
+# CLEANING
+########################################
 
-# 📏 SPATIAL CONTROL (réduction explosion)
-CULL_SCREEN_SIZE=0.25         # ↑ plus agressif en screen-space
-SPLIT_SCREEN_SIZE=0.02        # ↑ moins de split fin
+# Nettoyage alpha un peu plus agressif
+CULL_ALPHA_THRESH=0.1
 
-# ⚡ DENSIFICATION FREQUENCY (moins de croissance)
-REFINE_EVERY=300              # ↑ réduit création de nouveaux splats
+# Évite gros splats écran
+CULL_SCREEN_SIZE=0.15
+# SPLIT_SCREEN_SIZE=0.05
 
-# 🛑 STOP SPLIT PLUS TÔT
-STOP_SPLIT_AT=6000            # ↓ stop plus tôt (important)
+########################################
+# DENSIFICATION CONTROL
+########################################
 
-# 🧠 STABILISATION (évite accumulation de bruit)
-RESET_ALPHA_EVERY=40          # ↑ nettoyage plus fréquent
-CULL_SCALE_THRESH=0.5         # ↓ supprime petits clusters instables
+# Beaucoup plus stable à long terme
+REFINE_EVERY=200
+
+# PARAMÈTRE CRITIQUE
+# évite saturation alpha / écran blanc
+RESET_ALPHA_EVERY=30
+
+# Supprime davantage de gros splats instables
+# CULL_SCALE_THRESH=0.5
 
 ########################################
 # QUALITY / REGULARIZATION
 ########################################
 
+# Améliore la stabilité visuelle en corrigeant les variations de couleur locales
+USE_BILATERAL_GRID=False
 
-USE_BILATERAL_GRID=true
+# Désactive la régularisation des échelles des gaussiennes (plus de liberté mais moins de contraintes)
 USE_SCALE_REGULARIZATION=False
 
-MAX_GAUSS_RATIO=4.0          # ↓ limite taille splats
-SSIM_LAMBDA=0.25             # léger boost stabilité image (optionnel)
+# Limite la taille des covariances pour éviter des splats trop étalés
+MAX_GAUSS_RATIO=5.0
+
+# Équilibre entre fidélité visuelle et préservation de la structure de l’image
+# SSIM_LAMBDA=0.2
 
 ########################################
-# EXPORT BALANCED
+# TRAINING STABILITY (GPU OPTIMIZATION DISABLED)
 ########################################
 
-# adapté au nouveau volume
+#Désactive la précision mixte (FP16), entraînement plus lent mais plus stable numériquement
+MIXED_PRECISION=False
+
+#Désactive le scaling des gradients utilisé avec la précision mixte
+USE_GRAD_SCALER=False
+
+########################################
+# EXPORT
+########################################
+
 EXPORT_NUM_POINTS=600000
 EXPORT_DOWNSAMPLE=1
