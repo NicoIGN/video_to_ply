@@ -2,7 +2,7 @@
 # PERFORMANCE PROFILE
 ########################################
 
-TRAINING_PROFILE="splat/quality_plus"
+TRAINING_PROFILE="splat/experiment"
 
 DEVICE="gpu"
 MODEL="splatfacto-big"
