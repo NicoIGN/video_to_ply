@@ -9,21 +9,43 @@ Original file is located at
 
 # Commented out IPython magic to ensure Python compatibility.
 # %%bash
+# 
 # cat << 'EOF' > /content/config.sh
 # #!/bin/bash
 # 
-# export ROOTDIR="/content/statue"
-# export VIDEOSOURCE="gsplat/input/IMG_4794.MOV"
+# export SCENE="table_clem"
 # 
+# export ROOTDIR="/content/${SCENE}"
 # export NUM_FRAMES=100
-# 
-# #branche dev
+# export NUM_JOBS=2
 # export GIT_BRANCH="dev"
-# export BASENAME="sofa"
 # 
 # export PREPROCESS_PROFILE="hloc-lightblue"
+# export GSPLAT_PROFILE="balanced"
 # export GSPLAT_PROFILE="quality_plus"
+# export GSPLAT_PROFILE="experiment"
+# export GSPLAT_PROFILE="quality"
 # 
+# export BASENAME="${SCENE}_${GSPLAT_PROFILE}"
+# 
+# if [ "$SCENE" = "soldat" ]; then
+# 
+#   export VIDEOSOURCE="gsplat/input/Video_20260515_1755_16_064.MOV"
+#   export VIDEO_START=10
+#   export VIDEO_END=88
+# 
+# elif [ "$SCENE" = "statue" ]; then
+# 
+#   export VIDEOSOURCE="gsplat/input/IMG_4812.MOV"
+#   #export VIDEO_START=0
+#   #export VIDEO_END=100
+# 
+# elif [ "$SCENE" = "table_clem" ]; then
+# 
+#   export VIDEOSOURCE="gsplat/input/IMG_4811.MOV"
+#   #export VIDEO_START=0
+#   #export VIDEO_END=100
+# fi
 # EOF
 # 
 # cat /content/config.sh
@@ -68,8 +90,6 @@ os.environ["PATH"] = "/usr/local/miniforge/bin:" + os.environ["PATH"]
 # source /content/config.sh
 # git stash save && git checkout $GIT_BRANCH && git pull
 
-
-
 !source /usr/local/miniforge/etc/profile.d/conda.sh && \
 mamba env list | grep -q gsplat && \
 cd /content/video_to_ply/ && \
@@ -101,10 +121,10 @@ mamba run -n gsplat bash run.sh  \
 --name "$BASENAME" \
 --video $ROOTDIR/video.mp4  \
 --skip-conda \
---skip-filter \
 --preprocess-profile "$PREPROCESS_PROFILE" \
 --gsplat-profile "$GSPLAT_PROFILE" \
 --num-frames $NUM_FRAMES \
+--max-jobs $NUM_JOBS \
 --no-proxy)
 
 !RUN=0; \
@@ -117,10 +137,25 @@ mamba run -n gsplat bash run.sh  \
 --name "$BASENAME" \
 --video $ROOTDIR/video.mp4  \
 --skip-conda \
---skip-filter \
 --preprocess-profile "$PREPROCESS_PROFILE" \
 --gsplat-profile "$GSPLAT_PROFILE" \
 --fps $FPS \
+--no-proxy)
+
+!RUN=0; \
+[ "$RUN" -eq 0 ] && echo "skipping this stage" || \
+ (source /usr/local/miniforge/etc/profile.d/conda.sh && \
+source /content/config.sh && \
+cd /content/video_to_ply/ && \
+mamba run -n gsplat bash run.sh  \
+--root "$ROOTDIR" \
+--name "$BASENAME" \
+--video $ROOTDIR/video.mp4  \
+--skip-conda \
+--skip-training \
+--preprocess-profile "$PREPROCESS_PROFILE" \
+--gsplat-profile "$GSPLAT_PROFILE" \
+--num-frames $NUM_FRAMES \
 --no-proxy)
 
 from google.colab import files
@@ -203,7 +238,7 @@ if not basename:
 # =========================
 base_zip = os.path.join(export_dir, f"colmap_{basename}.zip")
 if os.path.exists(base_zip):
-    print(f"⬇️ Downloading original PLY: {os.path.basename(base_zip)}")
+    print(f"⬇️ Downloading COLMAP data: {os.path.basename(base_zip)}")
     files.download(base_zip)
 else:
     print(f"⚠️ COLMAP data not found: {base_zip}")
@@ -215,7 +250,10 @@ else:
 zip_files = [
     os.path.join(export_dir, f)
     for f in os.listdir(export_dir)
-    if f.endswith(".zip")
+    if (
+        f.endswith(".zip")
+        and not f.startswith("colmap_")
+    )
 ]
 
 if not zip_files:
