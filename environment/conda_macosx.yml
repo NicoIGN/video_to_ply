@@ -38,6 +38,7 @@ dependencies:
 
   # Geometry / SfM
   - colmap=3.8
+  - pycolmap
   - faiss-cpu
   - plyfile
 

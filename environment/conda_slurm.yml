@@ -61,6 +61,7 @@ dependencies:
   ########################################
   - colmap=3.8
   - faiss-cpu
+  - pycolmap
 
   ########################################
   # OPTIONAL UTILS
