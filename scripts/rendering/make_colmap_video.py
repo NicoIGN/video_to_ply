@@ -370,7 +370,7 @@ def interpolate_rotations(rotations, n):
 
 
 # ============================================================
-# Nerfstudio config/data patching
+# Nerfstudio helpers
 # ============================================================
 
 def infer_local_dataset_root(config_path, colmap_path):
@@ -467,16 +467,15 @@ def prepare_nerfstudio_data_dir(dataset_root, tmpdir):
     return work_dir, transforms_src, sparse_pc
 
 
-def patch_nerfstudio_config_struct(load_config, prepared_data_dir, checkpoint_path):
+def patch_nerfstudio_config_struct(load_config, prepared_data_dir, temp_output_root):
     load_config = Path(load_config).resolve()
     config = yaml.load(load_config.read_text(encoding="utf-8"), Loader=yaml.Loader)
 
-    local_output_dir = load_config.parent.resolve()
     prepared_data_dir = Path(prepared_data_dir).resolve()
-    checkpoint_path = Path(checkpoint_path).resolve() if checkpoint_path is not None else None
+    temp_output_root = Path(temp_output_root).resolve()
 
     if hasattr(config, "output_dir"):
-        config.output_dir = local_output_dir
+        config.output_dir = temp_output_root
 
     if hasattr(config, "pipeline") and hasattr(config.pipeline, "datamanager"):
         dm = config.pipeline.datamanager
@@ -485,28 +484,29 @@ def patch_nerfstudio_config_struct(load_config, prepared_data_dir, checkpoint_pa
         if hasattr(dm, "dataparser") and hasattr(dm.dataparser, "data"):
             dm.dataparser.data = prepared_data_dir
 
-    if checkpoint_path is not None:
-        if hasattr(config, "load_dir"):
-            config.load_dir = checkpoint_path.parent
-        if hasattr(config, "load_checkpoint"):
-            config.load_checkpoint = checkpoint_path
-        if hasattr(config, "load_step"):
-            config.load_step = None
-
-        # neutralize path reconstruction mismatch
-        if hasattr(config, "experiment_name"):
-            config.experiment_name = ""
-        if hasattr(config, "method_name"):
-            config.method_name = ""
-        if hasattr(config, "timestamp"):
-            config.timestamp = ""
-
-    return config, local_output_dir
+    return config
 
 
-# ============================================================
-# Nerfstudio camera path + render
-# ============================================================
+def materialize_expected_checkpoint_tree(config, checkpoint_path, tmpdir):
+    checkpoint_path = Path(checkpoint_path).resolve()
+    tmpdir = Path(tmpdir).resolve()
+
+    experiment_name = getattr(config, "experiment_name", "model3d")
+    method_name = getattr(config, "method_name", "splatfacto")
+    timestamp = getattr(config, "timestamp", "default")
+    relative_model_dir = getattr(config, "relative_model_dir", Path("nerfstudio_models"))
+
+    expected_dir = tmpdir / experiment_name / method_name / timestamp / Path(relative_model_dir)
+    expected_dir.mkdir(parents=True, exist_ok=True)
+
+    dst_ckpt = expected_dir / checkpoint_path.name
+    try:
+        dst_ckpt.symlink_to(checkpoint_path)
+    except Exception:
+        shutil.copy2(checkpoint_path, dst_ckpt)
+
+    return expected_dir, dst_ckpt
+
 
 def scale_intrinsics_to_output(intr, out_w, out_h):
     sx = out_w / float(intr["cam_w"])
@@ -572,14 +572,27 @@ def render_with_nerfstudio(load_config, camera_path_json, output_path, colmap_pa
     dataset_root = infer_local_dataset_root(load_config, colmap_path)
 
     with tempfile.TemporaryDirectory(prefix="ns_cfg_") as tmpdir:
+        tmpdir = Path(tmpdir).resolve()
+
         prepared_data_dir, transforms_src, sparse_pc = prepare_nerfstudio_data_dir(dataset_root, tmpdir)
-        patched_config, local_output_dir = patch_nerfstudio_config_struct(
+        original_config = yaml.load(Path(load_config).read_text(encoding="utf-8"), Loader=yaml.Loader)
+
+        expected_ckpt_dir = None
+        expected_ckpt_file = None
+        if checkpoint_path is not None:
+            expected_ckpt_dir, expected_ckpt_file = materialize_expected_checkpoint_tree(
+                config=original_config,
+                checkpoint_path=checkpoint_path,
+                tmpdir=tmpdir,
+            )
+
+        patched_config = patch_nerfstudio_config_struct(
             load_config=load_config,
             prepared_data_dir=prepared_data_dir,
-            checkpoint_path=checkpoint_path,
+            temp_output_root=tmpdir,
         )
 
-        patched_cfg = Path(tmpdir) / "config.patched.yml"
+        patched_cfg = tmpdir / "config.patched.yml"
         patched_cfg.write_text(yaml.dump(patched_config), encoding="utf-8")
 
         print(f"[INFO] Patched Nerfstudio config: {patched_cfg}")
@@ -587,7 +600,9 @@ def render_with_nerfstudio(load_config, camera_path_json, output_path, colmap_pa
         print(f"[INFO] Using transforms source: {transforms_src}")
         print(f"[INFO] Using sparse_pc: {sparse_pc}")
         print(f"[INFO] Using checkpoint: {checkpoint_path}")
-        print(f"[INFO] Using local output dir: {local_output_dir}")
+        print(f"[INFO] Materialized checkpoint dir: {expected_ckpt_dir}")
+        print(f"[INFO] Materialized checkpoint file: {expected_ckpt_file}")
+        print(f"[INFO] Temporary output root: {tmpdir}")
 
         cmd = [
             exe, "camera-path",
@@ -714,20 +729,112 @@ def render_frame_cpu(gs, cam_pos, cam_quat_xyzw, fx, fy, cx, cy, width, height,
     return (np.clip(img, 0.0, 1.0) * 255.0).astype(np.uint8)
 
 
-def render_ply_fallback(ply_path, poses, width, height, intrinsics):
+def render_frame_torch(gs_t, cam_pos, cam_quat_xyzw, fx, fy, cx, cy, width, height,
+                       znear=0.01, zfar=1e6, max_points=120000, radius_scale=120.0):
+    device = gs_t["xyz"].device
+    xyz = gs_t["xyz"]
+    rgb = gs_t["rgb"]
+    opacity = gs_t["opacity"]
+    radius = gs_t["radius"]
+
+    if xyz.shape[0] > max_points:
+        idx = torch.linspace(0, xyz.shape[0] - 1, max_points, device=device).long()
+        xyz = xyz[idx]
+        rgb = rgb[idx]
+        opacity = opacity[idx]
+        radius = radius[idx]
+
+    R_cw = torch.tensor(R.from_quat(cam_quat_xyzw).as_matrix(), dtype=torch.float32, device=device)
+    cam_pos_t = torch.tensor(cam_pos, dtype=torch.float32, device=device)
+    t_cw = -R_cw @ cam_pos_t
+    pts_cam = (R_cw @ xyz.T).T + t_cw
+
+    z = pts_cam[:, 2]
+    valid = (z > znear) & (z < zfar)
+    if valid.sum().item() == 0:
+        return np.zeros((height, width, 3), dtype=np.uint8)
+
+    pts_cam = pts_cam[valid]
+    z = z[valid]
+    col = rgb[valid]
+    alp = opacity[valid]
+    rad = radius[valid]
+
+    u = fx * (pts_cam[:, 0] / z) + cx
+    v = fy * (pts_cam[:, 1] / z) + cy
+
+    inside = (u >= -100) & (u < width + 100) & (v >= -100) & (v < height + 100)
+    if inside.sum().item() == 0:
+        return np.zeros((height, width, 3), dtype=np.uint8)
+
+    u = u[inside]
+    v = v[inside]
+    z = z[inside]
+    col = col[inside]
+    alp = alp[inside]
+    rad = rad[inside]
+
+    order = torch.argsort(z, descending=True)
+    u, v, col, alp, rad, z = u[order], v[order], col[order], alp[order], rad[order], z[order]
+
+    img = torch.zeros((height, width, 3), dtype=torch.float32, device=device)
+    trans = torch.ones((height, width), dtype=torch.float32, device=device)
+    screen_r = torch.clamp(radius_scale * rad / torch.clamp(z, min=1e-6), 1.0, 25.0)
+
+    for i in range(u.shape[0]):
+        cx_i = int(torch.round(u[i]).item())
+        cy_i = int(torch.round(v[i]).item())
+        r = int(torch.ceil(screen_r[i]).item())
+
+        x0, x1 = max(0, cx_i - r), min(width, cx_i + r + 1)
+        y0, y1 = max(0, cy_i - r), min(height, cy_i + r + 1)
+        if x0 >= x1 or y0 >= y1:
+            continue
+
+        ys, xs = torch.meshgrid(
+            torch.arange(y0, y1, device=device),
+            torch.arange(x0, x1, device=device),
+            indexing="ij"
+        )
+        dx = (xs - u[i]) / torch.clamp(screen_r[i], min=1e-6)
+        dy = (ys - v[i]) / torch.clamp(screen_r[i], min=1e-6)
+        w = torch.exp(-0.5 * (dx * dx + dy * dy))
+        a = torch.clamp(alp[i] * w, 0.0, 0.99)
+
+        img[y0:y1, x0:x1] += trans[y0:y1, x0:x1, None] * a[..., None] * col[i][None, None, :]
+        trans[y0:y1, x0:x1] *= (1.0 - a)
+
+    return (torch.clamp(img, 0.0, 1.0) * 255.0).byte().cpu().numpy()
+
+
+def render_ply_fallback(ply_path, poses, width, height, intrinsics, device="cpu"):
     gs = load_gaussian_ply(ply_path)
     intr = scale_intrinsics_to_output(intrinsics, width, height)
     fx, fy, cx, cy = intr["fx"], intr["fy"], intr["cx"], intr["cy"]
 
-    print("[INFO] Using fallback PLY renderer")
+    print(f"[INFO] Using fallback PLY renderer on {device}")
     print(f"[INFO] Rendering {len(poses)} frames")
+
+    gs_t = None
+    if device == "cuda":
+        gs_t = {
+            "xyz": torch.tensor(gs["xyz"], dtype=torch.float32, device="cuda"),
+            "rgb": torch.tensor(gs["rgb"], dtype=torch.float32, device="cuda"),
+            "opacity": torch.tensor(gs["opacity"], dtype=torch.float32, device="cuda"),
+            "radius": torch.tensor(gs["radius"], dtype=torch.float32, device="cuda"),
+        }
 
     frames = []
     for i, pose in enumerate(poses):
         if i % 10 == 0 or i == len(poses) - 1:
             print(f"[INFO] Frame {i+1}/{len(poses)}")
-        frame = render_frame_cpu(gs, pose["pos"], pose["rot"], fx, fy, cx, cy, width, height)
+
+        if device == "cuda":
+            frame = render_frame_torch(gs_t, pose["pos"], pose["rot"], fx, fy, cx, cy, width, height)
+        else:
+            frame = render_frame_cpu(gs, pose["pos"], pose["rot"], fx, fy, cx, cy, width, height)
         frames.append(frame)
+
     return frames
 
 
@@ -769,10 +876,24 @@ def main():
         ply_path=ply_path,
     )
 
-    if config_path is not None:
+    use_nerfstudio = config_path is not None
+
+    if use_nerfstudio:
         print(f"[INFO] Found Nerfstudio config: {config_path}")
         checkpoint_path = auto_find_checkpoint(config_path, checkpoint_path)
         print(f"[INFO] Found checkpoint: {checkpoint_path}")
+
+        # Splatfacto in this environment is CUDA-only.
+        if device != "cuda":
+            if ply_path is not None:
+                print("[WARN] CUDA unavailable; forcing PLY fallback instead of Nerfstudio.")
+                use_nerfstudio = False
+            else:
+                raise RuntimeError(
+                    "Nerfstudio Splatfacto requires CUDA in this environment, "
+                    "but PyTorch CUDA is not available. "
+                    "Provide --ply for CPU fallback or run on a CUDA machine."
+                )
     elif ply_path is not None:
         print("[WARN] No Nerfstudio config found, falling back to PLY renderer.")
     else:
@@ -798,7 +919,7 @@ def main():
     if (video_w, video_h) != (args.width, args.height):
         print(f"[INFO] Adjusting video size from {args.width}x{args.height} to {video_w}x{video_h}")
 
-    if config_path is not None:
+    if use_nerfstudio:
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         payload = build_nerfstudio_camera_path(
@@ -831,6 +952,7 @@ def main():
         width=args.width,
         height=args.height,
         intrinsics=intrinsics,
+        device=device,
     )
     frames = [pad_frame_to_size(f, video_w, video_h) for f in frames]
     imageio.mimsave(str(output_path), frames, fps=args.fps, macro_block_size=16)
