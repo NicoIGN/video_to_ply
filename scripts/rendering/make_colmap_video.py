@@ -4,17 +4,17 @@ import argparse
 import json
 import re
 import shutil
+import struct
 import subprocess
 import tempfile
 from pathlib import Path
 
 import imageio.v2 as imageio
 import numpy as np
-from plyfile import PlyData
 import pycolmap
 import yaml
+from plyfile import PlyData
 from scipy.interpolate import splprep, splev
-from scipy.spatial.transform import Rotation as R, Slerp
 
 try:
     import torch
@@ -23,58 +23,15 @@ except Exception:
 
 
 # ============================================================
-# Utils
+# Generic helpers
 # ============================================================
 
-def normalize_quaternions(q):
-    q = np.asarray(q, dtype=float)
-    norms = np.linalg.norm(q, axis=1, keepdims=True)
-    return q / np.clip(norms, 1e-12, None)
-
-
-def arc_length_param(points):
-    points = np.asarray(points, dtype=float)
-    if len(points) == 0:
-        return np.array([], dtype=float)
-    if len(points) == 1:
-        return np.array([0.0], dtype=float)
-
-    d = np.linalg.norm(np.diff(points, axis=0), axis=1)
-    s = np.concatenate([[0.0], np.cumsum(d)])
-    total = s[-1]
-
-    if total < 1e-12:
-        return np.linspace(0.0, 1.0, len(points))
-    return s / total
-
-
-def resample_by_arclength(points, n, smoothness=0.0):
-    points = np.asarray(points, dtype=float)
-
-    if len(points) == 0:
-        raise ValueError("Empty point array")
-    if len(points) == 1:
-        return np.repeat(points, n, axis=0)
-    if len(points) == 2:
-        t = np.linspace(0.0, 1.0, n)[:, None]
-        return (1.0 - t) * points[0] + t * points[1]
-
-    s = arc_length_param(points)
-    t = np.linspace(0.0, 1.0, n)
-    k = min(3, len(points) - 1)
-
-    tck, _ = splprep(
-        [points[:, 0], points[:, 1], points[:, 2]],
-        u=s,
-        s=max(0.0, float(smoothness)) * len(points),
-        k=k
-    )
-    x, y, z = splev(t, tck)
-    return np.stack([x, y, z], axis=1)
-
-
-def make_loop(points, quats):
-    return np.vstack([points, points[:1]]), np.vstack([quats, quats[:1]])
+def normalize(v, eps=1e-8):
+    v = np.asarray(v, dtype=float)
+    n = np.linalg.norm(v)
+    if n < eps:
+        return np.zeros_like(v)
+    return v / n
 
 
 def make_even(x, multiple=16):
@@ -108,7 +65,7 @@ def resolve_device(device_arg):
 # Path helpers
 # ============================================================
 
-def candidate_search_roots(colmap_path, output_path, ply_path=None, checkpoint=None, load_config=None):
+def candidate_search_roots(colmap_path, output_path, ply_path=None, checkpoint=None, load_config=None, dataparser_transforms=None):
     roots = []
 
     def add_with_parents(p):
@@ -127,6 +84,7 @@ def candidate_search_roots(colmap_path, output_path, ply_path=None, checkpoint=N
     add_with_parents(ply_path)
     add_with_parents(checkpoint)
     add_with_parents(load_config)
+    add_with_parents(dataparser_transforms)
     add_with_parents(Path.cwd())
 
     seen = set()
@@ -142,7 +100,7 @@ def candidate_search_roots(colmap_path, output_path, ply_path=None, checkpoint=N
     return unique
 
 
-def resolve_moved_path(path_like, colmap_path, output_path, ply_path=None, checkpoint=None, load_config=None):
+def resolve_moved_path(path_like, colmap_path, output_path, ply_path=None, checkpoint=None, load_config=None, dataparser_transforms=None):
     if path_like is None:
         return None
 
@@ -155,7 +113,9 @@ def resolve_moved_path(path_like, colmap_path, output_path, ply_path=None, check
     if cwd_try.exists():
         return cwd_try.resolve()
 
-    roots = candidate_search_roots(colmap_path, output_path, ply_path, checkpoint, load_config)
+    roots = candidate_search_roots(
+        colmap_path, output_path, ply_path, checkpoint, load_config, dataparser_transforms
+    )
     parts = p.parts
 
     for root in roots:
@@ -171,26 +131,28 @@ def resolve_moved_path(path_like, colmap_path, output_path, ply_path=None, check
                 return matches[0].resolve()
             if len(matches) > 1:
                 for m in matches:
-                    if str(m).endswith("config.yml") or str(m).endswith(".ckpt"):
+                    if str(m).endswith("config.yml") or str(m).endswith(".ckpt") or str(m).endswith(".json"):
                         return m.resolve()
                 return matches[0].resolve()
 
     return p
 
 
-def auto_find_config(load_config, colmap_path, checkpoint, output_path, ply_path=None):
+def auto_find_config(load_config, colmap_path, checkpoint, output_path, ply_path=None, dataparser_transforms=None):
     if load_config is not None:
-        p = resolve_moved_path(load_config, colmap_path, output_path, ply_path, checkpoint, load_config)
+        p = resolve_moved_path(load_config, colmap_path, output_path, ply_path, checkpoint, load_config, dataparser_transforms)
         if p.exists():
             return p
 
     if checkpoint is not None:
-        ckpt = resolve_moved_path(checkpoint, colmap_path, output_path, ply_path, checkpoint, load_config)
+        ckpt = resolve_moved_path(checkpoint, colmap_path, output_path, ply_path, checkpoint, load_config, dataparser_transforms)
         ckpt_cfg = ckpt.parent.parent / "config.yml"
         if ckpt_cfg.exists():
             return ckpt_cfg.resolve()
 
-    roots = candidate_search_roots(colmap_path, output_path, ply_path, checkpoint, load_config)
+    roots = candidate_search_roots(
+        colmap_path, output_path, ply_path, checkpoint, load_config, dataparser_transforms
+    )
     for root in roots:
         matches = list(root.rglob("config.yml"))
         if matches:
@@ -224,9 +186,60 @@ def auto_find_sparse_pc(dataset_root):
     return None
 
 
+def auto_find_dataparser_transforms(explicit_path, colmap_path, output_path, ply_path=None, checkpoint=None, load_config=None):
+    if explicit_path is not None:
+        p = resolve_moved_path(explicit_path, colmap_path, output_path, ply_path, checkpoint, load_config, explicit_path)
+        if p.exists():
+            return p
+
+    roots = candidate_search_roots(colmap_path, output_path, ply_path, checkpoint, load_config, explicit_path)
+    for root in roots:
+        cand = root / "dataparser_transforms.json"
+        if cand.exists():
+            return cand.resolve()
+        matches = list(root.rglob("dataparser_transforms.json"))
+        if matches:
+            return matches[0].resolve()
+
+    return None
+
+
 # ============================================================
-# COLMAP pose extraction
+# COLMAP helpers
 # ============================================================
+
+def rotation_matrix_to_quaternion_xyzw(R):
+    R = np.asarray(R, dtype=float)
+    q = np.empty(4, dtype=float)
+    tr = np.trace(R)
+
+    if tr > 0:
+        s = np.sqrt(tr + 1.0) * 2.0
+        qw = 0.25 * s
+        qx = (R[2, 1] - R[1, 2]) / s
+        qy = (R[0, 2] - R[2, 0]) / s
+        qz = (R[1, 0] - R[0, 1]) / s
+    elif R[0, 0] > R[1, 1] and R[0, 0] > R[2, 2]:
+        s = np.sqrt(1.0 + R[0, 0] - R[1, 1] - R[2, 2]) * 2.0
+        qw = (R[2, 1] - R[1, 2]) / s
+        qx = 0.25 * s
+        qy = (R[0, 1] + R[1, 0]) / s
+        qz = (R[0, 2] + R[2, 0]) / s
+    elif R[1, 1] > R[2, 2]:
+        s = np.sqrt(1.0 + R[1, 1] - R[0, 0] - R[2, 2]) * 2.0
+        qw = (R[0, 2] - R[2, 0]) / s
+        qx = (R[0, 1] + R[1, 0]) / s
+        qy = 0.25 * s
+        qz = (R[1, 2] + R[2, 1]) / s
+    else:
+        s = np.sqrt(1.0 + R[2, 2] - R[0, 0] - R[1, 1]) * 2.0
+        qw = (R[1, 0] - R[0, 1]) / s
+        qx = (R[0, 2] + R[2, 0]) / s
+        qy = (R[1, 2] + R[2, 1]) / s
+        qz = 0.25 * s
+
+    return np.array([qx, qy, qz, qw], dtype=float)
+
 
 def extract_rigid3d_pose(T):
     q_xyzw = None
@@ -263,11 +276,11 @@ def extract_rigid3d_pose(T):
             if M.shape == (3, 4):
                 R_cw = M[:, :3]
                 t = M[:, 3]
-                q_xyzw = R.from_matrix(R_cw).as_quat()
+                q_xyzw = rotation_matrix_to_quaternion_xyzw(R_cw)
             elif M.shape == (4, 4):
                 R_cw = M[:3, :3]
                 t = M[:3, 3]
-                q_xyzw = R.from_matrix(R_cw).as_quat()
+                q_xyzw = rotation_matrix_to_quaternion_xyzw(R_cw)
         except Exception:
             pass
 
@@ -281,13 +294,9 @@ def extract_rigid3d_pose(T):
             t = np.asarray([float(x.strip()) for x in t_match.group(1).split(",")], dtype=float)
 
     if q_xyzw is None or t is None:
-        raise RuntimeError(
-            "Could not extract pose from pycolmap Rigid3d.\n"
-            f"type(T)={type(T)}\n"
-            f"repr(T)={repr(T)}"
-        )
+        raise RuntimeError(f"Could not extract pose from {repr(T)}")
 
-    return np.asarray(q_xyzw, dtype=float).reshape(4,), np.asarray(t, dtype=float).reshape(3,)
+    return np.asarray(q_xyzw, dtype=float), np.asarray(t, dtype=float)
 
 
 def extract_intrinsics(camera, default_w, default_h):
@@ -310,41 +319,29 @@ def extract_intrinsics(camera, default_w, default_h):
     return float(default_w), float(default_w), default_w / 2.0, default_h / 2.0, int(default_w), int(default_h)
 
 
-def load_colmap_poses_and_camera(colmap_path, out_width, out_height):
+def load_colmap_camera_centers_and_intrinsics(colmap_path, out_width, out_height):
     recon = pycolmap.Reconstruction(str(colmap_path))
     images = sorted(recon.images.values(), key=lambda im: im.image_id)
 
     if len(images) == 0:
         raise RuntimeError(f"No images found in COLMAP reconstruction: {colmap_path}")
 
-    cam_centers = []
-    quats_xyzw = []
-
     ref_camera = images[0].camera
     fx, fy, cx, cy, cam_w, cam_h = extract_intrinsics(ref_camera, out_width, out_height)
 
+    cam_centers = []
     for img in images:
         T = img.cam_from_world()
         q_xyzw, t = extract_rigid3d_pose(T)
         q_xyzw = q_xyzw / max(np.linalg.norm(q_xyzw), 1e-12)
 
-        R_cw = R.from_quat(q_xyzw).as_matrix()
-        c_from_pose = -R_cw.T @ t
-
-        if hasattr(img, "projection_center"):
-            try:
-                c_world = np.asarray(img.projection_center(), dtype=float).reshape(3,)
-            except Exception:
-                c_world = c_from_pose
-        else:
-            c_world = c_from_pose
-
+        # world->camera
+        R_cw = quaternion_xyzw_to_matrix(q_xyzw)
+        c_world = -R_cw.T @ t
         cam_centers.append(c_world)
-        quats_xyzw.append(q_xyzw)
 
     return (
-        np.asarray(cam_centers),
-        np.asarray(quats_xyzw),
+        np.asarray(cam_centers, dtype=float),
         {
             "fx": fx,
             "fy": fy,
@@ -352,25 +349,201 @@ def load_colmap_poses_and_camera(colmap_path, out_width, out_height):
             "cy": cy,
             "cam_w": cam_w,
             "cam_h": cam_h,
-        }
+        },
     )
 
 
-def interpolate_rotations(rotations, n):
-    rotations = normalize_quaternions(rotations)
-    if len(rotations) == 0:
-        raise ValueError("Empty rotation array")
-    if len(rotations) == 1:
-        return np.repeat(rotations, n, axis=0)
+def load_colmap_points3d_bin(path, max_points=5_000_000):
+    pts = []
+    with open(path, "rb") as f:
+        n = struct.unpack("<Q", f.read(8))[0]
+        for _ in range(n):
+            f.read(8)  # point3D_id
+            x, y, z = struct.unpack("<ddd", f.read(24))
+            f.read(3)  # rgb
+            f.read(8)  # error
+            track_len = struct.unpack("<Q", f.read(8))[0]
+            f.seek(track_len * 8, 1)
 
-    key_times = np.linspace(0.0, 1.0, len(rotations))
-    target_times = np.linspace(0.0, 1.0, n)
-    slerp = Slerp(key_times, R.from_quat(rotations))
-    return slerp(target_times).as_quat()
+            if np.isfinite(x) and np.isfinite(y) and np.isfinite(z):
+                pts.append([x, y, z])
+
+            if len(pts) >= max_points:
+                break
+    if not pts:
+        return np.zeros((0, 3), dtype=np.float32)
+    return np.asarray(pts, dtype=np.float32)
 
 
 # ============================================================
-# Nerfstudio helpers
+# Dataparser transform
+# ============================================================
+
+def load_dataparser_transform(path):
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    transform = data.get("transform", None)
+    scale = data.get("scale", None)
+
+    if transform is None or scale is None:
+        raise RuntimeError(f"{path} must contain 'transform' and 'scale'")
+
+    transform = np.asarray(transform, dtype=np.float32)
+    if transform.shape != (3, 4):
+        raise RuntimeError(f"Expected transform shape (3,4), got {transform.shape}")
+
+    R = transform[:, :3]
+    t = transform[:, 3]
+    scale = float(scale)
+    return R, t, scale
+
+
+def apply_ns_transform_points(pts, R, t, scale):
+    pts = np.asarray(pts, dtype=np.float32)
+    return scale * (pts @ R.T + t)
+
+
+# ============================================================
+# Trajectory building
+# ============================================================
+
+def arc_length_param(points):
+    points = np.asarray(points, dtype=float)
+    if len(points) == 0:
+        return np.array([], dtype=float)
+    if len(points) == 1:
+        return np.array([0.0], dtype=float)
+
+    d = np.linalg.norm(np.diff(points, axis=0), axis=1)
+    s = np.concatenate([[0.0], np.cumsum(d)])
+    total = s[-1]
+    if total < 1e-12:
+        return np.linspace(0.0, 1.0, len(points))
+    return s / total
+
+
+def resample_by_arclength(points, n, smoothness=0.0):
+    points = np.asarray(points, dtype=float)
+
+    if len(points) == 0:
+        raise ValueError("Empty point array")
+    if len(points) == 1:
+        return np.repeat(points, n, axis=0)
+    if len(points) == 2:
+        t = np.linspace(0.0, 1.0, n)[:, None]
+        return (1.0 - t) * points[0] + t * points[1]
+
+    s = arc_length_param(points)
+    t = np.linspace(0.0, 1.0, n)
+    k = min(3, len(points) - 1)
+
+    tck, _ = splprep(
+        [points[:, 0], points[:, 1], points[:, 2]],
+        u=s,
+        s=max(0.0, float(smoothness)) * len(points),
+        k=k,
+    )
+    x, y, z = splev(t, tck)
+    return np.stack([x, y, z], axis=1)
+
+
+def make_loop(points):
+    return np.vstack([points, points[:1]])
+
+
+def look_at_camera_to_world(center, target, up_hint=np.array([0.0, 0.0, 1.0])):
+    center = np.asarray(center, dtype=float)
+    target = np.asarray(target, dtype=float)
+    up_hint = np.asarray(up_hint, dtype=float)
+
+    forward = normalize(target - center)
+    if np.linalg.norm(forward) < 1e-8:
+        forward = np.array([0.0, 0.0, -1.0], dtype=float)
+
+    right = np.cross(forward, up_hint)
+    if np.linalg.norm(right) < 1e-8:
+        up_hint = np.array([0.0, 1.0, 0.0], dtype=float)
+        right = np.cross(forward, up_hint)
+
+    right = normalize(right)
+    up = normalize(np.cross(right, forward))
+
+    # Nerfstudio camera_to_world convention
+    c2w = np.eye(4, dtype=float)
+    c2w[:3, 0] = right
+    c2w[:3, 1] = up
+    c2w[:3, 2] = forward
+    c2w[:3, 3] = center
+    return c2w
+
+
+def quaternion_xyzw_to_matrix(q):
+    q = np.asarray(q, dtype=float)
+    q = q / max(np.linalg.norm(q), 1e-12)
+    x, y, z, w = q
+
+    xx = x * x
+    yy = y * y
+    zz = z * z
+    xy = x * y
+    xz = x * z
+    yz = y * z
+    wx = w * x
+    wy = w * y
+    wz = w * z
+
+    return np.array([
+        [1 - 2 * (yy + zz), 2 * (xy - wz),     2 * (xz + wy)],
+        [2 * (xy + wz),     1 - 2 * (xx + zz), 2 * (yz - wx)],
+        [2 * (xz - wy),     2 * (yz + wx),     1 - 2 * (xx + yy)],
+    ], dtype=float)
+
+
+def scale_intrinsics_to_output(intr, out_w, out_h):
+    sx = out_w / float(intr["cam_w"])
+    sy = out_h / float(intr["cam_h"])
+    return {
+        "fx": intr["fx"] * sx,
+        "fy": intr["fy"] * sy,
+        "cx": intr["cx"] * sx,
+        "cy": intr["cy"] * sy,
+    }
+
+
+def build_nerfstudio_camera_path(centers, target, out_w, out_h, intrinsics, fps):
+    intr = scale_intrinsics_to_output(intrinsics, out_w, out_h)
+    camera_path = []
+
+    for center in centers:
+        c2w = look_at_camera_to_world(center, target)
+        camera_path.append({
+            "camera_to_world": c2w.tolist(),
+            "fov": None,
+            "aspect": float(out_w) / float(out_h),
+        })
+
+    return {
+        "camera_type": "perspective",
+        "render_height": int(out_h),
+        "render_width": int(out_w),
+        "fps": float(fps),
+        "seconds": float(len(centers) / fps) if fps > 0 else 0.0,
+        "smoothness_value": 0.0,
+        "is_cycle": False,
+        "camera_path": camera_path,
+        "keyframes": [],
+        "camera_intrinsics": {
+            "fx": float(intr["fx"]),
+            "fy": float(intr["fy"]),
+            "cx": float(intr["cx"]),
+            "cy": float(intr["cy"]),
+        },
+    }
+
+
+# ============================================================
+# Nerfstudio rendering
 # ============================================================
 
 def infer_local_dataset_root(config_path, colmap_path):
@@ -508,58 +681,6 @@ def materialize_expected_checkpoint_tree(config, checkpoint_path, tmpdir):
     return expected_dir, dst_ckpt
 
 
-def scale_intrinsics_to_output(intr, out_w, out_h):
-    sx = out_w / float(intr["cam_w"])
-    sy = out_h / float(intr["cam_h"])
-    return {
-        "fx": intr["fx"] * sx,
-        "fy": intr["fy"] * sy,
-        "cx": intr["cx"] * sx,
-        "cy": intr["cy"] * sy,
-    }
-
-
-def c2w_from_center_quat(center, quat_xyzw):
-    R_cw = R.from_quat(quat_xyzw).as_matrix()
-    R_wc = R_cw.T
-
-    c2w = np.eye(4, dtype=float)
-    c2w[:3, :3] = R_wc
-    c2w[:3, 3] = center
-    return c2w
-
-
-def build_nerfstudio_camera_path(poses, out_w, out_h, intrinsics, fps):
-    intr = scale_intrinsics_to_output(intrinsics, out_w, out_h)
-    camera_path = []
-
-    for pose in poses:
-        c2w = c2w_from_center_quat(pose["pos"], pose["rot"])
-        camera_path.append({
-            "camera_to_world": c2w.tolist(),
-            "fov": None,
-            "aspect": float(out_w) / float(out_h),
-        })
-
-    return {
-        "camera_type": "perspective",
-        "render_height": int(out_h),
-        "render_width": int(out_w),
-        "fps": float(fps),
-        "seconds": float(len(poses) / fps) if fps > 0 else 0.0,
-        "smoothness_value": 0.0,
-        "is_cycle": False,
-        "camera_path": camera_path,
-        "keyframes": [],
-        "camera_intrinsics": {
-            "fx": float(intr["fx"]),
-            "fy": float(intr["fy"]),
-            "cx": float(intr["cx"]),
-            "cy": float(intr["cy"]),
-        },
-    }
-
-
 def find_ns_render():
     exe = shutil.which("ns-render")
     if exe is None:
@@ -637,12 +758,13 @@ def load_gaussian_ply(ply_path):
         rgb = np.stack([vertex["red"], vertex["green"], vertex["blue"]], axis=1).astype(np.float32) / 255.0
     elif all(k in names for k in ["f_dc_0", "f_dc_1", "f_dc_2"]):
         rgb = np.stack([vertex["f_dc_0"], vertex["f_dc_1"], vertex["f_dc_2"]], axis=1).astype(np.float32)
-        rgb = np.clip(0.5 + rgb, 0.0, 1.0)
+        rgb = np.clip(rgb, 0.0, 1.0)
     else:
         rgb = np.ones((xyz.shape[0], 3), dtype=np.float32) * 0.8
 
     if "opacity" in names:
         opacity = np.asarray(vertex["opacity"]).astype(np.float32)
+        # many gaussian splat ply export logit opacity
         opacity = 1.0 / (1.0 + np.exp(-opacity))
     else:
         opacity = np.ones((xyz.shape[0],), dtype=np.float32) * 0.7
@@ -657,8 +779,8 @@ def load_gaussian_ply(ply_path):
     return {"xyz": xyz, "rgb": rgb, "opacity": opacity, "radius": radius}
 
 
-def render_frame_cpu(gs, cam_pos, cam_quat_xyzw, fx, fy, cx, cy, width, height,
-                     znear=0.01, zfar=1e6, max_points=120000, radius_scale=120.0):
+def render_frame_cpu(gs, cam_pos, target, fx, fy, cx, cy, width, height,
+                     znear=0.01, zfar=1e6, max_points=120000, radius_scale=140.0):
     xyz = gs["xyz"]
     rgb = gs["rgb"]
     opacity = gs["opacity"]
@@ -671,10 +793,12 @@ def render_frame_cpu(gs, cam_pos, cam_quat_xyzw, fx, fy, cx, cy, width, height,
         opacity = opacity[idx]
         radius = radius[idx]
 
-    R_cw = R.from_quat(cam_quat_xyzw).as_matrix()
+    c2w = look_at_camera_to_world(cam_pos, target)
+    R_wc = c2w[:3, :3]
+    R_cw = R_wc.T
     t_cw = -R_cw @ cam_pos
-    pts_cam = (R_cw @ xyz.T).T + t_cw
 
+    pts_cam = (R_cw @ xyz.T).T + t_cw
     z = pts_cam[:, 2]
     valid = (z > znear) & (z < zfar)
     if not np.any(valid):
@@ -729,8 +853,8 @@ def render_frame_cpu(gs, cam_pos, cam_quat_xyzw, fx, fy, cx, cy, width, height,
     return (np.clip(img, 0.0, 1.0) * 255.0).astype(np.uint8)
 
 
-def render_frame_torch(gs_t, cam_pos, cam_quat_xyzw, fx, fy, cx, cy, width, height,
-                       znear=0.01, zfar=1e6, max_points=120000, radius_scale=120.0):
+def render_frame_torch(gs_t, cam_pos, target, fx, fy, cx, cy, width, height,
+                       znear=0.01, zfar=1e6, max_points=120000, radius_scale=140.0):
     device = gs_t["xyz"].device
     xyz = gs_t["xyz"]
     rgb = gs_t["rgb"]
@@ -744,11 +868,13 @@ def render_frame_torch(gs_t, cam_pos, cam_quat_xyzw, fx, fy, cx, cy, width, heig
         opacity = opacity[idx]
         radius = radius[idx]
 
-    R_cw = torch.tensor(R.from_quat(cam_quat_xyzw).as_matrix(), dtype=torch.float32, device=device)
+    c2w = look_at_camera_to_world(cam_pos, target)
+    R_wc = torch.tensor(c2w[:3, :3], dtype=torch.float32, device=device)
     cam_pos_t = torch.tensor(cam_pos, dtype=torch.float32, device=device)
+    R_cw = R_wc.T
     t_cw = -R_cw @ cam_pos_t
-    pts_cam = (R_cw @ xyz.T).T + t_cw
 
+    pts_cam = (R_cw @ xyz.T).T + t_cw
     z = pts_cam[:, 2]
     valid = (z > znear) & (z < zfar)
     if valid.sum().item() == 0:
@@ -807,13 +933,13 @@ def render_frame_torch(gs_t, cam_pos, cam_quat_xyzw, fx, fy, cx, cy, width, heig
     return (torch.clamp(img, 0.0, 1.0) * 255.0).byte().cpu().numpy()
 
 
-def render_ply_fallback(ply_path, poses, width, height, intrinsics, device="cpu"):
+def render_ply_fallback_to_video(ply_path, centers, target, width, height, intrinsics, output_path, fps, device="cpu"):
     gs = load_gaussian_ply(ply_path)
     intr = scale_intrinsics_to_output(intrinsics, width, height)
     fx, fy, cx, cy = intr["fx"], intr["fy"], intr["cx"], intr["cy"]
 
     print(f"[INFO] Using fallback PLY renderer on {device}")
-    print(f"[INFO] Rendering {len(poses)} frames")
+    print(f"[INFO] Rendering {len(centers)} frames")
 
     gs_t = None
     if device == "cuda":
@@ -824,18 +950,23 @@ def render_ply_fallback(ply_path, poses, width, height, intrinsics, device="cpu"
             "radius": torch.tensor(gs["radius"], dtype=torch.float32, device="cuda"),
         }
 
-    frames = []
-    for i, pose in enumerate(poses):
-        if i % 10 == 0 or i == len(poses) - 1:
-            print(f"[INFO] Frame {i+1}/{len(poses)}")
+    video_w = make_even(width, 16)
+    video_h = make_even(height, 16)
 
-        if device == "cuda":
-            frame = render_frame_torch(gs_t, pose["pos"], pose["rot"], fx, fy, cx, cy, width, height)
-        else:
-            frame = render_frame_cpu(gs, pose["pos"], pose["rot"], fx, fy, cx, cy, width, height)
-        frames.append(frame)
+    with imageio.get_writer(str(output_path), fps=fps, macro_block_size=16) as writer:
+        for i, center in enumerate(centers):
+            if i % 10 == 0 or i == len(centers) - 1:
+                print(f"[INFO] Frame {i+1}/{len(centers)}")
 
-    return frames
+            if device == "cuda":
+                frame = render_frame_torch(gs_t, center, target, fx, fy, cx, cy, width, height)
+            else:
+                frame = render_frame_cpu(gs, center, target, fx, fy, cx, cy, width, height)
+
+            frame = pad_frame_to_size(frame, video_w, video_h)
+            writer.append_data(frame)
+
+    print(f"[OK] Saved: {output_path}")
 
 
 # ============================================================
@@ -844,29 +975,182 @@ def render_ply_fallback(ply_path, poses, width, height, intrinsics, device="cpu"
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Render a video from COLMAP camera path using Nerfstudio or PLY fallback."
+        description=(
+            "Generate a video from a COLMAP trajectory transformed into Nerfstudio/PLY space.\n\n"
+            "Two modes:\n"
+            "  1) CUDA available  -> uses Nerfstudio/Splatfacto (recommended, true renderer)\n"
+            "  2) CPU-only / no CUDA -> uses --ply fallback renderer\n\n"
+            "Examples:\n"
+            "  CUDA / Nerfstudio:\n"
+            "    python make_colmap_video.py "
+            "--colmap /path/to/colmap/sparse/0 "
+            "--load-config /path/to/config.yml "
+            "--dataparser-transforms /path/to/dataparser_transforms.json "
+            "--output /path/to/out.mp4 "
+            "--device cuda\n\n"
+            "  CPU-only / PLY fallback:\n"
+            "    python make_colmap_video.py "
+            "--colmap /path/to/colmap/sparse/0 "
+            "--ply /path/to/model.ply "
+            "--dataparser-transforms /path/to/dataparser_transforms.json "
+            "--output /path/to/out.mp4 "
+            "--device cpu"
+        ),
+        formatter_class=argparse.RawTextHelpFormatter,
     )
-    parser.add_argument("--colmap", required=True, help="Path to COLMAP sparse model folder")
-    parser.add_argument("--output", required=True, help="Output video path (.mp4)")
-    parser.add_argument("--load-config", default=None, help="Path to Nerfstudio config.yml")
-    parser.add_argument("--checkpoint", default=None, help="Optional checkpoint path")
-    parser.add_argument("--ply", default=None, help="Optional PLY fallback renderer input")
-    parser.add_argument("--fps", type=int, default=30)
-    parser.add_argument("--duration", type=float, default=10.0)
-    parser.add_argument("--width", type=int, default=1920)
-    parser.add_argument("--height", type=int, default=1080)
-    parser.add_argument("--smoothness", type=float, default=0.2)
-    parser.add_argument("--loop", action="store_true")
-    parser.add_argument("--device", choices=["auto", "cpu", "cuda"], default="auto")
-    args = parser.parse_args()
 
+    # Core inputs
+    parser.add_argument(
+        "--colmap",
+        required=True,
+        help=(
+            "Required.\n"
+            "Path to the COLMAP sparse reconstruction folder.\n"
+            "Example: /.../colmap_table_clem_quality/colmap/sparse/0"
+        ),
+    )
+
+    parser.add_argument(
+        "--output",
+        required=True,
+        help=(
+            "Required.\n"
+            "Output video path (.mp4).\n"
+            "Example: /.../table_clem.mp4"
+        ),
+    )
+
+    parser.add_argument(
+        "--dataparser-transforms",
+        default=None,
+        help=(
+            "Optional but strongly recommended.\n"
+            "Path to dataparser_transforms.json used to map COLMAP space -> final Nerfstudio/PLY space.\n"
+            "If omitted, the script tries to auto-find it."
+        ),
+    )
+
+    # Nerfstudio / CUDA path
+    parser.add_argument(
+        "--load-config",
+        default=None,
+        help=(
+            "Optional.\n"
+            "Path to Nerfstudio config.yml.\n"
+            "Needed for the true Nerfstudio/Splatfacto rendering path (CUDA mode).\n"
+            "If omitted, the script tries to auto-find it."
+        ),
+    )
+
+    parser.add_argument(
+        "--checkpoint",
+        default=None,
+        help=(
+            "Optional.\n"
+            "Path to a specific Nerfstudio checkpoint (.ckpt).\n"
+            "If omitted, the script tries to auto-find the latest checkpoint near config.yml."
+        ),
+    )
+
+    # CPU / fallback path
+    parser.add_argument(
+        "--ply",
+        default=None,
+        help=(
+            "Optional.\n"
+            "Path to the fallback PLY model.\n"
+            "Required when running on CPU-only / no-CUDA machines, or whenever Nerfstudio rendering "
+            "cannot be used."
+        ),
+    )
+
+    # Video / trajectory settings
+    parser.add_argument(
+        "--fps",
+        type=int,
+        default=30,
+        help="Optional. Output video FPS. Default: 30",
+    )
+
+    parser.add_argument(
+        "--duration",
+        type=float,
+        default=10.0,
+        help="Optional. Video duration in seconds. Default: 10.0",
+    )
+
+    parser.add_argument(
+        "--width",
+        type=int,
+        default=1920,
+        help="Optional. Output width before macroblock padding. Default: 1920",
+    )
+
+    parser.add_argument(
+        "--height",
+        type=int,
+        default=1080,
+        help="Optional. Output height before macroblock padding. Default: 1080",
+    )
+
+    parser.add_argument(
+        "--smoothness",
+        type=float,
+        default=0.2,
+        help=(
+            "Optional. Spline smoothing strength for the camera path.\n"
+            "Lower = closer to raw COLMAP cameras. Higher = smoother trajectory.\n"
+            "Default: 0.2"
+        ),
+    )
+
+    parser.add_argument(
+        "--loop",
+        action="store_true",
+        help="Optional. Close the trajectory into a loop before resampling.",
+    )
+
+    parser.add_argument(
+        "--target-mode",
+        choices=["points", "cameras"],
+        default="points",
+        help=(
+            "Optional. Camera look-at target source.\n"
+            "  points  = look toward scene points centroid/median (default)\n"
+            "  cameras = look toward camera centers centroid/median"
+        ),
+    )
+
+    # Device choice
+    parser.add_argument(
+        "--device",
+        choices=["auto", "cpu", "cuda"],
+        default="auto",
+        help=(
+            "Optional. Rendering device selection.\n"
+            "  auto = use CUDA if available, else CPU\n"
+            "  cpu  = force CPU\n"
+            "  cuda = force CUDA\n"
+            "Default: auto"
+        ),
+    )
+
+    args = parser.parse_args()
     device = resolve_device(args.device)
     print(f"[INFO] Selected device: {device}")
 
     output_path = Path(args.output).expanduser()
-    colmap_path = resolve_moved_path(args.colmap, args.colmap, output_path, args.ply, args.checkpoint, args.load_config)
-    ply_path = resolve_moved_path(args.ply, colmap_path, output_path, args.ply, args.checkpoint, args.load_config) if args.ply else None
-    checkpoint_path = resolve_moved_path(args.checkpoint, colmap_path, output_path, args.ply, args.checkpoint, args.load_config) if args.checkpoint else None
+    colmap_path = resolve_moved_path(args.colmap, args.colmap, output_path, args.ply, args.checkpoint, args.load_config, args.dataparser_transforms)
+    ply_path = resolve_moved_path(args.ply, colmap_path, output_path, args.ply, args.checkpoint, args.load_config, args.dataparser_transforms) if args.ply else None
+    checkpoint_path = resolve_moved_path(args.checkpoint, colmap_path, output_path, args.ply, args.checkpoint, args.load_config, args.dataparser_transforms) if args.checkpoint else None
+    dataparser_transforms_path = auto_find_dataparser_transforms(
+        args.dataparser_transforms, colmap_path, output_path, args.ply, args.checkpoint, args.load_config
+    )
+    if dataparser_transforms_path is None:
+        raise RuntimeError("Could not find dataparser_transforms.json")
+
+    print(f"[INFO] Using dataparser transforms: {dataparser_transforms_path}")
+    R_ns, t_ns, scale_ns = load_dataparser_transform(dataparser_transforms_path)
 
     config_path = auto_find_config(
         args.load_config,
@@ -874,6 +1158,7 @@ def main():
         checkpoint=checkpoint_path,
         output_path=output_path,
         ply_path=ply_path,
+        dataparser_transforms=dataparser_transforms_path,
     )
 
     use_nerfstudio = config_path is not None
@@ -883,7 +1168,6 @@ def main():
         checkpoint_path = auto_find_checkpoint(config_path, checkpoint_path)
         print(f"[INFO] Found checkpoint: {checkpoint_path}")
 
-        # Splatfacto in this environment is CUDA-only.
         if device != "cuda":
             if ply_path is not None:
                 print("[WARN] CUDA unavailable; forcing PLY fallback instead of Nerfstudio.")
@@ -892,27 +1176,39 @@ def main():
                 raise RuntimeError(
                     "Nerfstudio Splatfacto requires CUDA in this environment, "
                     "but PyTorch CUDA is not available. "
-                    "Provide --ply for CPU fallback or run on a CUDA machine."
+                    "Provide --ply for fallback or run on a CUDA machine."
                 )
     elif ply_path is not None:
         print("[WARN] No Nerfstudio config found, falling back to PLY renderer.")
     else:
         raise RuntimeError("No Nerfstudio config found and no --ply provided.")
 
-    cam_centers, quats, intrinsics = load_colmap_poses_and_camera(
+    cam_centers_colmap, intrinsics = load_colmap_camera_centers_and_intrinsics(
         colmap_path, args.width, args.height
     )
 
-    if len(cam_centers) < 2:
+    if len(cam_centers_colmap) < 2:
         raise RuntimeError("Not enough COLMAP poses")
 
+    cam_centers_final = apply_ns_transform_points(cam_centers_colmap, R_ns, t_ns, scale_ns)
+
     if args.loop:
-        cam_centers, quats = make_loop(cam_centers, quats)
+        cam_centers_final = make_loop(cam_centers_final)
 
     n_frames = max(1, int(args.fps * args.duration))
-    traj = resample_by_arclength(cam_centers, n_frames, smoothness=args.smoothness)
-    rot = interpolate_rotations(quats, n_frames)
-    poses = [{"pos": traj[i], "rot": rot[i]} for i in range(n_frames)]
+    traj_centers = resample_by_arclength(cam_centers_final, n_frames, smoothness=args.smoothness)
+
+    points3d_bin = Path(colmap_path) / "points3D.bin"
+    if points3d_bin.exists():
+        scene_points_colmap = load_colmap_points3d_bin(points3d_bin)
+        scene_points_final = apply_ns_transform_points(scene_points_colmap, R_ns, t_ns, scale_ns)
+    else:
+        scene_points_final = np.zeros((0, 3), dtype=np.float32)
+
+    if args.target_mode == "points" and len(scene_points_final) > 0:
+        target = np.median(scene_points_final, axis=0)
+    else:
+        target = np.median(cam_centers_final, axis=0)
 
     video_w = make_even(args.width, 16)
     video_h = make_even(args.height, 16)
@@ -923,7 +1219,8 @@ def main():
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         payload = build_nerfstudio_camera_path(
-            poses=poses,
+            centers=traj_centers,
+            target=target,
             out_w=video_w,
             out_h=video_h,
             intrinsics=intrinsics,
@@ -946,17 +1243,20 @@ def main():
         print(f"[OK] Saved: {output_path}")
         return
 
-    frames = render_ply_fallback(
+    if ply_path is None:
+        raise RuntimeError("PLY fallback requested but no --ply was provided.")
+
+    render_ply_fallback_to_video(
         ply_path=ply_path,
-        poses=poses,
+        centers=traj_centers,
+        target=target,
         width=args.width,
         height=args.height,
         intrinsics=intrinsics,
+        output_path=output_path,
+        fps=args.fps,
         device=device,
     )
-    frames = [pad_frame_to_size(f, video_w, video_h) for f in frames]
-    imageio.mimsave(str(output_path), frames, fps=args.fps, macro_block_size=16)
-    print(f"[OK] Saved: {output_path}")
 
 
 if __name__ == "__main__":
