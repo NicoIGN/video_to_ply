@@ -11,7 +11,7 @@
 #SBATCH -e /mnt/common/hdd/slurm/logs/gsplat-%j.err
 
 set -e
-set -x
+# set -x
 
 # =========================
 # LOAD USER CONFIG
