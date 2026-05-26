@@ -1,0 +1,21 @@
+(gsplat) nbellaiche@pc-46 cleaning % python clean_gaussian_ply.py \
+  --input /Users/nbellaiche/Downloads/soldat_experiment.ply \
+  --output /Users/nbellaiche/Downloads/soldat_experiment_cleaned5.ply \
+  --min-opacity 0.01 \
+  --max-scale-percentile 95.0 \
+  --center-percentile 80 \
+  --voxel-grid-size 50 \
+  --scene-type balanced \
+  --border-strictness 0.9 \
+  --distance-mode planar-aware
+
+python clean_gaussian_ply.py \
+  --input /Users/nbellaiche/Downloads/table_clem/table_clem_quality.ply \
+  --output /Users/nbellaiche/Downloads/table_clem/table_clem_quality_cleaned4.ply \
+  --min-opacity 0.005 \
+  --max-scale-percentile 99.5 \
+  --center-percentile 99.5 \
+  --voxel-grid-size 50 \
+  --scene-type wide \
+  --border-strictness 0.05 \
+  --distance-mode euclidean
