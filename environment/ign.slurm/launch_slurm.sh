@@ -10,7 +10,7 @@
 #SBATCH -o /mnt/common/hdd/slurm/logs/gsplat-%j.out
 #SBATCH -e /mnt/common/hdd/slurm/logs/gsplat-%j.err
 
-set -euo pipefail
+set -e
 set -x
 
 # =========================
@@ -49,7 +49,13 @@ cd "$HOME_SLURM/video_to_ply"
 # =========================
 # CONDA ENV
 # =========================
-eval "$(conda shell.bash hook)"
+CONDA_BASE=$(conda info --base 2>/dev/null || echo "")
+if [ -z "$CONDA_BASE" ]; then
+    echo "❌ conda not found"
+    exit 1
+fi
+
+source "$CONDA_BASE/etc/profile.d/conda.sh"
 conda activate gsplat
 
 # =========================
