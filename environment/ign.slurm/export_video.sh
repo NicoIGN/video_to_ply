@@ -182,7 +182,7 @@ trap cleanup EXIT
 # =========================
 # RUN RENDER
 # =========================
-srun -vv python "$SCRIPT_PATH" \
+srun -v python "$SCRIPT_PATH" \
   --colmap "$COLMAP_DIR" \
   --load-config "$LOAD_CONFIG" \
   --fps "$FPS" \
