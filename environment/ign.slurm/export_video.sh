@@ -26,7 +26,7 @@ OUTPUT_PATH="${OUTPUT_PATH:-$SCENE_ROOT/exports/video.mov}"
 # =========================
 # SLURM / ENV
 # =========================
-export SRUN_CPUS_PER_TASK=12
+export SRUN_CPUS_PER_TASK=4
 export NCCL_BLOCKING_WAIT=1
 export NCCL_ASYNC_ERROR_HANDLING=1
 
