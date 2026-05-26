@@ -338,8 +338,8 @@ if [[ "$DEVICE" == "gpu" ]]; then
     else
         add_arg MODEL_ARGS       --pipeline.datamanager.camera-res-scale-factor "$CAMERA_RES_SCALE_FACTOR"
         add_arg MODEL_ARGS       --pipeline.datamanager.dataparser.downscale-factor "$DOWNSCALE_FACTOR"
-        add_arg MODEL_ARGS       --pipeline.datamanager.cache-images gpu
-        add_bool_arg MODEL_ARGS  --pipeline.datamanager.images-on-gpu True
+        add_arg MODEL_ARGS       --pipeline.datamanager.cache-images cpu
+        add_bool_arg MODEL_ARGS  --pipeline.datamanager.images-on-gpu False
         add_bool_arg MODEL_ARGS  --pipeline.datamanager.masks-on-gpu False
         add_arg MODEL_ARGS       --pipeline.model.densify-grad-thresh "$DENSIFY_GRAD_THRESH"
         add_arg MODEL_ARGS       --pipeline.model.cull-alpha-thresh "$CULL_ALPHA_THRESH"
