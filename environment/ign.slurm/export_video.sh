@@ -2,10 +2,10 @@
 #SBATCH --job-name=colmap-video
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=8
+#SBATCH --cpus-per-task=4
 #SBATCH --gres=gpu:1
-#SBATCH --mem=16G
-#SBATCH --time=04:00:00
+#SBATCH --mem=4G
+#SBATCH --time=01:00:00
 #SBATCH --partition=jean-zellou
 #SBATCH -o /mnt/common/hdd/slurm/logs/colmap-video-%j.out
 #SBATCH -e /mnt/common/hdd/slurm/logs/colmap-video-%j.err
