@@ -35,12 +35,15 @@ dependencies:
   - ffmpeg
   - imageio
   - imageio-ffmpeg
-
+  - rasterio
+  - libgdal-jp2openjpeg
+  
   # Geometry / SfM
   - colmap=3.8
   - pycolmap
   - faiss-cpu
   - plyfile
+  - laspy
 
   # Graphics
   - glew
