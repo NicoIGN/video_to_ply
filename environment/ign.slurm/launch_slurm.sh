@@ -2,7 +2,7 @@
 #SBATCH --job-name=gsplat
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=12
+#SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:1
 #SBATCH --mem=16G
 #SBATCH --time=04:00:00
@@ -21,7 +21,7 @@ source config.sh
 # =========================
 # SRUN / SLURM SETTINGS
 # =========================
-export SRUN_CPUS_PER_TASK=12
+export SRUN_CPUS_PER_TASK=8
 export NCCL_BLOCKING_WAIT=1
 export NCCL_ASYNC_ERROR_HANDLING=1
 
@@ -143,7 +143,7 @@ trap cleanup EXIT
 # =========================
 # RUN TRAINING
 # =========================
-srun -vv bash run.sh \
+srun -v bash run.sh \
   --root "$ROOTDIR" \
   --name "$BASENAME" \
   --video "$VIDEOSOURCE" \
