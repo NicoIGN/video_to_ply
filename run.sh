@@ -63,11 +63,11 @@ cd $SCRIPT_DIR
 # INPUT MODE
 # ======================
 INPUT_MODE="video"
-VIDEO=""
+#VIDEO=""
+VIDEOS=()
+NUM_FRAMES_LIST=()
+FPS_LIST=()
 IMAGES=""
-
-unset FPS
-unset NUM_FRAMES
 
 # ======================
 # HELP
@@ -132,10 +132,34 @@ EOF
 # ======================
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --video) VIDEO="$2"; INPUT_MODE="video"; shift 2 ;;
     --images) IMAGES="$2"; INPUT_MODE="images"; shift 2 ;;
-    --num-frames) NUM_FRAMES="$2"; shift 2 ;;
-    --fps) FPS="$2"; shift 2 ;;
+    --video)
+        INPUT_MODE="video"
+        shift
+
+        while [[ $# -gt 0 && "$1" != --* ]]; do
+            VIDEOS+=("$1")
+            shift
+        done
+        ;;
+
+    --num-frames)
+        shift
+
+        while [[ $# -gt 0 && "$1" != --* ]]; do
+            NUM_FRAMES_LIST+=("$1")
+            shift
+        done
+        ;;
+
+    --fps)
+        shift
+
+        while [[ $# -gt 0 && "$1" != --* ]]; do
+            FPS_LIST+=("$1")
+            shift
+        done
+        ;;
     --preprocess-profile) PREPROCESS_PROFILE="$2"; shift 2 ;;
     --gsplat-profile) GSPLAT_PROFILE="$2"; shift 2 ;;
     --max-jobs) MAX_JOBS="$2"; shift 2 ;;
@@ -171,15 +195,43 @@ BASENAME=${BASENAME:-gsplat_$(date +%Y%m%d_%H%M%S)}
 
 case "$INPUT_MODE" in
   video)
-    if [ -z "$VIDEO" ]; then
+    if [ ${#VIDEOS[@]} -eq 0 ]; then
       echo "❌ --video is required in $INPUT_MODE mode"
       exit 1
     fi
 
-    if [ ! -f "$VIDEO" ]; then
-      echo "❌ Video not found: $VIDEO"
-      exit 1
+    for VIDEO in "${VIDEOS[@]}"; do
+        if [ ! -f "$VIDEO" ]; then
+            echo "❌ Video not found: $VIDEO"
+            exit 1
+        fi
+    done
+    
+    if [ ${#NUM_FRAMES_LIST[@]} -gt 0 ] && \
+       [ ${#NUM_FRAMES_LIST[@]} -ne ${#VIDEOS[@]} ]; then
+
+        echo "❌ Number of videos and num-frame values differ"
+        echo "   videos     : ${#VIDEOS[@]}"
+        echo "   num-frames : ${#NUM_FRAMES_LIST[@]}"
+        exit 1
     fi
+
+    if [ ${#FPS_LIST[@]} -gt 0 ] && \
+       [ ${#FPS_LIST[@]} -ne ${#VIDEOS[@]} ]; then
+
+        echo "❌ Number of videos and fps values differ"
+        echo "   videos : ${#VIDEOS[@]}"
+        echo "   fps    : ${#FPS_LIST[@]}"
+        exit 1
+    fi
+
+    if [ ${#NUM_FRAMES_LIST[@]} -gt 0 ] && \
+       [ ${#FPS_LIST[@]} -gt 0 ]; then
+
+        echo "❌ Use either --fps or --num-frames"
+        exit 1
+    fi
+    
     ;;
 
   images)
@@ -367,16 +419,33 @@ OUTPUT_DIR="$ROOT_DIR/model3d"
 EXPORT_DIR="$ROOT_DIR/exports"
 TRAIN_DIR="$ROOT_DIR"
 
-mkdir -p "$INPUT_DIR/images" "$IMAGE_DIR" "$OUTPUT_DIR" "$EXPORT_DIR" "$TRAIN_DIR"
+mkdir -p "$INPUT_DIR/images" "$INPUT_DIR/videos" "$IMAGE_DIR" "$OUTPUT_DIR" "$EXPORT_DIR" "$TRAIN_DIR"
+
+VIDEOS_IMPORTED=()
+INDEX=0
 
 # copy input dataset
 case "$INPUT_MODE" in
   video)
-    if [ ! -f "$INPUT_DIR/video.mov" ]; then
-      cp "$VIDEO" "$INPUT_DIR/video.mov"
-    fi
-    VIDEO="$INPUT_DIR/video.mov"
-    ;;
+    VIDEOS_IMPORTED=()
+
+    INDEX=0
+
+    for VIDEO in "${VIDEOS[@]}"; do
+
+        EXT="${VIDEO##*.}"
+
+        DEST="$INPUT_DIR/videos/video_${INDEX}.${EXT}"
+
+        cp "$VIDEO" "$DEST"
+
+        VIDEOS_IMPORTED+=("$DEST")
+
+        ((INDEX++))
+
+    done
+
+    VIDEOS=("${VIDEOS_IMPORTED[@]}")
 
   images)
     echo "🖼️ Importing images from: $IMAGES"
@@ -432,27 +501,57 @@ case "$INPUT_MODE" in
 
     else
 
-      # optional trim env vars
-      EXTRA_ENV=()
+        # optional trim env vars
+        EXTRA_ENV=()
 
-      [[ -n "${VIDEO_START:-}" ]] && EXTRA_ENV+=(VIDEO_START="$VIDEO_START")
-      [[ -n "${VIDEO_END:-}" ]] && EXTRA_ENV+=(VIDEO_END="$VIDEO_END")
+        [[ -n "${VIDEO_START:-}" ]] && EXTRA_ENV+=(VIDEO_START="$VIDEO_START")
+        [[ -n "${VIDEO_END:-}" ]] && EXTRA_ENV+=(VIDEO_END="$VIDEO_END")
 
-      # extraction mode
-      if [[ -n "${FPS:-}" ]]; then
-        EXTRA_ENV+=(FPS="$FPS")
-        echo "🎬 Extracting frames at ${FPS} FPS → $INPUT_DIR/images"
 
-      else
-        EXTRA_ENV+=(NUM_FRAMES="$NUM_FRAMES")
-        echo "🎬 Extracting $NUM_FRAMES sharp frames → $INPUT_DIR/images"
-      fi
+        START_INDEX=0
 
-      env \
-        IMAGE_DIR="$IMAGE_DIR" \
-        VIDEO="$VIDEO" \
-        "${EXTRA_ENV[@]}" \
-        bash scripts/extract_frames.sh
+        for ((i=0; i<${#VIDEOS[@]}; i++)); do
+
+            VIDEO="${VIDEOS[$i]}"
+
+            echo ""
+            echo "🎬 Processing: $VIDEO"
+            echo "🔢 START_INDEX=$START_INDEX"
+
+            EXTRA_ENV_VIDEO=("${EXTRA_ENV[@]}")
+
+            if [ ${#NUM_FRAMES_LIST[@]} -gt 0 ]; then
+
+                NUM_FRAMES="${NUM_FRAMES_LIST[$i]}"
+
+                EXTRA_ENV_VIDEO+=(
+                    NUM_FRAMES="$NUM_FRAMES"
+                )
+
+                echo "🎯 NUM_FRAMES=$NUM_FRAMES"
+
+            elif [ ${#FPS_LIST[@]} -gt 0 ]; then
+
+                FPS="${FPS_LIST[$i]}"
+
+                EXTRA_ENV_VIDEO+=(
+                    FPS="$FPS"
+                )
+
+                echo "🎯 FPS=$FPS"
+            fi
+
+            env \
+                IMAGE_DIR="$IMAGE_DIR" \
+                VIDEO="$VIDEO" \
+                START_INDEX="$START_INDEX" \
+                "${EXTRA_ENV_VIDEO[@]}" \
+                bash scripts/extract_frames.sh
+
+            START_INDEX=$(find "$IMAGE_DIR" \
+                -name "frame_*.png" | wc -l | tr -d ' ')
+
+        done
 
     fi
     ;;

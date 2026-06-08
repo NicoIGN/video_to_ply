@@ -25,6 +25,7 @@ NUM_FRAMES="${NUM_FRAMES:-}"
 VIDEO_START="${VIDEO_START:-}"
 VIDEO_END="${VIDEO_END:-}"
 
+START_INDEX="${START_INDEX:-0}"
 # ======================
 # SCALE LOGIC
 # ======================
@@ -82,6 +83,11 @@ if end <= start:
 EOF
 fi
 
+if ! [[ "$START_INDEX" =~ ^[0-9]+$ ]]; then
+    echo "❌ START_INDEX must be a positive integer"
+    exit 1
+fi
+
 mkdir -p "$IMAGE_DIR"
 mkdir -p "$TMP_DIR"
 
@@ -98,6 +104,8 @@ fi
 if [[ -n "$VIDEO_END" ]]; then
     echo "⏹️ VIDEO_END: ${VIDEO_END}s"
 fi
+
+echo "🔢 START_INDEX: $START_INDEX"
 
 # ======================
 # COMPUTE EFFECTIVE DURATION
@@ -197,9 +205,11 @@ EOF
     python3 "$SCRIPT_DIR/filter_frames.py" \
         --tmp_dir "$TMP_DIR" \
         --out_dir "$IMAGE_DIR" \
+        --start_index "$START_INDEX" \
         --num_frames "$NUM_FRAMES"
 
 fi
+
 
 rm -rf "$TMP_DIR"
 
