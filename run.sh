@@ -441,7 +441,7 @@ case "$INPUT_MODE" in
 
         VIDEOS_IMPORTED+=("$DEST")
 
-        ((INDEX++))
+        INDEX=$((INDEX + 1))
 
     done
 
