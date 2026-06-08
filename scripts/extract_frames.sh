@@ -91,7 +91,13 @@ fi
 mkdir -p "$IMAGE_DIR"
 mkdir -p "$TMP_DIR"
 
-rm -f "$IMAGE_DIR"/frame_*.png
+if [[ "${START_INDEX:-0}" -eq 0 ]]; then
+    echo "🧹 Cleaning existing frames"
+    rm -f "$IMAGE_DIR"/frame_*.png
+else
+    echo "⏩ START_INDEX=$START_INDEX, keeping existing frames"
+fi
+
 rm -f "$TMP_DIR"/frame_*.png
 
 echo "🎬 Video: $VIDEO"
