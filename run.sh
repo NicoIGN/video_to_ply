@@ -446,7 +446,8 @@ case "$INPUT_MODE" in
     done
 
     VIDEOS=("${VIDEOS_IMPORTED[@]}")
-
+    ;;
+    
   images)
     echo "🖼️ Importing images from: $IMAGES"
 
