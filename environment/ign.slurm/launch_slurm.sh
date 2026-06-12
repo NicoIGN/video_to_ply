@@ -146,10 +146,10 @@ trap cleanup EXIT
 srun -v bash run.sh \
   --root "$ROOTDIR" \
   --name "$BASENAME" \
-  --video "$VIDEOSOURCE" \
+  --video $VIDEOSOURCE \
   --skip-conda \
   --preprocess-profile "$PREPROCESS_PROFILE" \
   --gsplat-profile "$GSPLAT_PROFILE" \
-  --num-frames "$NUM_FRAMES"
+  --num-frames $NUM_FRAMES
 
 echo "✅ Job complete"
