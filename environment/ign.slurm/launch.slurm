@@ -22,7 +22,7 @@ source $CONFIG_SH
 # =========================
 # SRUN / SLURM SETTINGS
 # =========================
-export SRUN_CPUS_PER_TASK=8
+export SRUN_CPUS_PER_TASK=4
 export NCCL_BLOCKING_WAIT=1
 export NCCL_ASYNC_ERROR_HANDLING=1
 VERBOSE="${VERBOSE:-false}"
