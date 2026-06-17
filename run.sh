@@ -448,41 +448,57 @@ case "$INPUT_MODE" in
     VIDEOS=("${VIDEOS_IMPORTED[@]}")
     ;;
     
-  images)
-    echo "🖼️ Importing images from: $IMAGES"
+    images)
+      echo "🖼️ Importing images from: $IMAGES"
 
-    mkdir -p "$INPUT_DIR/images"
+      mkdir -p "$INPUT_DIR/images"
 
-    if [ ! -d "$IMAGES" ]; then
-      echo "❌ Images directory not found: $IMAGES"
-      exit 1
-    fi
+      if [[ ! -d "$IMAGES" ]]; then
+        echo "❌ Images directory not found: $IMAGES"
+        exit 1
+      fi
 
-    SOURCE_COUNT=$(find "$IMAGES" -maxdepth 1 -type f \
-      \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) | wc -l)
+      mapfile -t SOURCE_IMAGES < <(
+        find "$IMAGES" -maxdepth 1 -type f \
+          \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) \
+          | sort
+      )
 
-    TARGET_COUNT=$(find "$INPUT_DIR/images" -maxdepth 1 -type f \
-      \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) | wc -l)
+      SOURCE_COUNT="${#SOURCE_IMAGES[@]}"
+      TARGET_COUNT=$(find "$INPUT_DIR/images" -maxdepth 1 -type f -iname "frame_*.png" | wc -l)
 
-    if [ "$SOURCE_COUNT" -eq 0 ]; then
-      echo "❌ No images found in: $IMAGES"
-      exit 1
-    fi
+      if [[ "$SOURCE_COUNT" -eq 0 ]]; then
+        echo "❌ No images found in: $IMAGES"
+        exit 1
+      fi
 
-    if [ "$TARGET_COUNT" -eq "$SOURCE_COUNT" ]; then
-      echo "⏩ All images already imported in $INPUT_DIR/images, skipping copy"
-    else
-      echo "📥 Copying $SOURCE_COUNT images to $INPUT_DIR/images"
-      find "$IMAGES" -maxdepth 1 -type f \
-        \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) \
-        -exec cp {} "$INPUT_DIR/images"/ \;
-    fi
-    ;;
+      if [[ "$TARGET_COUNT" -eq "$SOURCE_COUNT" ]]; then
+        echo "⏩ All images already imported in $INPUT_DIR/images as frame_XXXXX.png, skipping conversion"
+      else
+        echo "📥 Converting $SOURCE_COUNT images to PNG in $INPUT_DIR/images"
 
-  *)
-    echo "❌ Invalid INPUT_MODE: $INPUT_MODE"
-    exit 1
-    ;;
+        # Nettoyage pour éviter mélange ancien/nouveau contenu
+        find "$INPUT_DIR/images" -maxdepth 1 -type f -iname "frame_*.png" -delete
+
+        INDEX=1
+        for SRC in "${SOURCE_IMAGES[@]}"; do
+          DEST=$(printf "%s/images/frame_%05d.png" "$INPUT_DIR" "$INDEX")
+
+          echo "   → $(basename "$SRC") -> $(basename "$DEST")"
+
+          if command -v magick >/dev/null 2>&1; then
+            magick "$SRC" "$DEST"
+          elif command -v convert >/dev/null 2>&1; then
+            convert "$SRC" "$DEST"
+          else
+            echo "❌ Neither 'magick' nor 'convert' is available. Install ImageMagick."
+            exit 1
+          fi
+
+          INDEX=$((INDEX + 1))
+        done
+      fi
+      ;;
 esac
 
 echo "📦 ROOT: $ROOT_DIR"
