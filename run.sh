@@ -459,7 +459,7 @@ case "$INPUT_MODE" in
     elif [ -d "$IMAGE_DIR" ] && [ "$(ls -A "$IMAGE_DIR" 2>/dev/null)" ]; then
       echo "⏩ Skipping image preparation"
     else
-      echo "🖼️ Preparing images → $IMAGE_DIR"
+      echo "🖼️ Preparing images from $IMAGES → $IMAGE_DIR"
       bash scripts/prepare_images.sh "$IMAGES" "$IMAGE_DIR"
     fi
     ;;
