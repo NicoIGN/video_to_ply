@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-export VERBOSE="${VERBOSE:-false}"
+VERBOSE="${VERBOSE:-true}"
 
 # Usage:
 # GIT_ROOT=/path/to/video_to_ply ./submit.sh
