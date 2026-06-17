@@ -105,6 +105,8 @@ export MPLBACKEND=Agg
 export OMP_NUM_THREADS=1
 export MKL_NUM_THREADS=1
 export TORCH_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+export NUMEXPR_NUM_THREADS=1
 
 # Variables optionnelles conservées côté GPU app si besoin plus tard,
 # mais ici on force ns-process-data en no-gpu dans tous les cas.
