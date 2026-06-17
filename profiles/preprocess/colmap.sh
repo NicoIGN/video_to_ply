@@ -18,7 +18,7 @@ NUM_DOWNSCALES=1
 # 0 | 1 | 2 | 3
 # → + haut = moins de détails mais plus stable
 
-SKIP_IMAGE_PROCESSING=true
+SKIP_IMAGE_PROCESSING=false
 # true | false
 # → évite resize/copie images si déjà préparées
 
