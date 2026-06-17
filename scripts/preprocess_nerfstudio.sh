@@ -112,6 +112,10 @@ export MESA_GLSL_VERSION_OVERRIDE=330
 # Évite certains plantages EGL
 export PYOPENGL_PLATFORM=osmesa
 
+#force gpu a 0 pour colmap
+if [[ "$COLMAP_CMD" == "colmap" ]]; then
+    export COLMAP_USE_GPU=0
+fi
 
 if [[ "$DEVICE" == "cpu" ]]; then
   echo "🧠 CPU MODE"
@@ -119,7 +123,7 @@ if [[ "$DEVICE" == "cpu" ]]; then
   export MPLBACKEND=Agg
   export CUDA_VISIBLE_DEVICES=""
   export OMP_NUM_THREADS=1
-  export COLMAP_USE_GPU=0
+
 
 else
   export OMP_NUM_THREADS=3
