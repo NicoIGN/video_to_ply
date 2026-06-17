@@ -99,40 +99,18 @@ export MESA_GL_VERSION_OVERRIDE=3.3
 export MESA_GLSL_VERSION_OVERRIDE=330
 export PYOPENGL_PLATFORM=osmesa
 
-# ======================
-# CPU/GPU MODE
-# ======================
-WRAP_DIR="$OUTPUT_DIR/bin"
-mkdir -p "$WRAP_DIR"
+# Forcer environnement CPU pour éviter COLMAP GPU/OpenGL
+export CUDA_VISIBLE_DEVICES=""
+export MPLBACKEND=Agg
+export OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+export TORCH_NUM_THREADS=1
 
-REAL_COLMAP="${COLMAP_CMD:-colmap}"
-
-if [[ "$DEVICE" == "cpu" ]]; then
-  echo "🧠 CPU MODE"
-  export LIBGL_ALWAYS_SOFTWARE=1
-  export MPLBACKEND=Agg
-  export CUDA_VISIBLE_DEVICES=""
-  export OMP_NUM_THREADS=1
-  export MKL_NUM_THREADS=1
-  export TORCH_NUM_THREADS=1
-
-  # Wrapper pour forcer COLMAP en CPU
-  cat > "$WRAP_DIR/colmap" <<EOF
-#!/bin/bash
-exec "$REAL_COLMAP" "\$@" --SiftExtraction.use_gpu 0 --SiftMatching.use_gpu 0
-EOF
-  chmod +x "$WRAP_DIR/colmap"
-
-  export PATH="$WRAP_DIR:$PATH"
-  COLMAP_CMD="colmap"
-else
-  echo "🚀 GPU MODE"
-  export OMP_NUM_THREADS=3
-  export MKL_NUM_THREADS=3
-  export TORCH_NUM_THREADS=3
+# Variables optionnelles conservées côté GPU app si besoin plus tard,
+# mais ici on force ns-process-data en no-gpu dans tous les cas.
+if [[ "$DEVICE" == "gpu" ]]; then
   export DATASET_WORKERS=3
   export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-  COLMAP_CMD="${COLMAP_CMD:-colmap}"
 fi
 
 # ======================
@@ -149,10 +127,10 @@ set +e
 
 ARGS=()
 
-if [[ "$DEVICE" == "cpu" ]]; then
-  ARGS+=("--no-gpu")
+# Force no-gpu quoi qu'il arrive
+if [[ "$COLMAP_CMD" == "colmap" ]]; then
+    ARGS+=("--no-gpu")
 fi
-
 # ======================
 # REQUIRED
 # ======================
