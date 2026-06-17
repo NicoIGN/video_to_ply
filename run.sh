@@ -448,57 +448,26 @@ case "$INPUT_MODE" in
     VIDEOS=("${VIDEOS_IMPORTED[@]}")
     ;;
     
-    images)
-      echo "🖼️ Importing images from: $IMAGES"
+ images)
+    if [ ! -d "$IMAGES" ]; then
+      echo "❌ Images directory not found: $IMAGES"
+      exit 1
+    fi
 
-      mkdir -p "$IMAGE_DIR"
+    if [ "$SKIP_FRAME_EXTRACTION" = true ]; then
+      echo "⏩ Skipping image preparation (config)"
+    elif [ -d "$IMAGE_DIR" ] && [ "$(ls -A "$IMAGE_DIR" 2>/dev/null)" ]; then
+      echo "⏩ Skipping image preparation"
+    else
+      echo "🖼️ Preparing images → $IMAGE_DIR"
+      bash scripts/prepare_images.sh "$IMAGES" "$IMAGE_DIR"
+    fi
+    ;;
 
-      if [[ ! -d "$IMAGES" ]]; then
-        echo "❌ Images directory not found: $IMAGES"
-        exit 1
-      fi
-
-      mapfile -t SOURCE_IMAGES < <(
-        find "$IMAGES" -maxdepth 1 -type f \
-          \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) \
-          | sort
-      )
-
-      SOURCE_COUNT="${#SOURCE_IMAGES[@]}"
-      TARGET_COUNT=$(find "$IMAGE_DIR" -maxdepth 1 -type f -iname "frame_*.png" | wc -l)
-
-      if [[ "$SOURCE_COUNT" -eq 0 ]]; then
-        echo "❌ No images found in: $IMAGES"
-        exit 1
-      fi
-
-      if [[ "$TARGET_COUNT" -eq "$SOURCE_COUNT" ]]; then
-        echo "⏩ All images already imported in $IMAGE_DIR as frame_XXXXX.png, skipping conversion"
-      else
-        echo "📥 Converting $SOURCE_COUNT images to PNG in $IMAGE_DIR"
-
-        # Nettoyage pour éviter mélange ancien/nouveau contenu
-        find "$IMAGE_DIR" -maxdepth 1 -type f -iname "frame_*.png" -delete
-
-        INDEX=1
-        for SRC in "${SOURCE_IMAGES[@]}"; do
-          DEST=$(printf "%s/frame_%05d.png" "$IMAGE_DIR" "$INDEX")
-
-          echo "   → $(basename "$SRC") -> $(basename "$DEST")"
-
-          if command -v magick >/dev/null 2>&1; then
-            magick "$SRC" "$DEST"
-          elif command -v convert >/dev/null 2>&1; then
-            convert "$SRC" "$DEST"
-          else
-            echo "❌ Neither 'magick' nor 'convert' is available. Install ImageMagick."
-            exit 1
-          fi
-
-          INDEX=$((INDEX + 1))
-        done
-      fi
-      ;;
+  *)
+    echo "❌ Invalid INPUT_MODE: $INPUT_MODE"
+    exit 1
+    ;;
 esac
 
 echo "📦 ROOT: $ROOT_DIR"

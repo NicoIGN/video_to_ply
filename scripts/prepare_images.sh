@@ -1,90 +1,114 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # ======================
-# LOAD CONFIG
+# PATHS
 # ======================
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/../config/config.sh"
 
-SRC_DIR="$1"
+SRC_DIR="${1:-}"
 OUT_DIR="${2:-dataset/images}"
 
 # ======================
 # CHECKS
 # ======================
-if [ -z "$SRC_DIR" ]; then
+if [[ -z "$SRC_DIR" ]]; then
   echo "❌ Usage: $0 <source_images_dir> [output_dir]"
   exit 1
 fi
 
-if [ ! -d "$SRC_DIR" ]; then
+if [[ ! -d "$SRC_DIR" ]]; then
   echo "❌ Source directory not found: $SRC_DIR"
+  exit 1
+fi
+
+if ! command -v ffmpeg >/dev/null 2>&1; then
+  echo "❌ ffmpeg is required but not found in PATH"
   exit 1
 fi
 
 # ======================
 # PREPARE OUTPUT
 # ======================
-
 echo "🧹 Preparing output directory: $OUT_DIR"
 
-if [ -d "$OUT_DIR" ]; then
-  rm -rf "$OUT_DIR"
-fi
-
+rm -rf "$OUT_DIR"
 mkdir -p "$OUT_DIR"
 
 echo "🖼️ Preparing images from: $SRC_DIR"
 echo "📁 Output: $OUT_DIR"
 
 # ======================
-# COPY + RENAME (SAFE LOOP)
+# DISCOVER INPUTS
 # ======================
+mapfile -d '' SOURCE_IMAGES < <(
+  find "$SRC_DIR" -maxdepth 1 -type f \
+    \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.tif" -o -iname "*.tiff" \) \
+    -print0 | sort -z
+)
 
+TOTAL_SOURCE="${#SOURCE_IMAGES[@]}"
+
+if [[ "$TOTAL_SOURCE" -eq 0 ]]; then
+  echo "❌ No supported images found in: $SRC_DIR"
+  exit 1
+fi
+
+# ======================
+# COPY + RENAME + NORMALIZE
+# ======================
 COUNT=1
 
-while IFS= read -r FILE; do
+for FILE in "${SOURCE_IMAGES[@]}"; do
   INDEX=$(printf "%05d" "$COUNT")
+  DEST="$OUT_DIR/frame_${INDEX}.png"
 
-  # convert/normalize every image
+  echo "   → $(basename "$FILE") -> $(basename "$DEST")"
+
   ffmpeg -hide_banner -loglevel error -y \
     -i "$FILE" \
     -vf "scale=1280:-1" \
-    "$OUT_DIR/frame_${INDEX}.png"
+    "$DEST"
+
+  if [[ ! -f "$DEST" ]]; then
+    echo "❌ Failed to create output image: $DEST"
+    exit 1
+  fi
 
   COUNT=$((COUNT + 1))
-
-done < <(find "$SRC_DIR" -maxdepth 1 -type f \
-  \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.tif" -o -iname "*.tiff" \) \
-  | sort)
+done
 
 # ======================
 # VALIDATION
 # ======================
-TOTAL=$(find "$OUT_DIR" -maxdepth 1 -name 'frame_*.png' | wc -l | tr -d ' ')
+TOTAL=$(find "$OUT_DIR" -maxdepth 1 -type f -name 'frame_*.png' | wc -l | tr -d ' ')
 
-if [ "$TOTAL" -eq 0 ]; then
-  echo "❌ No supported images found in: $SRC_DIR"
+if [[ "$TOTAL" -eq 0 ]]; then
+  echo "❌ No output images were created"
+  exit 1
+fi
+
+if [[ "$TOTAL" -ne "$TOTAL_SOURCE" ]]; then
+  echo "❌ Output count mismatch"
+  echo "   source images : $TOTAL_SOURCE"
+  echo "   output images : $TOTAL"
   exit 1
 fi
 
 echo "✅ Prepared $TOTAL images"
 
 # ======================
-# FINAL CLEANUP (STRICT)
+# FINAL CLEANUP
 # ======================
-
 echo "🧼 Removing non-frame files from output directory..."
 
-find "$OUT_DIR" -type f ! -name "frame_*.png" -delete
+find "$OUT_DIR" -maxdepth 1 -type f ! -name "frame_*.png" -delete
 
-# safety check
-EXTRA_FILES=$(find "$OUT_DIR" -type f ! -name "frame_*.png" | wc -l | tr -d ' ')
+EXTRA_FILES=$(find "$OUT_DIR" -maxdepth 1 -type f ! -name "frame_*.png" | wc -l | tr -d ' ')
 
-if [ "$EXTRA_FILES" -ne 0 ]; then
+if [[ "$EXTRA_FILES" -ne 0 ]]; then
   echo "❌ Cleanup failed: some non-frame files remain"
-  find "$OUT_DIR" -type f ! -name "frame_*.png"
+  find "$OUT_DIR" -maxdepth 1 -type f ! -name "frame_*.png"
   exit 1
 fi
 
