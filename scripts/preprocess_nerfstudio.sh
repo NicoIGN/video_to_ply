@@ -130,9 +130,9 @@ set +e
 ARGS=()
 
 # Force no-gpu quoi qu'il arrive
-if [[ "$COLMAP_CMD" == "colmap" ]]; then
-    ARGS+=("--no-gpu")
-fi
+#if [[ "$COLMAP_CMD" == "colmap" ]]; then
+#    ARGS+=("--no-gpu")
+#fi
 # ======================
 # REQUIRED
 # ======================
