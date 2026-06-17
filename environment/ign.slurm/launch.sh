@@ -6,11 +6,11 @@ VERBOSE="${VERBOSE:-false}"
 # Usage:
 # GIT_ROOT=/path/to/video_to_ply ./submit.sh
 
-: "${GIT_ROOT:?❌ GIT_ROOT is not set. Example: GIT_ROOT=/path/to/video_to_ply ./submit.sh}"
+: "${GIT_ROOT:?❌ GIT_ROOT is not set. Example: GIT_ROOT=/path/to/video_to_ply ./launch.sh}"
 
 LAUNCH_SLURM="$GIT_ROOT/environment/ign.slurm/launch.slurm"
 RUN_SH="$GIT_ROOT/run.sh"
-CONFIG_SH="./config.sh"
+CONFIG_SH="${CONFIG_SH:-./config.sh}"
 
 LOG_DIR="/mnt/common/hdd/slurm/logs"
 SUBMIT_LOG="$LOG_DIR/submit.log"
