@@ -451,7 +451,7 @@ case "$INPUT_MODE" in
     images)
       echo "🖼️ Importing images from: $IMAGES"
 
-      mkdir -p "$INPUT_DIR/images"
+      mkdir -p "$IMAGE_DIR"
 
       if [[ ! -d "$IMAGES" ]]; then
         echo "❌ Images directory not found: $IMAGES"
@@ -465,7 +465,7 @@ case "$INPUT_MODE" in
       )
 
       SOURCE_COUNT="${#SOURCE_IMAGES[@]}"
-      TARGET_COUNT=$(find "$INPUT_DIR/images" -maxdepth 1 -type f -iname "frame_*.png" | wc -l)
+      TARGET_COUNT=$(find "$IMAGE_DIR" -maxdepth 1 -type f -iname "frame_*.png" | wc -l)
 
       if [[ "$SOURCE_COUNT" -eq 0 ]]; then
         echo "❌ No images found in: $IMAGES"
@@ -473,16 +473,16 @@ case "$INPUT_MODE" in
       fi
 
       if [[ "$TARGET_COUNT" -eq "$SOURCE_COUNT" ]]; then
-        echo "⏩ All images already imported in $INPUT_DIR/images as frame_XXXXX.png, skipping conversion"
+        echo "⏩ All images already imported in $IMAGE_DIR as frame_XXXXX.png, skipping conversion"
       else
-        echo "📥 Converting $SOURCE_COUNT images to PNG in $INPUT_DIR/images"
+        echo "📥 Converting $SOURCE_COUNT images to PNG in $IMAGE_DIR"
 
         # Nettoyage pour éviter mélange ancien/nouveau contenu
-        find "$INPUT_DIR/images" -maxdepth 1 -type f -iname "frame_*.png" -delete
+        find "$IMAGE_DIR" -maxdepth 1 -type f -iname "frame_*.png" -delete
 
         INDEX=1
         for SRC in "${SOURCE_IMAGES[@]}"; do
-          DEST=$(printf "%s/images/frame_%05d.png" "$INPUT_DIR" "$INDEX")
+          DEST=$(printf "%s/frame_%05d.png" "$IMAGE_DIR" "$INDEX")
 
           echo "   → $(basename "$SRC") -> $(basename "$DEST")"
 
