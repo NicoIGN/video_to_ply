@@ -125,24 +125,25 @@ PY
     # =========================
     # OPTIONAL BACKGROUND MONITOR
     # =========================
-    (
-      while true; do
-        echo
-        echo "========================"
-        echo "⏱ RESOURCE SNAPSHOT $(date)"
-        echo "========================"
-        free -h || true
-        echo
-        if command -v nvidia-smi >/dev/null 2>&1; then
-            nvidia-smi --query-gpu=index,name,memory.total,memory.used,memory.free,utilization.gpu --format=csv || true
+    if [ "$VERBOSE" = "true" ]; then
+        (
+          while true; do
             echo
-            nvidia-smi --query-compute-apps=pid,process_name,gpu_uuid,used_gpu_memory --format=csv || true
-        fi
-        sleep 120
-      done
-    ) &
-    MONITOR_PID=$!
-
+            echo "========================"
+            echo "⏱ RESOURCE SNAPSHOT $(date)"
+            echo "========================"
+            free -h || true
+            echo
+            if command -v nvidia-smi >/dev/null 2>&1; then
+                nvidia-smi --query-gpu=index,name,memory.total,memory.used,memory.free,utilization.gpu --format=csv || true
+                echo
+                nvidia-smi --query-compute-apps=pid,process_name,gpu_uuid,used_gpu_memory --format=csv || true
+            fi
+            sleep 120
+          done
+        ) &
+        MONITOR_PID=$!
+    fi
 
 fi
 
