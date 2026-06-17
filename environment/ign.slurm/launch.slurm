@@ -73,16 +73,16 @@ if [ "$VERBOSE" = "true" ]; then
     echo "python: $(which python)"
     echo "CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-<unset>}"
 
-    python - <<'PY'
-    import torch
-    print("torch:", torch.__version__)
-    print("cuda available:", torch.cuda.is_available())
-    print("cuda device count:", torch.cuda.device_count())
-    if torch.cuda.is_available():
-        for i in range(torch.cuda.device_count()):
-            p = torch.cuda.get_device_properties(i)
-            print(f"gpu[{i}]: {p.name} | total_vram={p.total_memory/1024**3:.2f} GiB")
-    PY
+python - <<'PY'
+import torch
+print("torch:", torch.__version__)
+print("cuda available:", torch.cuda.is_available())
+print("cuda device count:", torch.cuda.device_count())
+if torch.cuda.is_available():
+    for i in range(torch.cuda.device_count()):
+        p = torch.cuda.get_device_properties(i)
+        print(f"gpu[{i}]: {p.name} | total_vram={p.total_memory/1024**3:.2f} GiB")
+PY
 
     echo
     echo "========================"
