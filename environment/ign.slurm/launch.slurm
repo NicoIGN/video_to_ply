@@ -16,7 +16,8 @@ set -e
 # =========================
 # LOAD USER CONFIG
 # =========================
-source config.sh
+CONFIG_SH="${CONFIG_SH:-./config.sh}"
+source $CONFIG_SH
 
 # =========================
 # SRUN / SLURM SETTINGS
