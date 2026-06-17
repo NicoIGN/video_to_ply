@@ -6,6 +6,8 @@
 SFMT_TOOL="colmap" # colmap | hloc | any
 # → hloc = meilleur pour scènes difficiles / moins d’artefacts
 
+export COLMAP_CMD="colmap --colmap-sift-extraction-use-gpu False --colmap-sift-matching-use-gpu False"
+
 MATCHING_METHOD="exhaustive"
 # sequential | vocab_tree | exhaustive
 # → exhaustive = plus précis mais lent

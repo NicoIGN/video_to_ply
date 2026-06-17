@@ -41,6 +41,7 @@ export MAX_JOBS
 # =========================
 export MPLCONFIGDIR="$HOME_SLURM/.config/matplotlib"
 mkdir -p "$MPLCONFIGDIR"
+chmod 700 "$MPLCONFIGDIR"
 
 export XDG_RUNTIME_DIR="$HOME_SLURM/.runtime"
 mkdir -p "$XDG_RUNTIME_DIR"

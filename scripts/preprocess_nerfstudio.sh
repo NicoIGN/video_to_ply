@@ -102,12 +102,25 @@ export LOGLEVEL=DEBUG
 export COLMAP_LOG_LEVEL=2
 export QT_QPA_PLATFORM=offscreen
 
+# OpenGL software fallback
+export LIBGL_ALWAYS_SOFTWARE=1
+
+# Mesa software renderer
+export MESA_GL_VERSION_OVERRIDE=3.3
+export MESA_GLSL_VERSION_OVERRIDE=330
+
+# Évite certains plantages EGL
+export PYOPENGL_PLATFORM=osmesa
+
+
 if [[ "$DEVICE" == "cpu" ]]; then
   echo "🧠 CPU MODE"
   export LIBGL_ALWAYS_SOFTWARE=1
   export MPLBACKEND=Agg
   export CUDA_VISIBLE_DEVICES=""
   export OMP_NUM_THREADS=1
+  export COLMAP_USE_GPU=0
+
 else
   export OMP_NUM_THREADS=3
   export MKL_NUM_THREADS=3
