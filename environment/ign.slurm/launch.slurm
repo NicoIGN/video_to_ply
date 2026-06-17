@@ -37,10 +37,14 @@ export NO_PROXY
 export MAX_JOBS
 
 # =========================
-# MATPLOTLIB CACHE
+# MATPLOTLIB & Qt CACHES
 # =========================
 export MPLCONFIGDIR="$HOME_SLURM/.config/matplotlib"
 mkdir -p "$MPLCONFIGDIR"
+
+export XDG_RUNTIME_DIR="$HOME_SLURM/.runtime"
+mkdir -p "$XDG_RUNTIME_DIR"
+chmod 700 "$XDG_RUNTIME_DIR"
 
 # =========================
 # PROJECT
