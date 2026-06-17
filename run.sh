@@ -634,7 +634,7 @@ else
     echo "🧭 Preprocessing $PREPROCESS_PROFILE through NerfStudio..."
     STEP_START=$(date +%s)
 
-
+echo [debug] SKIP_IMAGE_PROCESSING: $SKIP_IMAGE_PROCESSING
     HTTP_PROXY="$HTTP_PROXY" \
     HTTPS_PROXY="$HTTPS_PROXY" \
     NO_PROXY="$NO_PROXY" \
