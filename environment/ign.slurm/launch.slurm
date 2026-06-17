@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=gsplat
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
+#SBATCH --ntasks-per-node=4
 #SBATCH --cpus-per-task=1
 #SBATCH --gres=gpu:1
 #SBATCH --mem=16G
@@ -22,7 +22,7 @@ source $CONFIG_SH
 # =========================
 # SRUN / SLURM SETTINGS
 # =========================
-export SRUN_CPUS_PER_TASK=1
+export SRUN_CPUS_PER_TASK=4
 export NCCL_BLOCKING_WAIT=1
 export NCCL_ASYNC_ERROR_HANDLING=1
 VERBOSE="${VERBOSE:-false}"
