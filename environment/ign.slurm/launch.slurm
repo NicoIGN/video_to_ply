@@ -143,13 +143,26 @@ trap cleanup EXIT
 # =========================
 # RUN TRAINING
 # =========================
-srun -v bash run.sh \
-  --root "$ROOTDIR" \
-  --name "$BASENAME" \
-  --video $VIDEOSOURCE \
-  --skip-conda \
-  --preprocess-profile "$PREPROCESS_PROFILE" \
-  --gsplat-profile "$GSPLAT_PROFILE" \
-  --num-frames $NUM_FRAMES
+
+ARGS=(
+  --root "$ROOTDIR"
+  --name "$BASENAME"
+  --skip-conda
+  --preprocess-profile "$PREPROCESS_PROFILE"
+  --gsplat-profile "$GSPLAT_PROFILE"
+)
+
+if [ -n "${VIDEOSOURCE:-}" ]; then
+    ARGS+=( --video "$VIDEOSOURCE" )
+    ARGS+=( --num-frames "$NUM_FRAMES")
+
+elif [ -n "${IMAGE_DIR:-}" ]; then
+    ARGS+=( --images "$IMAGE_DIR" )
+else
+    echo "❌ Neither VIDEOSOURCE nor IMAGE_DIR is set"
+    exit 1
+fi
+
+srun -v bash run.sh "${ARGS[@]}"
 
 echo "✅ Job complete"
