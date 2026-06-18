@@ -1,47 +1,62 @@
 #!/bin/bash
 #SBATCH --job-name=gsplat
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=4
-#SBATCH --cpus-per-task=1
+#SBATCH --ntasks=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:1
 #SBATCH --mem=16G
-#SBATCH --time=04:00:00
+#SBATCH --time=08:00:00
 #SBATCH --partition=jean-zellou
 #SBATCH -o /mnt/common/hdd/slurm/logs/gsplat-%j.out
 #SBATCH -e /mnt/common/hdd/slurm/logs/gsplat-%j.err
 
-set -e
-# set -x
+set -euo pipefail
+
+
+unset SRUN_CPUS_PER_TASK
+unset SLURM_NTASKS
+unset SLURM_NPROCS
+unset SLURM_TASKS_PER_NODE
+unset SLURM_CPUS_PER_TASK
 
 # =========================
 # LOAD USER CONFIG
 # =========================
-CONFIG_SH="${CONFIG_SH:-./config.sh}"
-source $CONFIG_SH
+source config.sh
+VERBOSE="${VERBOSE:-false}"
+
+# Expected variables in config.sh:
+#   ROOTDIR
+#   BASENAME
+#   GSPLAT_PROFILE
+#   COLMAP_DIR
+#   IMAGE_DIR
 
 # =========================
-# SRUN / SLURM SETTINGS
+# ENV SETTINGS
 # =========================
-export SRUN_CPUS_PER_TASK=4
 export NCCL_BLOCKING_WAIT=1
 export NCCL_ASYNC_ERROR_HANDLING=1
-VERBOSE="${VERBOSE:-false}"
+export PYTHONUNBUFFERED=1
+
 # =========================
 # PROXY / ENV
 # =========================
-export HTTP_PROXY
-export HTTPS_PROXY
-export http_proxy
-export https_proxy
-export NO_PROXY
-export MAX_JOBS
+export HTTP_PROXY="${HTTP_PROXY:-}"
+export HTTPS_PROXY="${HTTPS_PROXY:-}"
+export http_proxy="${http_proxy:-}"
+export https_proxy="${https_proxy:-}"
+export NO_PROXY="${NO_PROXY:-}"
+export MAX_JOBS="${MAX_JOBS:-}"
 
 # =========================
-# MATPLOTLIB & Qt CACHES
+# MATPLOTLIB CACHE
 # =========================
+: "${HOME_SLURM:=$HOME}"
 export MPLCONFIGDIR="$HOME_SLURM/.config/matplotlib"
 mkdir -p "$MPLCONFIGDIR"
-chmod 700 "$MPLCONFIGDIR"
+
 
 export XDG_RUNTIME_DIR="$HOME_SLURM/.runtime"
 mkdir -p "$XDG_RUNTIME_DIR"
@@ -50,19 +65,72 @@ chmod 700 "$XDG_RUNTIME_DIR"
 # =========================
 # PROJECT
 # =========================
-cd "$HOME_SLURM/video_to_ply"
+: "${GIT_ROOT:?❌ GIT_ROOT is not set. Example: export GIT_ROOT=/path/to/git_project}"
+
+if [ ! -d "$GIT_ROOT" ]; then
+    echo "❌ GIT_ROOT does not exist or is not a directory: $GIT_ROOT"
+    exit 1
+fi
+cd "$GIT_ROOT"
 
 # =========================
 # CONDA ENV
 # =========================
-CONDA_BASE=$(conda info --base 2>/dev/null || echo "")
+CONDA_BASE="$(conda info --base 2>/dev/null || echo "")"
 if [ -z "$CONDA_BASE" ]; then
     echo "❌ conda not found"
     exit 1
 fi
 
 source "$CONDA_BASE/etc/profile.d/conda.sh"
+set +u
 conda activate gsplat
+set -u
+
+# =========================
+# INPUT VALIDATION
+# =========================
+if [ -z "${ROOTDIR:-}" ]; then
+    echo "❌ ROOTDIR is not set in config.sh"
+    exit 1
+fi
+
+if [ -z "${BASENAME:-}" ]; then
+    echo "❌ BASENAME is not set in config.sh"
+    exit 1
+fi
+
+if [ -z "${PREPROCESS_PROFILE:-}" ]; then
+    echo "❌ PREPROCESS_PROFILE is not set in config.sh"
+    exit 1
+fi
+
+if [ -z "${GSPLAT_PROFILE:-}" ]; then
+    echo "❌ GSPLAT_PROFILE is not set in config.sh"
+    exit 1
+fi
+
+if [ -n "${VIDEOSOURCE:-}" ]; then
+    if [ ! -f "$VIDEOSOURCE" ]; then
+        echo "❌ VIDEOSOURCE does not exist: $VIDEOSOURCE"
+        exit 1
+    fi
+
+    if [ -z "${NUM_FRAMES:-}" ]; then
+        echo "❌ NUM_FRAMES is not set in config.sh"
+        exit 1
+    fi
+
+elif [ -n "${IMAGE_DIR:-}" ]; then
+    if [ ! -d "$IMAGE_DIR" ]; then
+        echo "❌ IMAGE_DIR does not exist: $IMAGE_DIR"
+        exit 1
+    fi
+
+else
+    echo "❌ Neither VIDEOSOURCE nor IMAGE_DIR is set"
+    exit 1
+fi
 
 # =========================
 # DEBUG INFO
@@ -176,6 +244,8 @@ else
     exit 1
 fi
 
-srun -v bash run.sh "${ARGS[@]}"
+srun -v --unbuffered \
+  bash run.sh "${ARGS[@]}"
+
 
 echo "✅ Job complete"
