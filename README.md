@@ -1,6 +1,5 @@
 # video_to_ply
 
-# video_to_ply
 
 `video_to_ply` est un pipeline permettant de générer un fichier 3D `.ply` de **splats gaussiens** à partir d’une ou plusieurs **vidéos** ou d’un **dossier d’images**
 
@@ -416,9 +415,6 @@ video_to_ply/
   --skip-preprocess \
   --gsplat-profile quality
 ```
-
-
-## Exemples de résultats
 
 ## Exemples de résultats
 
