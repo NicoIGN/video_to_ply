@@ -416,3 +416,51 @@ video_to_ply/
   --skip-preprocess \
   --gsplat-profile quality
 ```
+
+
+## Exemples de résultats
+
+## Exemples de résultats
+
+<table>
+  <tr>
+    <th colspan="3">Arbuste sous différents angles</th>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="doc/images/arbuste1.png" alt="Vue 1" width="400"><br>
+      <sub>Vue 1</sub>
+    </td>
+    <td align="center">
+      <img src="doc/images/arbuste2.png" alt="Vue 2" width="400"><br>
+      <sub>Vue 2</sub>
+    </td>
+    <td align="center">
+      <img src="doc/images/arbuste3.png" alt="Vue 3" width="400"><br>
+      <sub>Vue 3</sub>
+    </td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <th colspan="3">Statue sous différents angles</th>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="doc/images/statue1.png" alt="Vue 1" width="400"><br>
+      <sub>Vue 1</sub>
+    </td>
+    <td align="center">
+      <img src="doc/images/statue2.png" alt="Vue 2" width="400"><br>
+      <sub>Vue 2</sub>
+    </td>
+    <td align="center">
+      <img src="doc/images/statue3.png" alt="Vue 3" width="400"><br>
+      <sub>Vue 3</sub>
+    </td>
+  </tr>
+</table>
+
+
+```md
