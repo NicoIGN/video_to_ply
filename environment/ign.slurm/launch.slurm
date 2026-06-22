@@ -135,6 +135,8 @@ fi
 # =========================
 # DEBUG INFO
 # =========================
+MONITOR_PID=""
+
 if [ "$VERBOSE" = "true" ]; then
 
     echo "========================"
@@ -193,27 +195,40 @@ PY
     # =========================
     # OPTIONAL BACKGROUND MONITOR
     # =========================
-    if [ "$VERBOSE" = "true" ]; then
-        (
-          while true; do
+    (
+      while true; do
+        echo
+        echo "========================"
+        echo "⏱ RESOURCE SNAPSHOT $(date)"
+        echo "========================"
+        free -h || true
+        echo
+
+        if command -v nvidia-smi >/dev/null 2>&1; then
+            nvidia-smi \
+                --query-gpu=index,name,memory.total,memory.used,memory.free,utilization.gpu \
+                --format=csv || true
             echo
-            echo "========================"
-            echo "⏱ RESOURCE SNAPSHOT $(date)"
-            echo "========================"
-            free -h || true
-            echo
-            if command -v nvidia-smi >/dev/null 2>&1; then
-                nvidia-smi --query-gpu=index,name,memory.total,memory.used,memory.free,utilization.gpu --format=csv || true
-                echo
-                nvidia-smi --query-compute-apps=pid,process_name,gpu_uuid,used_gpu_memory --format=csv || true
-            fi
-            sleep 120
-          done
-        ) &
-        MONITOR_PID=$!
-    fi
+            nvidia-smi \
+                --query-compute-apps=pid,process_name,gpu_uuid,used_gpu_memory \
+                --format=csv || true
+        fi
+
+        sleep 120
+      done
+    ) &
+
+    MONITOR_PID=$!
 
 fi
+
+cleanup() {
+    if [ -n "${MONITOR_PID:-}" ]; then
+        kill "$MONITOR_PID" 2>/dev/null || true
+    fi
+}
+
+trap cleanup EXIT
 
 
 cleanup() {
