@@ -459,4 +459,25 @@ video_to_ply/
 </table>
 
 
+<table>
+  <tr>
+    <th colspan="3">Rue de Paris (Panos GoPro 8k) </th>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="doc/images/Paris1.png" alt="Vue 1" width="400"><br>
+      <sub>Vue 1</sub>
+    </td>
+    <td align="center">
+      <img src="doc/images/Paris2.png" alt="Vue 2" width="400"><br>
+      <sub>Vue 2</sub>
+    </td>
+    <td align="center">
+      <img src="doc/images/Paris3.png" alt="Vue 3" width="400"><br>
+      <sub>Vue 3</sub>
+    </td>
+  </tr>
+</table>
+
+
 ```md
