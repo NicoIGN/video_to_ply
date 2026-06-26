@@ -32,6 +32,7 @@ log "host      : $(hostname)"
 log "user      : $(whoami)"
 log "pwd       : $(pwd)"
 log "GIT_ROOT  : $GIT_ROOT"
+log "CONFIG    : $CONFIG_SH"
 log "verbose   : $VERBOSE"
 
 [ -d "$GIT_ROOT" ] || { log "❌ GIT_ROOT not found: $GIT_ROOT"; exit 1; }
