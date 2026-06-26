@@ -8,12 +8,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 SRC_DIR="${1:-}"
 OUT_DIR="${2:-dataset/images}"
+MAX_SIZE="${3:-1280}"   # largeur max (par défaut 1280)
 
 # ======================
 # CHECKS
 # ======================
 if [[ -z "$SRC_DIR" ]]; then
-  echo "❌ Usage: $0 <source_images_dir> [output_dir]"
+  echo "❌ Usage: $0 <source_images_dir> [output_dir] [max_size]"
   exit 1
 fi
 
@@ -27,6 +28,11 @@ if ! command -v ffmpeg >/dev/null 2>&1; then
   exit 1
 fi
 
+if ! [[ "$MAX_SIZE" =~ ^[1-9][0-9]*$ ]]; then
+  echo "❌ max_size must be a strictly positive integer, got: $MAX_SIZE"
+  exit 1
+fi
+
 # ======================
 # PREPARE OUTPUT
 # ======================
@@ -37,6 +43,7 @@ mkdir -p "$OUT_DIR"
 
 echo "🖼️ Preparing images from: $SRC_DIR"
 echo "📁 Output: $OUT_DIR"
+echo "📏 Max width: $MAX_SIZE"
 
 # ======================
 # DISCOVER INPUTS
@@ -67,7 +74,7 @@ for FILE in "${SOURCE_IMAGES[@]}"; do
 
   ffmpeg -hide_banner -loglevel error -y \
     -i "$FILE" \
-    -vf "scale=1280:-1" \
+    -vf "scale=${MAX_SIZE}:-1" \
     "$DEST"
 
   if [[ ! -f "$DEST" ]]; then

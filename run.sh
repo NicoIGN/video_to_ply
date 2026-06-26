@@ -460,7 +460,7 @@ case "$INPUT_MODE" in
       echo "⏩ Skipping image preparation"
     else
       echo "🖼️ Preparing images from $IMAGES → $IMAGE_DIR"
-      bash scripts/prepare_images.sh "$IMAGES" "$IMAGE_DIR"
+      bash scripts/prepare_images.sh "$IMAGES" "$IMAGE_DIR" "$MAX_RES"
     fi
     ;;
 
