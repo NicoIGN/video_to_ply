@@ -17,7 +17,7 @@ TRAIN_VIS_MODE="tensorboard"
 CAMERA_RES_SCALE_FACTOR=1.0
 
 # Garde une résolution raisonnable
-MAX_RES=5000
+MAX_RES=10000
 
 NUM_DOWNSCALES=1
 SKIP_IMAGE_PROCESSING=true
