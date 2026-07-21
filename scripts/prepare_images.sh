@@ -74,7 +74,7 @@ for FILE in "${SOURCE_IMAGES[@]}"; do
 
   ffmpeg -hide_banner -loglevel error -y \
     -i "$FILE" \
-    -vf "scale=${MAX_SIZE}:-1" \
+    -vf "scale=${MAX_SIZE}:${MAX_SIZE}:force_original_aspect_ratio=decrease" \
     "$DEST"
 
   if [[ ! -f "$DEST" ]]; then
