@@ -142,7 +142,7 @@ else
 fi
 
 srun -v --unbuffered \
-  bash run.sh "${ARGS[@]}"
+  bash scripts/run.sh "${ARGS[@]}"
 
 
 echo "✅ Job complete"
