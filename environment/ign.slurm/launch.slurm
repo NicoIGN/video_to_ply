@@ -2,247 +2,128 @@
 #SBATCH --job-name=gsplat
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:1
 #SBATCH --mem=16G
-#SBATCH --time=99:00:00
-#SBATCH --partition=jean-zellou
-#SBATCH -o /mnt/common/hdd/slurm/logs/gsplat-%j.out
-#SBATCH -e /mnt/common/hdd/slurm/logs/gsplat-%j.err
+#SBATCH --time=48:00:00
+
+# stdout/stderr are injected at submit-time by launch.sh:
+#   export SLURM_STDOUT="$LOG_DIR/gsplat-%j.out"
+#   export SLURM_STDERR="$LOG_DIR/gsplat-%j.err"
+#SBATCH -o ${SLURM_STDOUT}
+#SBATCH -e ${SLURM_STDERR}
 
 set -euo pipefail
 
+echo "CONFIG_SH: ${CONFIG_SH:-<unset>}"
+: "${CONFIG_SH:?❌ CONFIG_SH is not set}"
+: "${RUN_SH:?❌ RUN_SH is not set}"
 
-unset SRUN_CPUS_PER_TASK
-unset SLURM_NTASKS
-unset SLURM_NPROCS
-unset SLURM_TASKS_PER_NODE
-unset SLURM_CPUS_PER_TASK
+source "$CONFIG_SH"
 
-# =========================
-# LOAD USER CONFIG
-# =========================
-echo CONFIG_SH: $CONFIG_SH
-source $CONFIG_SH
+: "${GIT_ROOT:?❌ GIT_ROOT is not set in config.sh}"
+: "${OUTPUT_DIR:?❌ OUTPUT_DIR is not set in config.sh}"
+: "${BASENAME:?❌ BASENAME is not set in config.sh}"
+: "${GSPLAT_PROFILE:?❌ GSPLAT_PROFILE is not set in config.sh}"
+: "${DATASET_DIR:?❌ DATASET_DIR is not set in config.sh}"
+
 VERBOSE="${VERBOSE:-false}"
 
-# Expected variables in config.sh:
-#   ROOTDIR
-#   BASENAME
-#   GSPLAT_PROFILE
-#   COLMAP_DIR
-#   IMAGE_DIR
+is_verbose() {
+  case "${VERBOSE:-false}" in
+    1|true|TRUE|yes|YES) return 0 ;;
+    *) return 1 ;;
+  esac
+}
 
-# =========================
-# ENV SETTINGS
-# =========================
+cd "$GIT_ROOT"
+
+export PYTHONUNBUFFERED=1
 export NCCL_BLOCKING_WAIT=1
 export NCCL_ASYNC_ERROR_HANDLING=1
-export PYTHONUNBUFFERED=1
 
-# =========================
-# PROXY / ENV
-# =========================
-export HTTP_PROXY="${HTTP_PROXY:-}"
-export HTTPS_PROXY="${HTTPS_PROXY:-}"
-export http_proxy="${http_proxy:-}"
-export https_proxy="${https_proxy:-}"
-export NO_PROXY="${NO_PROXY:-}"
-export MAX_JOBS="${MAX_JOBS:-}"
-
-# =========================
-# MATPLOTLIB CACHE
-# =========================
 : "${HOME_SLURM:=$HOME}"
 export MPLCONFIGDIR="$HOME_SLURM/.config/matplotlib"
 mkdir -p "$MPLCONFIGDIR"
-
 
 export XDG_RUNTIME_DIR="$HOME_SLURM/.runtime"
 mkdir -p "$XDG_RUNTIME_DIR"
 chmod 700 "$XDG_RUNTIME_DIR"
 
-# =========================
-# PROJECT
-# =========================
-: "${GIT_ROOT:?❌ GIT_ROOT is not set. Example: export GIT_ROOT=/path/to/git_project}"
-
-if [ ! -d "$GIT_ROOT" ]; then
-    echo "❌ GIT_ROOT does not exist or is not a directory: $GIT_ROOT"
-    exit 1
-fi
-cd "$GIT_ROOT"
-
-# =========================
-# CONDA ENV
-# =========================
-CONDA_BASE="$(conda info --base 2>/dev/null || echo "")"
-if [ -z "$CONDA_BASE" ]; then
-    echo "❌ conda not found"
-    exit 1
-fi
+CONDA_BASE="$(conda info --base 2>/dev/null || true)"
+[ -n "$CONDA_BASE" ] || { echo "❌ conda not found"; exit 1; }
 
 source "$CONDA_BASE/etc/profile.d/conda.sh"
 set +u
 conda activate gsplat
+
+echo "=== PYTORCH DEBUG ==="
+which python
+python -V
+python -c "import sys; print(sys.executable)"
+python -c "import torch; print('torch=', torch.__version__)"
+python -c "import torch; print('cuda_version=', torch.version.cuda)"
+python -c "import torch; print('cuda_available=', torch.cuda.is_available())"
+python -c "import torch; print('torch_file=', torch.__file__)"
+python -c "import site; print(site.getsitepackages())"
+command -v nvidia-smi && nvidia-smi || true
+echo "====================="
+
 set -u
 
-# =========================
-# INPUT VALIDATION
-# =========================
-if [ -z "${ROOTDIR:-}" ]; then
-    echo "❌ ROOTDIR is not set in config.sh"
-    exit 1
-fi
+echo "========================"
+echo "🚀 GSPLAT RUN ENV"
+echo "========================"
+echo "job_id: ${SLURM_JOB_ID:-N/A}"
+echo "host  : $(hostname)"
+echo "pwd   : $(pwd)"
+echo "python: $(which python)"
+echo "RUN_SH=$RUN_SH"
+echo "OUTPUT_DIR=$OUTPUT_DIR"
+echo "BASENAME=$BASENAME"
+echo "GSPLAT_PROFILE=$GSPLAT_PROFILE"
+echo "DATASET_DIR=$DATASET_DIR"
+echo "VERBOSE=$VERBOSE"
 
-if [ -z "${BASENAME:-}" ]; then
-    echo "❌ BASENAME is not set in config.sh"
-    exit 1
-fi
-
-if [ -z "${PREPROCESS_PROFILE:-}" ]; then
-    echo "❌ PREPROCESS_PROFILE is not set in config.sh"
-    exit 1
-fi
-
-if [ -z "${GSPLAT_PROFILE:-}" ]; then
-    echo "❌ GSPLAT_PROFILE is not set in config.sh"
-    exit 1
-fi
-
-if [ -n "${VIDEOSOURCE:-}" ]; then
-    if [ ! -f "$VIDEOSOURCE" ]; then
-        echo "❌ VIDEOSOURCE does not exist: $VIDEOSOURCE"
-        exit 1
-    fi
-
-    if [ -z "${NUM_FRAMES:-}" ]; then
-        echo "❌ NUM_FRAMES is not set in config.sh"
-        exit 1
-    fi
-
-elif [ -n "${IMAGE_DIR:-}" ]; then
-    if [ ! -d "$IMAGE_DIR" ]; then
-        echo "❌ IMAGE_DIR does not exist: $IMAGE_DIR"
-        exit 1
-    fi
-
-else
-    echo "❌ Neither VIDEOSOURCE nor IMAGE_DIR is set"
-    exit 1
-fi
-
-# =========================
-# DEBUG INFO
-# =========================
 MONITOR_PID=""
+cleanup() {
+  if [ -n "${MONITOR_PID:-}" ]; then
+    kill "$MONITOR_PID" 2>/dev/null || true
+  fi
+}
+trap cleanup EXIT
 
-if [ "$VERBOSE" = "true" ]; then
-
-    echo "========================"
-    echo "🚀 GSPLAT RUN ENV"
-    echo "========================"
-    echo "job_id: ${SLURM_JOB_ID:-N/A}"
-    echo "hostname: $(hostname)"
-    echo "user: $(whoami)"
-    echo "pwd: $(pwd)"
-    echo "python: $(which python)"
-    echo "CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-<unset>}"
-
-python - <<'PY'
-import torch
-print("torch:", torch.__version__)
-print("cuda available:", torch.cuda.is_available())
-print("cuda device count:", torch.cuda.device_count())
-if torch.cuda.is_available():
-    for i in range(torch.cuda.device_count()):
-        p = torch.cuda.get_device_properties(i)
-        print(f"gpu[{i}]: {p.name} | total_vram={p.total_memory/1024**3:.2f} GiB")
-PY
-
-    echo
-    echo "========================"
-    echo "💾 RAM INFO"
-    echo "========================"
-    free -h || true
-
-    echo
-    echo "========================"
-    echo "🎮 GPU INFO"
-    echo "========================"
-    if command -v nvidia-smi >/dev/null 2>&1; then
-        nvidia-smi || true
-        echo
+if is_verbose; then
+  (
+    while true; do
+      echo
+      echo "⏱ RESOURCE SNAPSHOT $(date)"
+      free -h || true
+      if command -v nvidia-smi >/dev/null 2>&1; then
         nvidia-smi --query-gpu=index,name,memory.total,memory.used,memory.free,utilization.gpu --format=csv || true
-        echo
-        nvidia-smi --query-compute-apps=pid,process_name,gpu_uuid,used_gpu_memory --format=csv || true
-    else
-        echo "⚠️ nvidia-smi not available"
-    fi
-
-    echo
-    echo "========================"
-    echo "📦 TOP MEMORY PROCESSES"
-    echo "========================"
-    ps -eo pid,user,comm,%mem,%cpu,rss,vsz --sort=-rss | head -30 || true
-
-    echo
-    echo "========================"
-    echo "🧾 SLURM JOB INFO"
-    echo "========================"
-    scontrol show job "${SLURM_JOB_ID}" || true
-
-    # =========================
-    # OPTIONAL BACKGROUND MONITOR
-    # =========================
-    (
-      while true; do
-        echo
-        echo "========================"
-        echo "⏱ RESOURCE SNAPSHOT $(date)"
-        echo "========================"
-        free -h || true
-        echo
-
-        if command -v nvidia-smi >/dev/null 2>&1; then
-            nvidia-smi \
-                --query-gpu=index,name,memory.total,memory.used,memory.free,utilization.gpu \
-                --format=csv || true
-            echo
-            nvidia-smi \
-                --query-compute-apps=pid,process_name,gpu_uuid,used_gpu_memory \
-                --format=csv || true
-        fi
-
-        sleep 120
-      done
-    ) &
-
-    MONITOR_PID=$!
-
+      fi
+      sleep 120
+    done
+  ) &
+  MONITOR_PID=$!
 fi
 
-cleanup() {
-    if [ -n "${MONITOR_PID:-}" ]; then
-        kill "$MONITOR_PID" 2>/dev/null || true
-    fi
-}
+EXTRA_ARGS=()
+[ "${SKIP_TRAINING:-false}" = "true" ] && EXTRA_ARGS+=(--skip-training)
+[ "${SKIP_EXPORT:-false}" = "true" ] && EXTRA_ARGS+=(--skip-export)
 
-trap cleanup EXIT
-
-
-cleanup() {
-    kill "$MONITOR_PID" 2>/dev/null || true
-}
-trap cleanup EXIT
-
+case "${USE_DEFAULTS:-false}" in
+  true|True|1)
+    EXTRA_ARGS+=(--use-defaults)
+    ;;
+esac
+ 
 # =========================
 # RUN TRAINING
 # =========================
 
 ARGS=(
-  --root "$ROOTDIR"
+  --root "$DATASET_DIR"
   --name "$BASENAME"
   --skip-conda
   --preprocess-profile "$PREPROCESS_PROFILE"
