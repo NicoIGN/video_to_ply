@@ -53,8 +53,7 @@ SKIP_PREPROCESS=false
 SKIP_TRAINING=false
 SKIP_EXPORT=false
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PREPROCESS_PROFILE=""
 GSPLAT_PROFILE=""
 
